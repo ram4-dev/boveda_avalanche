@@ -6,6 +6,8 @@
 node_modules/
 dist/
 coverage/
+.pi-lens/
+**/.pi-lens/
 
 # Secrets and local credentials
 .env

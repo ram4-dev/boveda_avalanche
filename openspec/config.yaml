@@ -1,74 +1,106 @@
 project:
   name: boveda_avalanche
   repository: /Users/rcarnicer/Desktop/hackathon_avalance
-  branch: feature/batch-2
-  type: hackathon-demo-backend
+  branch: feature/batch-3-borrower-widget
+  type: hackathon-demo-fullstack
   description: >-
-    Bóveda Avalanche demo backend for Batch 2: API orchestration, wallet risk,
-    payment attestations, dashboard aggregation, and mock-first web3 integration.
+    Bóveda Avalanche hackathon demo. Batch 2 backend/API is implemented and
+    verified locally; Batch 3 will add the borrower-facing widget using
+    Vite + React + TypeScript against the canonical local Batch 2 API.
   stack:
-    runtime: Node.js
-    language: TypeScript
-    http_framework: Fastify
-    contract_integration: >-
-      Mock web3 adapter for Batch 2 until Batch 1 ABI/addresses are available;
-      real Avalanche Fuji integration is deferred behind the same adapter boundary.
+    frontend_target:
+      bundler: Vite
+      ui: React
+      language: TypeScript
+      status: planned_for_batch_3; no frontend scaffold detected during init
+      wallet: >-
+        Basic real wallet connection via injected provider/window.ethereum when
+        available, with no secret material and safe fallback messaging when a
+        provider is absent.
+    backend_existing:
+      runtime: Node.js
+      language: TypeScript
+      http_framework: Fastify
+      status: Batch 2 implemented and verified
+      local_api_source: src/ plus docs/demo/openapi.yaml
+      contract_integration: >-
+        Mock web3 adapter by default; real Avalanche Fuji integration remains
+        behind the adapter boundary and is not required for Batch 3 local demo.
   current_inventory:
-    status: spec-first repository; no backend package scaffold detected during init
+    status: backend package exists; frontend scaffold not yet present
+    package_manifest: package.json
+    lockfile: package-lock.json
+    backend_source:
+      - src/
+      - tests/
     docs:
       - boveda_plan_funcional_tareas_hackathon.md
       - docs/demo/openapi.yaml
       - docs/demo/demo-flow.md
       - docs/demo/states-events.md
+      - docs/demo/backend-runbook.md
     data:
       - data/demo/loans.seed.json
+    completed_sdd:
+      - openspec/changes/batch-2-backend-risk-attestations/
 
 sources_of_truth:
   product_plan: boveda_plan_funcional_tareas_hackathon.md
-  batch_scope: Batch 2 — Backend, riesgo y atestaciones
+  batch_scope: Batch 3 — Borrower Widget
   api_contract: docs/demo/openapi.yaml
   demo_flow: docs/demo/demo-flow.md
   states_events: docs/demo/states-events.md
   seed_data: data/demo/loans.seed.json
+  backend_runbook: docs/demo/backend-runbook.md
+  backend_readiness: openspec/changes/batch-2-backend-risk-attestations/verify-report.md
   canonical_endpoint_policy: >-
-    docs/demo/openapi.yaml is canonical when plan prose differs; for example use
-    POST /quotes and POST /loans/{loanId}/payments/attest unless a later SDD
-    decision explicitly changes the API contract.
+    docs/demo/openapi.yaml is canonical when plan prose differs. Batch 3 should
+    use the Batch 2 local API paths exactly, including POST /quotes and
+    POST /loans/{loanId}/payments/attest.
+  batch_2_status: >-
+    Batch 2 API is implemented and verified on main per the verify report.
+    Treat it as the local API source for Batch 3 instead of rebuilding backend
+    behavior inside the widget.
 
 sdd:
   strict_tdd: true
-  execution_mode: auto
+  execution_mode: interactive
   artifact_store:
     primary: openspec
     memory_requested: engram
     note: >-
-      Engram persistence was requested for this session; agents must use callable
-      memory tools when exposed by the runtime, otherwise write OpenSpec artifacts
-      and report memory unavailability.
-  change: batch-2-backend-risk-attestations
+      Preserve the prior OpenSpec + Engram policy. In this runtime, Engram tools
+      were not callable during init, so OpenSpec is the authoritative store and
+      agents must report memory unavailability unless memory tools are exposed.
+  change: demo-control-panel-customization
   scope:
     include:
-      - B2.1 API base: health, loans, risk, payments, dashboard
-      - B2.2 deterministic terms/quote calculation
-      - B2.3 Wavy Node mock/adapter for wallet risk
-      - B2.4 payment attestation payload and hash generation
-      - B2.5 mock-first web3 adapter, real ABI/addresses later
-      - B2.6 dashboard aggregation from seeds/events/state
-      - B2.7 simple event listener or manual post-transaction refresh path
+      - B3.1 borrower offer/request screen showing amount, collateral, LTV, tenor, and rate
+      - B3.2 basic injected wallet connection and displayed borrower address
+      - B3.3 visible collateral deposit action using Batch 2 API simulation unless contract integration is available
+      - B3.4 active loan state view with status, paid installments/payment evidence, current LTV, and receipt
+      - B3.5 payment simulation using payment attestation endpoint with visible event/attestation feedback
+      - B3.6 margin-call/liquidation risk state with clear alert and liquidation outcome
+      - Demo-first UX that a judge can understand without prior technical explanation
+      - Consistent polished data-product UI per project UI standards
     exclude:
-      - Real KYC, fiat rails, payment processor, accounting reconciliation, off-ramp
-      - Production-grade oracle, DEX liquidation, or real Wavy Node integration
-      - Implementing Batch 2 during init
+      - Real KYC, fiat rails, payment processor, accounting reconciliation, or off-ramp
+      - Production wallet/session management, custodial flows, private keys, or secrets
+      - Production-grade wallet risk, oracle, DEX liquidation, or real Wavy Node integration
+      - Reimplementing Batch 2 backend/API behavior in frontend code
+      - Implementing Batch 3 during init
   acceptance: >-
-    Backend can complete the minimum demo flow or simulate it consistently, and
-    dashboard metrics are traceable to seeded/recorded loan, risk, payment, and
-    liquidation data.
+    A judge can follow the borrower journey end-to-end from offer to wallet,
+    deposit/activation, active loan status, payment attestation, and
+    margin/liquidation outcome using the local Batch 2 API and demo fixtures,
+    without needing technical narration.
   review:
     pr_strategy: auto-forecast
     changed_lines_budget: 700
     guard: >-
-      Pause before sdd-apply if task forecast exceeds the changed-lines budget or
-      requires a chained PR decision.
+      Pause before sdd-apply if task forecast exceeds the changed-lines budget,
+      introduces multiple high-risk frontend/backend areas, or requires a
+      chained work-unit decision.
   phases:
     order:
       - init
@@ -81,55 +113,119 @@ sdd:
       - verify
       - archive
     rules:
-      init: Capture project context, docs, source-of-truth files, testing plan, and skill registry status.
-      explore: Inspect Batch 0 artifacts, OpenAPI schemas, seeds, and any newly added backend scaffold before proposing.
-      proposal: Define full Batch 2 scope, acceptance criteria, non-goals, dependencies, and mock-vs-real boundaries.
-      spec: Use docs/demo/openapi.yaml as canonical API contract and write testable Given/When/Then requirements.
-      design: Document Fastify module boundaries, state/event storage, risk and attestation algorithms, and web3 adapter interface.
-      tasks: Break work into reviewable TDD slices and forecast changed lines before apply.
+      init: Capture project context, docs, Batch 2 readiness, source-of-truth files, testing plan, UI standards, and skill registry status.
+      explore: Inspect existing backend API shapes, OpenAPI schemas, seeds, demo flow, and current package/test setup before proposing frontend slices.
+      proposal: Define complete Batch 3 scope, acceptance criteria, non-goals, dependencies, API usage, wallet fallback behavior, and mock-vs-real boundaries.
+      spec: Write testable Given/When/Then requirements for each borrower step, using docs/demo/openapi.yaml and demo-flow states/events as canonical contracts.
+      design: Document Vite/React component boundaries, API client/state model, wallet provider abstraction, demo event feedback, and UI layout standards.
+      tasks: Break work into reviewable strict-TDD slices, forecast changed lines, and decide whether to chain work units before apply.
       apply: >-
-        STRICT TDD MODE IS ACTIVE. Follow RED, GREEN, TRIANGULATE, REFACTOR and
-        record evidence. If no test scaffold exists, the first implementation
-        slice must create the test runner and a failing test before production code.
-      verify: Run configured tests and contract/API validation; compare implementation against every accepted spec scenario.
-      archive: Preserve final SDD decisions, artifacts, run commands, and remaining integration gaps.
+        STRICT TDD MODE IS ACTIVE. Test runner: npm test -- --run. Follow RED,
+        GREEN, TRIANGULATE, REFACTOR and record evidence. If frontend scaffold
+        or UI test dependencies are absent, the first implementation slice must
+        create the minimal Vite/React/Vitest test setup and a failing test before
+        production UI code.
+      verify: Run configured tests plus typecheck/build/lint; validate all accepted spec scenarios against the local Batch 2 API contract and UI requirements.
+      archive: Preserve final SDD decisions, artifacts, run commands, review boundary decisions, and remaining integration gaps.
+
+previous_changes:
+  batch_2_backend_risk_attestations:
+    change: batch-2-backend-risk-attestations
+    branch_recorded_in_prior_config: feature/batch-2
+    status: verified_pass_with_non_blocking_coverage_notes
+    artifacts:
+      - openspec/changes/batch-2-backend-risk-attestations/proposal.md
+      - openspec/changes/batch-2-backend-risk-attestations/design.md
+      - openspec/changes/batch-2-backend-risk-attestations/tasks.md
+      - openspec/changes/batch-2-backend-risk-attestations/apply-progress.md
+      - openspec/changes/batch-2-backend-risk-attestations/verify-report.md
+    verification_commands:
+      - npm test -- --run
+      - npm run typecheck
+      - npm run build
+      - npm run lint
+    notes:
+      - Mock Wavy and mock web3 are default; no RPC, ABI, contract address, private key, or credential is required.
+      - Liquidation previews, responses, and events report proceeds in USDC.
+      - Dashboard values derive from current loans/events.
+      - Non-blocking coverage notes remain around some terminal transition and refresh-hook cases.
 
 testing:
   strict_tdd: true
   detected_at: "2026-05-16"
   detection:
-    package_manifest: not_found
-    lockfile: not_found
-    test_config: not_found
-    existing_runnable_command: none
-  planned_for_batch_2:
+    package_manifest: package.json
+    lockfile: package-lock.json
+    test_config: vitest.config.ts
+    existing_runnable_command: npm test -- --run
+    current_vitest_environment: node
+    current_test_include: tests/**/*.test.ts
+    frontend_scaffold: not_detected
+  current_backend_commands:
+    install: npm install --registry=https://registry.npmjs.org
+    dev: npm run dev
+    primary_test: npm test -- --run
+    lint: npm run lint
+    typecheck: npm run typecheck
+    build: npm run build
+  planned_for_batch_3:
     package_manager: npm
-    framework: Vitest
-    http_testing: Fastify inject or light-my-request
-    primary_command: npm test
-    targeted_command: npm test -- --run
+    frontend_framework: React
+    bundler: Vite
+    test_framework: Vitest
+    likely_ui_testing: React Testing Library with jsdom
+    primary_command: npm test -- --run
+    targeted_command: npm test -- --run <test-file>
     lint_command: npm run lint
     typecheck_command: npm run typecheck
     build_command: npm run build
   tdd_requirement: >-
-    Because no runnable backend scaffold exists yet, sdd-apply must introduce the
-    Node/TypeScript/Fastify/Vitest scaffold and demonstrate the first RED test
-    before implementing endpoint behavior.
+    Batch 3 apply must start with failing UI/API-client/wallet behavior tests
+    before production React code. If test configuration must be extended from
+    Node-only backend tests to UI tests, that configuration change belongs in the
+    first RED/GREEN slice and must keep existing backend tests runnable.
 
 conventions:
   api_identifiers: English identifiers and enum values per docs/demo/openapi.yaml
   human_docs_language: Spanish is acceptable for narrative docs already in repo
+  generated_artifacts_language: English by default unless extending Spanish narrative docs
   money_and_liquidation: Liquidation proceeds must be reported in USDC
   status_machine: Follow docs/demo/states-events.md transitions
-  fixture_policy: Use data/demo/loans.seed.json for deterministic demo data until persistent storage is introduced
+  fixture_policy: Use data/demo/loans.seed.json and local Batch 2 API responses for deterministic demo data until persistent storage is introduced
+  wallet_policy: >-
+    Use injected provider/window.ethereum when available. Never read or expose
+    private keys, seed phrases, wallet secrets, .env files, credentials, or
+    secret manager outputs. Show a graceful unavailable-provider state.
+  ui_design:
+    background: "#f6f8fb"
+    surface: "#ffffff"
+    text_strong: "#172033"
+    text_muted: "#647084"
+    border: "#d9e1ec"
+    accent: "#0f766e"
+    secondary: "#2563eb"
+    warning: "#dc2626"
+    positive: "#16a34a"
+    radius:
+      cards: 8px
+      controls: 6px
+    spacing: [12px, 16px, 24px, 32px]
+    guidance: >-
+      Build a quiet polished data-product interface with a useful first screen,
+      compact headings, and borrower-flow clarity. Avoid purple-blue generic
+      gradients, oversized empty cards, decorative blobs, and raw text dumps.
   secrets_policy: >-
-    Do not read or expose .env files, private keys, credentials, tokens, passwords,
-    or secret manager outputs. Commit only safe examples/templates.
+    Do not read or expose .env files, private keys, credentials, tokens,
+    passwords, seed phrases, or secret manager outputs. Commit only safe
+    examples/templates.
 
 skill_registry:
   path: .atl/skill-registry.md
   status: present
-  relevant_compact_rules: none
+  project_standards_resolution: injected
+  relevant_compact_rules:
+    - Consistent UI Design rules for the Batch 3 borrower widget
   note: >-
-    Registry exists, but no repository-specific compact standards relevant to this
-    Batch 2 backend init were available from the parent-injected standards.
+    Registry exists. Project UI standards were supplied by the parent under
+    Project Standards auto-resolved; this init did not independently load
+    registry rules.

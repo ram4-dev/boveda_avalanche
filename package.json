@@ -5,18 +5,33 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/index.ts",
+    "dev:web": "vite --config vite.config.ts",
     "test": "vitest",
-    "typecheck": "tsc --noEmit --pretty false",
-    "build": "tsc -p tsconfig.json",
-    "lint": "tsc --noEmit --pretty false"
+    "typecheck": "npm run typecheck:api && npm run typecheck:web",
+    "typecheck:api": "tsc --noEmit --pretty false -p tsconfig.json",
+    "typecheck:web": "tsc --noEmit --pretty false -p web/tsconfig.json",
+    "build": "npm run build:api && npm run build:web",
+    "build:api": "tsc -p tsconfig.json",
+    "build:web": "vite build --config vite.config.ts",
+    "lint": "npm run typecheck"
   },
   "dependencies": {
-    "fastify": "^5.3.3"
+    "fastify": "^5.3.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.15.17",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.2.0",
+    "jsdom": "^29.1.1",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
+    "vite": "^7.3.3",
     "vitest": "^3.1.3"
   }
 }
