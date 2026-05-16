@@ -1,26 +1,25 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { createBovedaApiClient } from './api/client.js';
+import { InstitutionalDashboardScreen } from './screens/InstitutionalDashboardScreen.js';
 import { OfferRequestScreen } from './screens/OfferRequestScreen.js';
 import { LoanActivityScreen } from './screens/LoanActivityScreen.js';
 import { useBorrowerJourney } from './state/borrowerJourney.js';
 import { useInjectedWallet } from './wallet/useInjectedWallet.js';
 import './styles/app.css';
 
+type AppView = 'borrower' | 'dashboard';
+
 export function App() {
   const client = useMemo(() => createBovedaApiClient(), []);
-  const journey = useBorrowerJourney(client);
-  const wallet = useInjectedWallet();
-  const loan = journey.state.selectedLoan;
-  const walletAddress = wallet.connection.status === 'connected' ? wallet.connection.address : loan?.borrower.walletAddress;
-  const isLoading = journey.state.loadStatus === 'loading' || journey.state.loadStatus === 'idle';
+  const [view, setView] = useState<AppView>('borrower');
 
   return <main className="app-shell">
     <header className="app-header">
       <div className="brand">
         <div className="brand-mark" aria-hidden="true">B</div>
         <div>
-          <h1>Bóveda borrower widget</h1>
-          <p className="brand-subtitle">Avalanche-backed credit demo for borrowers</p>
+          <h1>Bóveda demo workspace</h1>
+          <p className="brand-subtitle">Borrower journey + institutional dashboard over local Batch 2 API</p>
         </div>
       </div>
       <div className="header-meta">
@@ -28,16 +27,29 @@ export function App() {
           <span className="network-dot" aria-hidden="true"></span>
           Local Batch 2 API
         </span>
-        <button
-          className="button button-secondary"
-          onClick={journey.reload}
-          aria-label="Refresh borrower data"
-        >
-          Refresh
-        </button>
+        <nav className="view-switch" aria-label="Demo view switcher">
+          <button className={`button ${view === 'borrower' ? 'button-primary' : 'button-secondary'}`} onClick={() => setView('borrower')} aria-pressed={view === 'borrower'}>
+            Borrower widget
+          </button>
+          <button className={`button ${view === 'dashboard' ? 'button-primary' : 'button-secondary'}`} onClick={() => setView('dashboard')} aria-pressed={view === 'dashboard'}>
+            Institutional dashboard
+          </button>
+        </nav>
       </div>
     </header>
 
+    {view === 'borrower' ? <BorrowerWidgetView client={client} /> : <InstitutionalDashboardScreen client={client} />}
+  </main>;
+}
+
+function BorrowerWidgetView({ client }: { client: ReturnType<typeof createBovedaApiClient> }) {
+  const journey = useBorrowerJourney(client);
+  const wallet = useInjectedWallet();
+  const loan = journey.state.selectedLoan;
+  const walletAddress = wallet.connection.status === 'connected' ? wallet.connection.address : loan?.borrower.walletAddress;
+  const isLoading = journey.state.loadStatus === 'loading' || journey.state.loadStatus === 'idle';
+
+  return <>
     {journey.state.loadStatus === 'ready' ? (
       <div className="sr-status" role="status" aria-label="Borrower data status">
         Borrower data loaded from local Batch 2 API. Collateral, payment, and liquidation controls remain API-simulated until contracts are wired.
@@ -124,7 +136,7 @@ export function App() {
         </aside>
       </div>
     ) : null}
-  </main>;
+  </>;
 }
 
 export default App;
