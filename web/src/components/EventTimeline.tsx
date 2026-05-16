@@ -1,5 +1,7 @@
-import type { OnChainEvent } from '../api/types.js';
+import type { EvidenceSource, OnChainEvent } from '../api/types.js';
 import { isUsdcCurrency, shortHash, unsupportedLiquidationCurrencyMessage } from './format.js';
+import { EvidenceBadge } from './EvidenceBadge.js';
+import { ExplorerLink } from './ExplorerLink.js';
 
 function renderLiquidationProceeds(event: OnChainEvent) {
   const { proceedsAmount, proceedsCurrency } = event.payload;
@@ -26,12 +28,25 @@ export function EventTimeline({ events }: { events: OnChainEvent[] }) {
   if (events.length === 0) return <p className="muted">No loan events recorded yet.</p>;
   return (
     <ol className="event-list" aria-label="Loan event timeline">
-      {events.map((event) => (
-        <li key={event.eventId}>
+      {events.map((event) => {
+        const evidence = event.payload.evidence;
+        const source: EvidenceSource = evidence?.source ?? (event.txHash || event.blockNumber ? 'fuji-live' : 'demo-simulated');
+        const txHash = event.txHash ?? evidence?.txHash ?? null;
+        const blockNumber = event.blockNumber ?? evidence?.blockNumber ?? null;
+        const contractAddress = (evidence?.contracts?.[0]?.address ?? event.payload.vaultAddress) as string | undefined;
+        const explorerBaseUrl = evidence?.explorerUrl ?? 'https://testnet.snowtrace.io';
+
+        return <li key={event.eventId}>
           <span className="event-type">{event.eventType}</span>
           <span className="event-meta">
-            {formatOccurredAt(event.occurredAt)} · tx {shortHash(event.txHash)}
+            {formatOccurredAt(event.occurredAt)} · tx {shortHash(txHash)}
           </span>
+          <EvidenceBadge source={source} />
+          <div className="button-row">
+            <ExplorerLink entity="tx" value={txHash} source={source} explorerBaseUrl={explorerBaseUrl} />
+            <ExplorerLink entity="address" value={contractAddress} source={source} explorerBaseUrl={explorerBaseUrl} />
+            <ExplorerLink entity="block" value={blockNumber} source={source} explorerBaseUrl={explorerBaseUrl} />
+          </div>
           {event.payload.attestationHash ? (
             <div className="event-payload">Attestation {String(event.payload.attestationHash)}</div>
           ) : null}
@@ -39,8 +54,8 @@ export function EventTimeline({ events }: { events: OnChainEvent[] }) {
             <div className="event-payload">Top-up {String(event.payload.amount)} {String(event.payload.token ?? '')}</div>
           ) : null}
           {event.eventType === 'Liquidated' ? renderLiquidationProceeds(event) : null}
-        </li>
-      ))}
+        </li>;
+      })}
     </ol>
   );
 }

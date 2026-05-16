@@ -63,6 +63,8 @@ Batch 2 is mock-first by design:
 
 When Batch 1 smart contract ABI/addresses are available, add a real web3 adapter behind the same `Web3Adapter` interface instead of changing public HTTP paths.
 
+For Batch 5 real-Fuji collateral verification, see `docs/demo/fuji-real-e2e-collateral-verification.md`. The chosen real collateral path is **WAVAX on Fuji**, while liquidation proceeds remain **USDC**. The important rule is that the backend must verify on-chain receipt/log/state evidence before trusting a frontend wallet prompt or submitted `txHash`.
+
 ## State and dashboard traceability
 
 Runtime state is deterministic and in-memory:

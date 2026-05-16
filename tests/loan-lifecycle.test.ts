@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildFastifyApp } from '../src/app.js';
+import { buildFujiRuntimeConfig } from '../src/config/runtime.js';
 import { DemoStore } from '../src/store/demoStore.js';
 import { loadSeedFileSync } from '../src/store/seedLoader.js';
 import type { Loan, LoanStatus, SeedFile } from '../src/domain/types.js';
@@ -198,6 +199,19 @@ describe('loan creation and lifecycle through activation', () => {
     expect(activated.statusCode).toBe(200);
     expect(activated.json()).toMatchObject({
       status: 'Active',
+      txHash: expect.stringMatching(/^0x[a-f0-9]{64}$/),
+      blockNumber: null,
+      activationTxHash: expect.stringMatching(/^0x[a-f0-9]{64}$/),
+      activationBlockNumber: null,
+      activationEvidence: {
+        mode: 'demo',
+        source: 'demo-simulated',
+        status: 'simulated',
+        label: 'Simulated demo evidence',
+        txHash: expect.stringMatching(/^0x[a-f0-9]{64}$/),
+        blockNumber: null,
+        contracts: [{ name: 'CollateralVault', address: '0xB0VEDA0000000000000000000000000000000003' }]
+      },
       receipt: {
         receiptTokenId: '9001',
         soulbound: true,
@@ -213,6 +227,12 @@ describe('loan creation and lifecycle through activation', () => {
       'LoanActivated',
       'ReceiptIssued'
     ]);
+    const activationEvent = events.json().events.find((event: { eventType: string }) => event.eventType === 'LoanActivated');
+    expect(activationEvent.payload.evidence).toMatchObject({
+      source: 'demo-simulated',
+      mode: 'demo',
+      status: 'simulated'
+    });
   });
 
   it('tops up collateral for Active and MarginCall loans and records a distinct event', async () => {
@@ -322,6 +342,34 @@ describe('loan creation and lifecycle through activation', () => {
     expect((await app.inject({ method: 'GET', url: `/events?loanId=${loanId}` })).json().events).toHaveLength(
       before.json().events.length
     );
+  });
+
+  it('returns WEB3_UNAVAILABLE for activation in fuji mode without fabricating live evidence hashes', async () => {
+    const { app, riskAssessmentId } = await acceptedRiskAssessmentId(buildFastifyApp({ runtime: buildFujiRuntimeConfig({ prerequisites: 'missing' }) }));
+    const created = await app.inject({ method: 'POST', url: '/loans', payload: createLoanPayload(riskAssessmentId) });
+    const loanId = created.json().loanId;
+
+    await app.inject({
+      method: 'POST',
+      url: `/loans/${loanId}/approve`,
+      payload: { approvedBy: 'originator-ark-capital-demo' }
+    });
+    await app.inject({
+      method: 'POST',
+      url: `/loans/${loanId}/collateral/deposit`,
+      payload: {
+        token: 'AVAX',
+        amount: '1000',
+        txHash: '0x7777777777777777777777777777777777777777777777777777777777777777',
+        vaultAddress: '0xB0VEDA0000000000000000000000000000000007'
+      }
+    });
+
+    const activation = await app.inject({ method: 'POST', url: `/loans/${loanId}/activate`, payload: {} });
+    expect(activation.statusCode).toBe(503);
+    expect(activation.json().error.code).toBe('WEB3_UNAVAILABLE');
+    expect(activation.json().error.message).toContain('Fuji web3 adapter is unavailable');
+    expect(activation.json().error.message).not.toContain('0x');
   });
 
   it('keeps Repaid, Liquidated, and Cancelled loans terminal for practical lifecycle mutations', async () => {

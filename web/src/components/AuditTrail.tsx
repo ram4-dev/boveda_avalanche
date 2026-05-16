@@ -1,5 +1,7 @@
 import type { DashboardSummary, OnChainEvent } from '../api/types.js';
 import { selectAuditEvents } from '../state/dashboardSelectors.js';
+import { EvidenceBadge } from './EvidenceBadge.js';
+import { ExplorerLink } from './ExplorerLink.js';
 
 type AuditTrailProps = {
   summary: DashboardSummary | null;
@@ -28,7 +30,12 @@ export function AuditTrail({ summary, events, selectedLoanId }: AuditTrailProps)
           <span>Tx hash</span><span className="mono-cell">{row.txHash ?? 'Not recorded'}</span>
           <span>Block</span><span>{row.blockNumber ?? 'Not recorded'}</span>
         </div>
+        <EvidenceBadge source={row.evidenceSource} />
         <p className="table-subtle">{row.evidenceLabel}</p>
+        <div className="button-row">
+          <ExplorerLink entity="tx" value={row.txHash} source={row.evidenceSource} explorerBaseUrl="https://testnet.snowtrace.io" />
+          <ExplorerLink entity="block" value={row.blockNumber} source={row.evidenceSource} explorerBaseUrl="https://testnet.snowtrace.io" />
+        </div>
         {row.payloadHighlights.length ? <ul className="audit-highlights" aria-label={`Payload highlights ${row.eventId}`}>
           {row.payloadHighlights.map((highlight) => <li key={`${row.eventId}-${highlight.label}`}>
             <span>{highlight.label}</span>

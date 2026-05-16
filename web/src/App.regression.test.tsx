@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App.js';
@@ -10,11 +10,13 @@ function jsonResponse(body: unknown): Response {
 
 describe('app borrower + dashboard regression', () => {
   beforeEach(() => {
+    window.history.pushState({}, '', '/');
     const loan = sampleLoan({ status: 'Active' });
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const method = init?.method ?? 'GET';
 
+      if (url === '/runtime' && method === 'GET') return jsonResponse({ mode: 'fuji', evidenceSource: 'fuji-live', prerequisites: 'ready' });
       if (url === '/dashboard/summary' && method === 'GET') return jsonResponse({ activePrincipalUsd: '150000', activeVaults: 1, averageLtvBps: 5000, loansInMarginCall: 0, paymentsAttested: 1, liquidationsExecuted: 0, exposureByAsset: [{ asset: 'AVAX', valueUsd: '300000' }], recentEvents: [] });
       if (url.startsWith('/loans?') && method === 'GET') return jsonResponse({ loans: [loan] });
       if (url === '/loans' && method === 'GET') return jsonResponse({ loans: [loan] });
@@ -25,11 +27,15 @@ describe('app borrower + dashboard regression', () => {
     }));
   });
 
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.history.pushState({}, '', '/');
+  });
 
   it('renders keyboard-reachable borrower controls and keeps borrower/dashboard views selectable', async () => {
     render(<App />);
 
+    expect(await screen.findByText(/Fuji live mode/i)).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: /Borrower request/i })).toBeInTheDocument();
     expect(screen.getByText(/Offer terms, collateral requirement, and risk score are not shown/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Refresh borrower data/i })).toBeInTheDocument();
@@ -45,6 +51,35 @@ describe('app borrower + dashboard regression', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /Borrower widget/i }));
     expect(await screen.findByRole('heading', { name: /Borrower request/i })).toBeInTheDocument();
+  });
+
+  it('updates route mode on browser navigation events', async () => {
+    render(<App />);
+    expect(await screen.findByText(/Fuji live mode/i)).toBeInTheDocument();
+
+    act(() => {
+      window.history.pushState({}, '', '/demo');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    expect((await screen.findAllByText(/Demo mode/i)).length).toBeGreaterThan(0);
+  });
+
+  it('renders demo mode from /demo and blocks misleading route/API mismatches', async () => {
+    window.history.pushState({}, '', '/demo');
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url === '/runtime' && method === 'GET') return jsonResponse({ mode: 'fuji', evidenceSource: 'fuji-live', prerequisites: 'ready' });
+      if (url === '/loans?scenario=WEB3_BRIDGE' && method === 'GET') return jsonResponse({ loans: [sampleLoan({ status: 'Active' })] });
+      if (url === '/events?loanId=loan-web3-001' && method === 'GET') return jsonResponse({ events: [] });
+      return jsonResponse({});
+    }));
+
+    render(<App />);
+
+    expect((await screen.findAllByText(/Demo mode/i)).length).toBeGreaterThan(0);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Route expects demo mode but API reports fuji mode/i);
   });
 
   it('announces API-backed readiness in a polite status region', async () => {

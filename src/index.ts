@@ -1,6 +1,8 @@
 import { buildFastifyApp } from './app.js';
+import { loadRuntimeConfig, parseRuntimeMode } from './config/runtime.js';
 
-const app = buildFastifyApp();
+const runtime = loadRuntimeConfig({ mode: parseRuntimeMode(process.env.BOVEDA_RUNTIME_MODE) });
+const app = buildFastifyApp({ runtime });
 const port = Number(process.env.PORT ?? 3000);
 const host = process.env.HOST ?? '0.0.0.0';
 

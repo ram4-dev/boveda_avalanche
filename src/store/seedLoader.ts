@@ -3,7 +3,8 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { SeedFile } from '../domain/types.js';
 
-const DEFAULT_SEED_PATH = path.join(process.cwd(), 'data/demo/loans.seed.json');
+export const DEFAULT_SEED_SOURCE_PATH = 'data/demo/loans.seed.json';
+export const DEFAULT_SEED_PATH = path.join(process.cwd(), DEFAULT_SEED_SOURCE_PATH);
 
 export async function loadSeedFile(seedPath = DEFAULT_SEED_PATH): Promise<SeedFile> {
   const raw = await readFile(seedPath, 'utf8');

@@ -33,6 +33,7 @@ describe('LoanActivityScreen', () => {
     expect(screen.getByText('Receipt #1')).toBeInTheDocument();
     expect(screen.getByText(/soulbound demo evidence/i)).toBeInTheDocument();
     expect(screen.getByText('LoanActivated')).toBeInTheDocument();
+    expect(screen.getAllByText('Simulated demo evidence').length).toBeGreaterThanOrEqual(4);
     await userEvent.click(screen.getByRole('button', { name: /Attest simulated payment/i }));
     expect(onAttestPayment).toHaveBeenCalled();
   });
@@ -42,13 +43,13 @@ describe('LoanActivityScreen', () => {
     const onActivate = vi.fn();
     const { rerender } = render(<LoanActivityScreen {...props} loan={sampleLoan({ status: 'Approved', receipt: null, collateral: { ...props.loan.collateral, depositTxHash: null } })} onDeposit={onDeposit} onActivate={onActivate} />);
 
-    await userEvent.click(screen.getByRole('button', { name: /Record API-simulated collateral deposit/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Record simulated collateral deposit/i }));
     expect(onDeposit).toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: /Activate loan and receipt/i }));
     expect(onActivate).toHaveBeenCalled();
 
     rerender(<LoanActivityScreen {...props} loan={sampleLoan({ status: 'Requested' })} onDeposit={onDeposit} />);
-    expect(screen.getByRole('button', { name: /Record API-simulated collateral deposit/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Record simulated collateral deposit/i })).toBeDisabled();
   });
 
   it('allows collateral top-up only for active or margin-call loans with recorded collateral', async () => {
@@ -124,5 +125,15 @@ describe('LoanActivityScreen', () => {
     expect(screen.getByText(/terminal/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Attest simulated payment/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Simulate liquidation/i })).toBeDisabled();
+  });
+
+  it('renders Fuji-aware copy and disabled actions when evidence is unavailable', () => {
+    render(<LoanActivityScreen {...props} loan={sampleLoan({ status: 'Approved' })} evidenceSource="fuji-unavailable" />);
+
+    expect(screen.getAllByText('Fuji evidence pending/unavailable').length).toBeGreaterThanOrEqual(3);
+    expect(screen.getByRole('button', { name: /Record Fuji collateral evidence/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Attest payment on Fuji/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Execute Fuji liquidation/i })).toBeDisabled();
+    expect(screen.getByText(/Fuji mode unavailable/i)).toBeInTheDocument();
   });
 });

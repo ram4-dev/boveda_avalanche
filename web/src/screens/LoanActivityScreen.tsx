@@ -1,5 +1,5 @@
 import type { BorrowerFacingError } from '../api/errors.js';
-import type { LiquidationResult, Loan, OnChainEvent, PaymentAttestation } from '../api/types.js';
+import type { EvidenceSource, LiquidationResult, Loan, OnChainEvent, PaymentAttestation } from '../api/types.js';
 import { ActionButton } from '../components/ActionButton.js';
 import { Alert } from '../components/Alert.js';
 import { EventTimeline } from '../components/EventTimeline.js';
@@ -7,6 +7,7 @@ import { KeyValueList } from '../components/KeyValueList.js';
 import { MetricTile } from '../components/MetricTile.js';
 import { StatusPill } from '../components/StatusPill.js';
 import { formatBps, formatDate, formatMoney, isUsdcCurrency, shortHash, unsupportedLiquidationCurrencyMessage } from '../components/format.js';
+import { EvidenceBadge } from '../components/EvidenceBadge.js';
 import type { JourneyAction } from '../state/borrowerJourney.js';
 
 type Props = {
@@ -22,11 +23,12 @@ type Props = {
   onAttestPayment: () => void;
   onTriggerMarginCall: () => void;
   onLiquidate: () => void;
+  evidenceSource?: EvidenceSource;
 };
 
 const terminal = new Set(['Repaid', 'Liquidated', 'Cancelled']);
 
-export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation, action, errors, onDeposit, onTopUp, onActivate, onAttestPayment, onTriggerMarginCall, onLiquidate }: Props) {
+export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation, action, errors, onDeposit, onTopUp, onActivate, onAttestPayment, onTriggerMarginCall, onLiquidate, evidenceSource = 'demo-simulated' }: Props) {
   const canDeposit = loan.status === 'Approved';
   const hasRecordedCollateral = Number(loan.collateral.amount) > 0 && Boolean(loan.collateral.vaultAddress);
   const canTopUp = (loan.status === 'Active' || loan.status === 'MarginCall') && hasRecordedCollateral;
@@ -38,6 +40,13 @@ export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation,
   const previewUsesUsdc = isUsdcCurrency(loan.liquidationPreview.proceedsCurrency);
   const liquidationUsesUsdc = lastLiquidation ? isUsdcCurrency(lastLiquidation.proceedsCurrency) : true;
   const showMarginAlert = loan.status === 'MarginCall' || loan.currentMetrics.currentLtvBps >= loan.terms.marginCallLtvBps;
+  const collateralCopy = evidenceSource === 'demo-simulated'
+    ? 'This action records simulated collateral evidence until live Fuji prerequisites are ready.'
+    : 'This action records Fuji collateral evidence through the API runtime.';
+  const collateralButtonLabel = evidenceSource === 'demo-simulated' ? 'Record simulated collateral deposit' : 'Record Fuji collateral evidence';
+  const paymentButtonLabel = evidenceSource === 'demo-simulated' ? 'Attest simulated payment' : 'Attest payment on Fuji';
+  const liquidationButtonLabel = evidenceSource === 'demo-simulated' ? 'Simulate liquidation' : 'Execute Fuji liquidation';
+  const fujiUnavailable = evidenceSource === 'fuji-unavailable';
 
   return (
     <section className="screen-grid" aria-labelledby="loan-activity-title">
@@ -82,26 +91,29 @@ export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation,
       <article className="card">
         <span className="card-kicker">Collateral</span>
         <h2>Collateral and activation</h2>
-        <p>This action records an API-simulated collateral deposit until contracts are wired through the backend web3 adapter.</p>
+        <p>{collateralCopy}</p>
+        <EvidenceBadge source={loan.collateralEvidence?.source ?? evidenceSource} />
         {errors.deposit ? <Alert tone="danger">{errors.deposit.code}: {errors.deposit.message}</Alert> : null}
         {errors.topUp ? <Alert tone="danger">{errors.topUp.code}: {errors.topUp.message}</Alert> : null}
         {errors.activate ? <Alert tone="danger">{errors.activate.code}: {errors.activate.message}</Alert> : null}
         <div className="button-row">
-          <ActionButton onClick={onDeposit} disabled={!canDeposit} loading={action === 'depositing'}>
-            Record API-simulated collateral deposit
+          <ActionButton onClick={onDeposit} disabled={!canDeposit || fujiUnavailable} loading={action === 'depositing'}>
+            {collateralButtonLabel}
           </ActionButton>
-          <ActionButton variant="secondary" onClick={onTopUp} disabled={!canTopUp} loading={action === 'toppingUpCollateral'}>
+          <ActionButton variant="secondary" onClick={onTopUp} disabled={!canTopUp || fujiUnavailable} loading={action === 'toppingUpCollateral'}>
             Record collateral top-up
           </ActionButton>
-          <ActionButton variant="secondary" onClick={onActivate} disabled={loan.status !== 'Approved'} loading={action === 'activating'}>
+          <ActionButton variant="secondary" onClick={onActivate} disabled={loan.status !== 'Approved' || fujiUnavailable} loading={action === 'activating'}>
             Activate loan and receipt
           </ActionButton>
         </div>
+        {fujiUnavailable ? <Alert tone="warning">Fuji mode unavailable — configure live prerequisites or use /demo.</Alert> : null}
       </article>
 
       <article className="card">
         <span className="card-kicker">Receipt</span>
         <h2>Receipt NFT</h2>
+        <EvidenceBadge source={loan.receiptEvidence?.source ?? loan.activationEvidence?.source ?? evidenceSource} />
         {loan.receipt ? (
           <KeyValueList items={[
             { label: 'Receipt', value: `Receipt #${loan.receipt.receiptTokenId}` },
@@ -117,8 +129,9 @@ export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation,
         <span className="card-kicker">Payment</span>
         <h2>Payment attestation</h2>
         {errors.payment ? <Alert tone="danger">{errors.payment.code}: {errors.payment.message}</Alert> : null}
-        <ActionButton onClick={onAttestPayment} disabled={!canPay} loading={action === 'attestingPayment'}>
-          Attest simulated payment
+        <EvidenceBadge source={lastPayment?.evidence?.source ?? evidenceSource} />
+        <ActionButton onClick={onAttestPayment} disabled={!canPay || fujiUnavailable} loading={action === 'attestingPayment'}>
+          {paymentButtonLabel}
         </ActionButton>
         {lastPayment ? (
           <Alert tone="success">
@@ -144,10 +157,11 @@ export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation,
           <ActionButton variant="secondary" onClick={onTriggerMarginCall} disabled={!canMarginCall} loading={action === 'triggeringMarginCall'}>
             Trigger margin-call simulation
           </ActionButton>
-          <ActionButton variant="danger" onClick={onLiquidate} disabled={!canLiquidate} loading={action === 'liquidating'}>
-            Simulate liquidation
+          <ActionButton variant="danger" onClick={onLiquidate} disabled={!canLiquidate || fujiUnavailable} loading={action === 'liquidating'}>
+            {liquidationButtonLabel}
           </ActionButton>
         </div>
+        <EvidenceBadge source={lastLiquidation?.evidence?.source ?? evidenceSource} />
         {lastLiquidation
           ? (liquidationUsesUsdc ? (
               <Alert tone="success">

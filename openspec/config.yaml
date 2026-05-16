@@ -1,86 +1,84 @@
 project:
   name: boveda_avalanche
-  repository: /Users/rcarnicer/Desktop/hackathon_avalance-batch-4-dashboard
-  branch: feature/batch-4-institutional-dashboard
+  repository: /Users/rcarnicer/Desktop/hackathon_avalance-batch-5-e2e-integration
+  branch: feature/batch-5-e2e-integration
+  worktree_policy: separate worktree with own branch for Batch 5
   type: hackathon-demo-fullstack
   description: >-
-    Bóveda Avalanche hackathon demo. Batch 2 backend/API is implemented and
-    verified locally; Batch 3 borrower widget is committed as the frontend
-    baseline; Batch 4 will add the Institutional Dashboard for originators and
-    funding partners.
+    Bóveda Avalanche hackathon demo. Batches 1-4 produced Solidity contracts,
+    a mock-first Fastify API, a React borrower widget, and an institutional
+    dashboard. Batch 5 integrates those pieces into a repeatable end-to-end demo
+    with honest mock vs Fuji mode labeling, visible tx/event evidence, and a
+    reset/runbook path.
   stack:
-    frontend_existing:
+    frontend:
       bundler: Vite
       ui: React
       language: TypeScript
-      status: Batch 3 borrower widget committed; Batch 4 dashboard not yet planned or implemented
       source: web/src/
+      status: Batch 3 borrower widget and Batch 4 institutional dashboard are present.
+      routing_decision: >-
+        Normal / should represent the real Fuji-backed API mode. /demo should
+        represent labeled mock/demo data mode. Mock mode must never be presented
+        as live chain evidence.
       wallet: >-
-        Batch 3 uses injected provider/window.ethereum when available, with no
-        secret material and safe fallback messaging when a provider is absent.
-    backend_existing:
+        Injected wallet support exists via web/src/wallet. No private keys,
+        seed phrases, or wallet secrets may be read, committed, or exposed.
+    backend:
       runtime: Node.js
       language: TypeScript
       http_framework: Fastify
-      status: Batch 2 implemented and verified
-      local_api_source: src/ plus docs/demo/openapi.yaml
-      dashboard_api: >-
-        Batch 2 exposes dashboard/event/loan endpoints intended for Batch 4:
-        GET /dashboard/summary, GET /events, GET /loans, and GET /loans/{loanId}.
-      contract_integration: >-
-        Mock web3 adapter by default; real Avalanche Fuji integration remains
-        behind the adapter boundary and is not required for Batch 4 planning.
-  current_inventory:
-    status: backend package plus Vite/React frontend scaffold exist in this worktree
-    package_manifest: package.json
-    lockfile: package-lock.json
-    backend_source:
-      - src/
-      - tests/
-    frontend_source:
-      - web/src/
-      - web/index.html
-      - web/tsconfig.json
-      - vite.config.ts
-    docs:
-      - boveda_plan_funcional_tareas_hackathon.md
-      - DESIGN.md
-      - docs/demo/openapi.yaml
-      - docs/demo/demo-flow.md
-      - docs/demo/states-events.md
-      - docs/demo/backend-runbook.md
-      - docs/demo/borrower-widget-functional-checklist.md
-    data:
-      - data/demo/loans.seed.json
-    completed_sdd:
-      - openspec/changes/batch-2-backend-risk-attestations/
-      - openspec/changes/batch-3-borrower-widget/
-      - openspec/changes/batch-4-institutional-dashboard/
+      source: src/
+      status: Batch 2 API is implemented with deterministic in-memory demo state.
+      integration_boundary: >-
+        src/adapters/web3.ts defines the Web3Adapter seam. Mock web3 is the
+        current default and should remain available for /demo and fallback mode.
+        Batch 5 may add Fuji adapter/config wiring behind the same interface.
+      canonical_api: docs/demo/openapi.yaml
+    contracts:
+      framework: Foundry
+      source:
+        - contracts/
+        - script/
+        - test/
+      artifacts:
+        - out/**/*.json
+        - broadcast/Deploy.s.sol/43113/run-latest.json
+      status: >-
+        Batch 1 contracts, deploy script, compiled ABI artifacts, tests, and a
+        Fuji broadcast artifact are present. README_CONTRACTS.md appears stale
+        where it still marks Fuji deployment as pending.
 
 sources_of_truth:
   product_plan: boveda_plan_funcional_tareas_hackathon.md
-  batch_scope: Batch 4 — Institutional Dashboard
+  batch_scope: Batch 5 — Integración end-to-end
   api_contract: docs/demo/openapi.yaml
   demo_flow: docs/demo/demo-flow.md
   states_events: docs/demo/states-events.md
   seed_data: data/demo/loans.seed.json
   backend_runbook: docs/demo/backend-runbook.md
   design_system: DESIGN.md
-  backend_readiness: openspec/changes/batch-2-backend-risk-attestations/verify-report.md
-  borrower_widget_readiness: openspec/changes/batch-3-borrower-widget/verify-report.md
+  context_handoff: context-build/batch-5-e2e-context.md
+  prior_artifacts:
+    - openspec/changes/batch-2-backend-risk-attestations/
+    - openspec/changes/batch-3-borrower-widget/
+    - openspec/changes/batch-4-institutional-dashboard/
+    - openspec/changes/demo-control-panel-customization/
+    - openspec/specs/institutional-dashboard/spec.md
   canonical_endpoint_policy: >-
-    docs/demo/openapi.yaml is canonical when plan prose differs. Batch 4 should
-    use the Batch 2 local API paths exactly, especially GET /dashboard/summary,
-    GET /events, GET /loans, and GET /loans/{loanId}; fixtures are allowed only
-    where aggregate dashboard data is missing or insufficient for demo clarity.
-  batch_2_status: >-
-    Batch 2 API is implemented and verified on main per the verify report.
-    Treat it as the local API source for Batch 4 dashboard reads instead of
-    rebuilding backend behavior in frontend code.
-  batch_3_status: >-
-    Batch 3 borrower widget is committed at the Batch 4 branch base and provides
-    the Vite/React/TypeScript frontend baseline, API client patterns, UI tokens,
-    and app composition conventions for Batch 4.
+    docs/demo/openapi.yaml is canonical when plan prose differs. Batch 5 should
+    integrate using existing public API paths rather than inventing parallel
+    endpoints unless a later spec/design phase proves a minimal explicit gap.
+  address_source_policy: >-
+    The Fuji broadcast artifact is contract-authoritative for Batch 5. If user
+    typed labels conflict with the broadcast artifact, use the broadcast mapping.
+  broadcast_artifact: broadcast/Deploy.s.sol/43113/run-latest.json
+  fuji_contracts:
+    LoanRegistry: "0xb6832e4c43e97d5ad11e99abcb23d9a734a4be14"
+    CollateralVault: "0xe550a10f585e5595ae187f08a701bdef890de057"
+    LoanReceiptNFT: "0xf88b6e8c107a0a5da6f398734783541cbe12a38c"
+    PaymentAttestation: "0xa222a02e828d5480be971b80d4157f2abe1fabda"
+    LiquidationEngine: "0x212f6565319caa343c8c39e9b11a447febf2055a"
 
 sdd:
   strict_tdd: true
@@ -89,39 +87,41 @@ sdd:
     primary: openspec
     memory_requested: engram
     note: >-
-      OpenSpec files in the repository are the authoritative artifacts for this
-      init. Engram tools were not exposed to this subagent runtime, so memory
-      save-back could not be performed here.
-  change: batch-4-institutional-dashboard
+      OpenSpec files in the repository are authoritative for this run. Engram
+      memory tools were not exposed to this subagent runtime, so save-back could
+      not be performed here.
+  change: batch-5-e2e-integration
   scope:
     include:
-      - B4.1 institutional dashboard layout with clear cards and portfolio table
-      - B4.2 portfolio widgets for capital utilized, active loans, active vaults, and delinquency/default exposure
-      - B4.3 LTV/risk widget with average LTV, margin-call loans, and exposure by collateral asset
-      - B4.4 audit trail listing canonical events with tx hashes or links when available
-      - B4.5 loan detail view showing loanId, borrower wallet, collateral, payments, status, and receipt/liquidation context
-      - B4.6 dual demo mode toggle between institutional traditional case and crypto-native case
-      - Use Batch 2 endpoints first; use fixtures only for missing aggregate data
-      - Communicate institutional guarantees: verifiable collateral, LTV, attested payments, and programmatic liquidation
+      - B5.1 configure frontend/backend with deployed contract addresses and ABI references using safe examples/placeholders only
+      - B5.2 prove complete origination flow from loan creation through collateral deposit, activation, and receipt evidence
+      - B5.3 prove payment attestation flow with visible hash/tx/event evidence reflected in UI and dashboard
+      - B5.4 prove liquidation path with LTV/default trigger, liquidation result, USDC proceeds, and dashboard/event visibility
+      - B5.5 prepare reset script plus runbook so the demo can run twice consecutively without improvised manual recovery
+      - B5.6 freeze scope after integration; allow only demo-critical fixes and evidence/reporting gaps
+      - Implement honest runtime mode separation: normal / uses real Fuji-backed API mode and /demo uses mock data/mode
+      - Preserve mock-first fallback for hackathon safety, but label mock mode clearly as simulated
+      - Use broadcast artifact addresses as contract-authoritative
     exclude:
-      - Real KYC, fiat rails, payment processor, accounting reconciliation, or off-ramp
-      - Production-grade wallet/session management, custodial flows, private keys, or secrets
-      - Production oracle, DEX liquidation, or real Wavy Node integration
-      - Backend schema or endpoint rewrites unless later planning proves a minimal contract gap
-      - Reimplementing Batch 2 dashboard/event/loan behavior in frontend code
-      - Implementing Batch 4 during init
+      - Reading, printing, committing, or deriving private keys, .env values, tokens, credentials, seed phrases, or secret-manager outputs
+      - Production custody, KYC, fiat rail, accounting, oracle, keeper, or DEX automation
+      - Broad contract redesign or public HTTP API rewrites unrelated to Batch 5 evidence
+      - Hard dependency on live Fuji availability for baseline /demo success
+      - Claiming mock tx hashes or locally simulated events are live chain evidence
+      - Implementing Batch 6 pitch materials, Batch 7 oracle/keeper/top-up work, or Batch 8 real-source dashboard scope during Batch 5 init
   acceptance: >-
-    The dashboard communicates guarantees to an institutional funder: collateral
-    is verifiable, portfolio LTV/risk is understandable, payments are attested,
-    audit events are traceable, and liquidation is programmatic. It may use
-    static fixtures only where aggregate data is missing, while preserving the
-    canonical Batch 2 API contract.
+    The complete demo can be run twice consecutively with visible transaction,
+    event, receipt/payment/liquidation evidence and links where available. Normal
+    / is wired for real Fuji-backed API mode; /demo is wired for labeled mock
+    mode. Mock evidence is labeled honestly. Reset is provided by script plus
+    runbook. No secrets are read or exposed.
   review:
     pr_strategy: auto-forecast
     changed_lines_budget: 400
     guard: >-
       Pause before sdd-apply if task forecast exceeds the changed-lines budget,
-      introduces broad backend changes, or requires a chained work-unit decision.
+      requires broad backend and frontend rewrites in one slice, touches contract
+      semantics, or requires a chained work-unit decision.
   phases:
     order:
       - init
@@ -134,24 +134,64 @@ sdd:
       - verify
       - archive
     rules:
-      init: Capture Batch 4 project context, source-of-truth docs, Batch 2/3 readiness, testing plan, worktree/branch, UI standards, and skill registry status.
-      explore: Inspect OpenAPI dashboard/event/loan schemas, seed data, existing API client/types, Batch 3 App layout seams, current tests, and design tokens before proposing dashboard slices.
-      proposal: Define complete Batch 4 scope, acceptance criteria, non-goals, dependencies, endpoint usage, fixture boundaries, and dual-demo behavior.
-      spec: Write testable Given/When/Then requirements for institutional dashboard layout, portfolio metrics, LTV/risk, audit trail, loan detail, and demo-mode toggle using OpenAPI and Batch 4 plan as canonical inputs.
-      design: Document React component boundaries, API client additions, dashboard state model, fixture fallback model, loan-detail interaction, and visual layout standards.
-      tasks: Break work into reviewable strict-TDD slices, forecast changed lines, and decide whether to chain work units before apply.
+      init: >-
+        Refresh project context for Batch 5, preserve prior change artifacts,
+        capture source-of-truth docs, strict-TDD runner details, worktree/branch,
+        route/mode decisions, Fuji address source, validation commands, skill
+        registry status, and secrets guardrails.
+      explore: >-
+        Inspect OpenAPI endpoints, existing API adapters/routes, borrower journey,
+        dashboard evidence surfaces, demo controls/reset seams, contract ABIs,
+        broadcast artifact structure, current tests, and docs before proposing
+        Batch 5 implementation slices. Do not read .env or secret material.
+      proposal: >-
+        Define complete Batch 5 scope, non-goals, acceptance criteria,
+        dependencies, runtime mode policy, address/config policy, reset approach,
+        evidence definition, and fallback behavior.
+      spec: >-
+        Write testable Given/When/Then requirements for mock-vs-Fuji mode,
+        config/address loading, origination, payment attestation, liquidation,
+        dashboard/event evidence, reset/repeatability, and honest labeling.
+      design: >-
+        Document route/mode architecture (/ real Fuji-backed mode, /demo mock
+        mode), backend adapter composition, config loader, ABI/address handling,
+        UI evidence surfaces, reset script/runbook, and failure/fallback behavior.
+      tasks: >-
+        Break implementation into strict-TDD reviewable slices, forecast changed
+        lines, identify contract-touch risk, and decide whether to chain work
+        units before apply.
       apply: >-
         STRICT TDD MODE IS ACTIVE. Test runner: npm test -- --run. Follow RED,
-        GREEN, TRIANGULATE, REFACTOR and record evidence. Preserve existing
-        backend and Batch 3 frontend tests while adding focused dashboard tests
-        before production UI code.
-      verify: Run configured tests plus typecheck/build/lint; validate accepted Batch 4 scenarios against the local Batch 2 API contract, fixtures policy, and UI requirements.
-      archive: Preserve final SDD decisions, artifacts, run commands, review boundary decisions, and remaining integration gaps.
+        GREEN, TRIANGULATE, REFACTOR and record evidence. Preserve existing API,
+        borrower, dashboard, and contract tests. If contract artifacts or Solidity
+        are touched, also run forge build and forge test.
+      verify: >-
+        Run npm test -- --run, npm run typecheck, npm run build, npm run lint.
+        If contract artifacts or Solidity were touched, also run forge build and
+        forge test. Verify the demo can run twice with reset evidence, route/mode
+        labels, and no secret exposure.
+      archive: >-
+        Preserve final Batch 5 decisions, artifacts, evidence, commands, reset
+        runbook, review-boundary decisions, and remaining live-chain gaps.
 
 previous_changes:
+  batch_1_contracts:
+    status: present_in_worktree
+    artifacts:
+      - contracts/LoanRegistry.sol
+      - contracts/CollateralVault.sol
+      - contracts/LoanReceiptNFT.sol
+      - contracts/PaymentAttestation.sol
+      - contracts/LiquidationEngine.sol
+      - script/Deploy.s.sol
+      - test/*.t.sol
+      - out/**/*.json
+      - broadcast/Deploy.s.sol/43113/run-latest.json
+    notes:
+      - Public Fuji deployment addresses are captured under sources_of_truth.fuji_contracts.
+      - README_CONTRACTS.md may be stale and should not override broadcast evidence.
   batch_2_backend_risk_attestations:
     change: batch-2-backend-risk-attestations
-    branch_recorded_in_prior_config: feature/batch-2
     status: verified_pass_with_non_blocking_coverage_notes
     artifacts:
       - openspec/changes/batch-2-backend-risk-attestations/proposal.md
@@ -164,34 +204,19 @@ previous_changes:
       - npm run typecheck
       - npm run build
       - npm run lint
-    notes:
-      - Mock Wavy and mock web3 are default; no RPC, ABI, contract address, private key, or credential is required.
-      - Liquidation previews, responses, and events report proceeds in USDC.
-      - Dashboard values derive from current loans/events.
-      - Non-blocking coverage notes remain around some terminal transition and refresh-hook cases.
   batch_3_borrower_widget:
     change: batch-3-borrower-widget
-    branch_recorded_in_prior_config: feature/batch-3-borrower-widget
-    status: committed_frontend_baseline_for_batch_4
-    base_commit_for_batch_4: 145a767
+    status: frontend_baseline_present
     artifacts:
       - openspec/changes/batch-3-borrower-widget/proposal.md
       - openspec/changes/batch-3-borrower-widget/design.md
       - openspec/changes/batch-3-borrower-widget/tasks.md
       - openspec/changes/batch-3-borrower-widget/apply-progress.md
       - openspec/changes/batch-3-borrower-widget/verify-report.md
-    verification_commands:
-      - npm test -- --run
-      - npm run typecheck
-      - npm run build
-      - npm run lint
     notes:
-      - Vite/React/TypeScript frontend scaffold is available for reuse.
-      - API client, type definitions, UI tokens, and borrower flow tests are available as implementation patterns.
-      - Batch 4 should extend frontend capability without coupling institutional dashboard behavior to borrower-only state assumptions.
+      - Borrower flow, API client, injected wallet seam, and state tests are available for reuse.
   batch_4_institutional_dashboard:
     change: batch-4-institutional-dashboard
-    branch_recorded_in_prior_config: feature/batch-4-institutional-dashboard
     status: verified_pass_archived
     archived_on: "2026-05-16"
     artifacts:
@@ -208,8 +233,18 @@ previous_changes:
       - npm run build
       - npm run lint
     notes:
-      - Canonical spec archive created under openspec/specs/institutional-dashboard/spec.md with provenance note.
-      - Change history under openspec/changes/batch-4-institutional-dashboard/ is preserved.
+      - Batch 4 verify passed with 25 files and 81 tests.
+      - Dashboard summary, portfolio, risk, audit trail, loan detail, and dual demo labels are implemented.
+  demo_control_panel_customization:
+    change: demo-control-panel-customization
+    status: artifacts_present
+    artifacts:
+      - openspec/changes/demo-control-panel-customization/proposal.md
+      - openspec/changes/demo-control-panel-customization/design.md
+      - openspec/changes/demo-control-panel-customization/tasks.md
+      - openspec/changes/demo-control-panel-customization/apply-progress.md
+    notes:
+      - DemoControlsPanel and demoControls state/tests are present and may be reset/evidence integration seams.
 
 testing:
   strict_tdd: true
@@ -228,56 +263,73 @@ testing:
         include: web/src/**/*.test.{ts,tsx}
         setup_files:
           - web/src/test/setup.ts
+    foundry_config: foundry.toml
     frontend_scaffold: detected
+    backend_api: detected
+    contracts: detected
   commands:
     install: npm install --registry=https://registry.npmjs.org
     dev_api: npm run dev
     dev_web: npm run dev:web
     primary_test: npm test -- --run
     targeted_test: npm test -- --run <test-file>
-    lint: npm run lint
     typecheck: npm run typecheck
     build: npm run build
+    lint: npm run lint
+    forge_build_if_contracts_touched: forge build
+    forge_test_if_contracts_touched: forge test
+    full_validation:
+      - npm test -- --run
+      - npm run typecheck
+      - npm run build
+      - npm run lint
+      - forge build # if contract artifacts, Solidity, or deployment scripts are touched
+      - forge test # if contract artifacts, Solidity, or deployment scripts are touched
   tdd_requirement: >-
-    Batch 4 apply must start each implementation slice with failing API-client,
-    state, component, or integration tests before production code. Record RED,
-    GREEN, TRIANGULATE, and REFACTOR evidence in the Batch 4 apply-progress
-    artifact when implementation begins.
+    Batch 5 apply must start each implementation slice with failing tests before
+    production changes. Record RED, GREEN, TRIANGULATE, and REFACTOR evidence in
+    openspec/changes/batch-5-e2e-integration/apply-progress.md. Existing API,
+    borrower, dashboard, and contract confidence must remain green.
 
 conventions:
   api_identifiers: English identifiers and enum values per docs/demo/openapi.yaml
-  human_docs_language: Spanish is acceptable for narrative docs already in repo
   generated_artifacts_language: English by default unless extending Spanish narrative docs
+  human_docs_language: Spanish is acceptable for narrative docs already in repo
   money_and_liquidation: Liquidation proceeds must be reported in USDC
   status_machine: Follow docs/demo/states-events.md transitions
+  mode_policy: >-
+    Normal / is real Fuji-backed API mode. /demo is mock/demo mode. UI and API
+    evidence must make the active mode visible and must not conflate simulated
+    hashes with live chain transactions.
+  config_policy: >-
+    Commit only safe examples/placeholders for runtime configuration. Public
+    contract addresses and ABI references may be committed. Private keys, RPC
+    credentials, tokens, .env values, and secret material must never be read,
+    logged, or committed.
   fixture_policy: >-
-    Use Batch 2 API responses as the default source. Use data/demo/loans.seed.json
-    or Batch 4-specific frontend fixtures only for missing aggregate/dual-demo
-    data and label fixture-only assumptions in design/tasks.
+    Mock/demo fixtures remain valid for /demo and fallback paths. Real mode
+    should use Fuji-backed adapter evidence where available and degrade visibly
+    when live infrastructure is unavailable.
   wallet_policy: >-
     Never read or expose private keys, seed phrases, wallet secrets, .env files,
-    credentials, or secret manager outputs. Institutional dashboard work should
-    not require wallet secrets.
+    credentials, or secret manager outputs. Frontend wallet integration must use
+    injected provider boundaries only.
   ui_design:
     source: DESIGN.md plus existing web/src/styles/tokens.css and web/src/styles/app.css
     guidance: >-
-      Build a quiet, polished institutional data-product interface with useful
-      first-screen portfolio signal, compact headings, clear tables, status
-      labels, and traceable event evidence. Avoid generic gradients, oversized
-      empty cards, decorative blobs, raw JSON dumps, and floating/overlapping
-      panels.
+      Keep the interface polished, compact, evidence-forward, and honest about
+      data mode. Avoid raw JSON dumps, vague gradients, oversized empty cards,
+      and unlabeled simulated state.
   secrets_policy: >-
     Do not read or expose .env files, private keys, credentials, tokens,
-    passwords, seed phrases, or secret manager outputs. Commit only safe
-    examples/templates.
+    passwords, seed phrases, or secret manager outputs. Use examples/placeholders
+    only when documenting configuration.
 
 skill_registry:
   path: .atl/skill-registry.md
-  status: missing_in_batch_4_worktree
+  status: present
   project_standards_resolution: injected
   relevant_compact_rules: []
   note: >-
-    Parent resolved project standards and reported that the registry exists with
-    no compact Batch 4-specific rules. In this new worktree, .atl/skill-registry.md
-    is not present, likely because .atl is local runtime state and gitignored.
-    Use repo docs, OpenSpec artifacts, and tests as source of truth.
+    Parent injected project standards and reported the registry has no compact
+    project-specific rules. This init confirmed .atl/skill-registry.md exists.

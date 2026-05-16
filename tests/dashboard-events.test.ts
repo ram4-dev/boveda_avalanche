@@ -82,7 +82,19 @@ describe('dashboard aggregation and event filtering', () => {
     expect(afterPayment.json().recentEvents[0]).toMatchObject({
       eventType: 'InstallmentPaid',
       loanId: 'loan-web3-001',
-      payload: { installmentId: 'inst-dashboard-001', remainingPrincipal: '137500', status: 'Active' }
+      payload: {
+        loanId: 'loan-web3-001',
+        installmentId: 'inst-dashboard-001',
+        amount: '12500',
+        currency: 'USD',
+        remainingPrincipal: '137500',
+        status: 'Active',
+        evidence: {
+          source: 'demo-simulated',
+          mode: 'demo',
+          status: 'simulated'
+        }
+      }
     });
 
     const marginCall = await app.inject({ method: 'POST', url: '/loans/loan-web3-001/margin-call', payload: marginCallPayload });
@@ -106,5 +118,28 @@ describe('dashboard aggregation and event filtering', () => {
       'MarginCall',
       'InstallmentPaid'
     ]);
+    expect(afterLiquidation.json().recentEvents[0]).toMatchObject({
+      eventType: 'Liquidated',
+      loanId: 'loan-web3-001',
+      payload: {
+        reason: 'LTV_BREACH',
+        trigger: {
+          fromStatus: 'MarginCall',
+          outcome: 'LIQUIDATED'
+        },
+        proceedsCurrency: 'USDC',
+        distribution: {
+          fundingPartnerAmount: '150000',
+          originatorFeeAmount: '2100',
+          borrowerRemainderAmount: '2100'
+        },
+        status: 'Liquidated',
+        evidence: {
+          source: 'demo-simulated',
+          mode: 'demo',
+          status: 'simulated'
+        }
+      }
+    });
   });
 });

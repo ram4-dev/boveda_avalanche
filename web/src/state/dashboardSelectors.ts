@@ -1,4 +1,4 @@
-import type { DashboardSummary, Loan, OnChainEvent } from '../api/types.js';
+import type { DashboardSummary, EvidenceMetadata, EvidenceSource, Loan, OnChainEvent } from '../api/types.js';
 import { formatBps } from '../components/format.js';
 
 export type DashboardDemoMode = 'institutional' | 'crypto-native' | 'all';
@@ -79,6 +79,7 @@ export function selectAuditEvents(summary: DashboardSummary | null, events: OnCh
       occurredAt: event.occurredAt,
       txHash: event.txHash,
       blockNumber: event.blockNumber,
+      evidenceSource: evidenceSourceForEvent(event),
       evidenceLabel: event.txHash || event.blockNumber ? 'On-chain evidence recorded' : 'No tx hash or block recorded',
       payloadHighlights: payloadHighlights(event.payload)
     }));
@@ -86,7 +87,9 @@ export function selectAuditEvents(summary: DashboardSummary | null, events: OnCh
 
 export function selectLoanDetailViewModel(loan: Loan, events: OnChainEvent[]) {
   const paymentEvents = events.filter((event) => event.loanId === loan.loanId && event.eventType === 'InstallmentPaid');
-  const paymentEvidence = paymentEvents.map((event) => ({ eventId: event.eventId, occurredAt: event.occurredAt, highlights: payloadHighlights(event.payload) }));
+  const liquidationEvents = events.filter((event) => event.loanId === loan.loanId && event.eventType === 'LiquidationExecuted');
+  const liquidationEvent = liquidationEvents.at(-1);
+  const paymentEvidence = paymentEvents.map((event) => ({ eventId: event.eventId, occurredAt: event.occurredAt, evidenceSource: evidenceSourceForEvent(event), txHash: event.txHash ?? event.payload.evidence?.txHash ?? null, blockNumber: event.blockNumber ?? event.payload.evidence?.blockNumber ?? null, highlights: payloadHighlights(event.payload) }));
   return {
     loanId: loan.loanId,
     scenario: loan.scenario,
@@ -102,8 +105,15 @@ export function selectLoanDetailViewModel(loan: Loan, events: OnChainEvent[]) {
     receipt: loan.receipt ? { ...loan.receipt, emptyLabel: undefined as string | undefined } : { receiptTokenId: null, soulbound: null, ownerWallet: null, emptyLabel: 'No receipt minted yet' },
     paymentEvidence,
     paymentEmptyLabel: paymentEvidence.length ? undefined : 'No payment evidence recorded yet',
-    liquidation: loan.liquidationPreview
+    liquidation: loan.liquidationPreview,
+    liquidationEvidence: liquidationEvent
+      ? { evidenceSource: evidenceSourceForEvent(liquidationEvent), txHash: liquidationEvent.txHash ?? liquidationEvent.payload.evidence?.txHash ?? null, blockNumber: liquidationEvent.blockNumber ?? liquidationEvent.payload.evidence?.blockNumber ?? null }
+      : { evidenceSource: 'demo-simulated' as EvidenceSource, txHash: null, blockNumber: null }
   };
+}
+
+function evidenceSourceForEvent(event: OnChainEvent): EvidenceSource {
+  return (event.payload.evidence as EvidenceMetadata | undefined)?.source ?? (event.txHash || event.blockNumber ? 'fuji-live' : 'demo-simulated');
 }
 
 function field<T>(value: T, source: DashboardDataSource, label?: DashboardField<T>['label']): DashboardField<T> {
