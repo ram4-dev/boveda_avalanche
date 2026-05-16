@@ -178,6 +178,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Loan"
 
+  /loans/{loanId}/collateral/top-up:
+    post:
+      tags: [Loans]
+      summary: Register collateral top-up for an active or margin-call loan
+      operationId: topUpCollateral
+      parameters:
+        - $ref: "#/components/parameters/LoanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollateralTopUpRequest"
+      responses:
+        "200":
+          description: Loan with collateral top-up recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+
   /loans/{loanId}/activate:
     post:
       tags: [Loans]
@@ -375,6 +396,7 @@ components:
         - LoanCreated
         - LoanApproved
         - CollateralDeposited
+        - CollateralToppedUp
         - LoanActivated
         - ReceiptIssued
         - InstallmentPaid
@@ -734,6 +756,19 @@ components:
           type: string
         activationTxHash:
           type: string
+
+    CollateralTopUpRequest:
+      type: object
+      required: [token, amount]
+      properties:
+        token:
+          type: string
+        amount:
+          type: string
+        txHash:
+          type: string
+        resultingLtvBps:
+          type: integer
 
     PaymentAttestationRequest:
       type: object

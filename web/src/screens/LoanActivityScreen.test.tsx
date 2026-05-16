@@ -16,6 +16,7 @@ const props = {
   errors: {},
   onDeposit: vi.fn(),
   onActivate: vi.fn(),
+  onTopUp: vi.fn(),
   onAttestPayment: vi.fn(),
   onTriggerMarginCall: vi.fn(),
   onLiquidate: vi.fn()
@@ -50,12 +51,32 @@ describe('LoanActivityScreen', () => {
     expect(screen.getByRole('button', { name: /Record API-simulated collateral deposit/i })).toBeDisabled();
   });
 
+  it('allows collateral top-up only for active or margin-call loans with recorded collateral', async () => {
+    const onTopUp = vi.fn();
+    const { rerender } = render(<LoanActivityScreen {...props} loan={sampleLoan({ status: 'Active' })} onTopUp={onTopUp} />);
+
+    const topUpButton = screen.getByRole('button', { name: /Record collateral top-up/i });
+    expect(topUpButton).toBeEnabled();
+    await userEvent.click(topUpButton);
+    expect(onTopUp).toHaveBeenCalledTimes(1);
+
+    rerender(<LoanActivityScreen {...props} loan={sampleLoan({ status: 'MarginCall' })} onTopUp={onTopUp} />);
+    expect(screen.getByRole('button', { name: /Record collateral top-up/i })).toBeEnabled();
+
+    rerender(<LoanActivityScreen {...props} loan={sampleLoan({ status: 'Active', collateral: { ...props.loan.collateral, amount: '0', vaultAddress: null } })} onTopUp={onTopUp} />);
+    expect(screen.getByRole('button', { name: /Record collateral top-up/i })).toBeDisabled();
+
+    rerender(<LoanActivityScreen {...props} loan={sampleLoan({ status: 'Approved' })} onTopUp={onTopUp} />);
+    expect(screen.getByRole('button', { name: /Record collateral top-up/i })).toBeDisabled();
+  });
+
   it('shows payment attestation feedback and preserves borrower-readable errors', () => {
-    render(<LoanActivityScreen {...props} lastPayment={{ loanId: 'loan-web3-001', installmentId: 'inst-001', amount: '12500', currency: 'USD', attestationHash: '0xabc123456789', remainingPrincipal: '137500', status: 'Active' }} errors={{ payment: { code: 'INVALID_REQUEST', message: 'Bad amount' } }} />);
+    render(<LoanActivityScreen {...props} lastPayment={{ loanId: 'loan-web3-001', installmentId: 'inst-001', amount: '12500', currency: 'USD', attestationHash: '0xabc123456789', remainingPrincipal: '137500', status: 'Active' }} errors={{ payment: { code: 'INVALID_REQUEST', message: 'Bad amount' }, topUp: { code: 'INVALID_REQUEST', message: 'Bad top-up' } }} />);
 
     expect(screen.getByText(/0xabc123456789/i)).toBeInTheDocument();
     expect(screen.getByText(/137500 USD remaining/i)).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('INVALID_REQUEST: Bad amount');
+    expect(screen.getByText('INVALID_REQUEST: Bad amount')).toBeInTheDocument();
+    expect(screen.getByText('INVALID_REQUEST: Bad top-up')).toBeInTheDocument();
   });
 
   it('renders margin-call and liquidation flow with USDC proceeds and distribution rows', async () => {

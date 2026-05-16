@@ -48,6 +48,58 @@ contract CollateralVaultTest {
         assert(status == uint8(ILoanRegistry.LoanStatus.Active));
     }
 
+    function testTopUpCollateralWhenLoanIsActive() public {
+        uint256 dueDate = block.timestamp + 365 days;
+        uint256 loanId = loanRegistry.createLoan(
+            borrower,
+            originator,
+            address(token),
+            0,
+            50e18,
+            5000,
+            dueDate
+        );
+
+        token.approve(address(vault), 150e18);
+        vault.depositCollateral(loanId, 100e18);
+        vault.depositCollateral(loanId, 50e18);
+
+        (,, uint256 amount,,, bool liquidated) = vault.vaults(loanId);
+        assert(amount == 150e18);
+        assert(liquidated == false);
+
+        ILoanRegistry.Loan memory loan = loanRegistry.getLoan(loanId);
+        assert(loan.collateralAmount == 150e18);
+        assert(loan.status == uint8(ILoanRegistry.LoanStatus.Active));
+    }
+
+    function testTopUpCollateralWhenLoanIsMarginCallRecoversToActive() public {
+        uint256 dueDate = block.timestamp + 365 days;
+        uint256 loanId = loanRegistry.createLoan(
+            borrower,
+            originator,
+            address(token),
+            0,
+            50e18,
+            5000,
+            dueDate
+        );
+
+        token.approve(address(vault), 150e18);
+        vault.depositCollateral(loanId, 100e18);
+        loanRegistry.setLoanStatus(loanId, uint8(ILoanRegistry.LoanStatus.MarginCall));
+
+        vault.depositCollateral(loanId, 50e18);
+
+        (,, uint256 amount,,, bool liquidated) = vault.vaults(loanId);
+        assert(amount == 150e18);
+        assert(liquidated == false);
+
+        ILoanRegistry.Loan memory loan = loanRegistry.getLoan(loanId);
+        assert(loan.collateralAmount == 150e18);
+        assert(loan.status == uint8(ILoanRegistry.LoanStatus.Active));
+    }
+
     function testReleaseCollateralAfterRepaid() public {
         uint256 dueDate = block.timestamp + 365 days;
         uint256 loanId = loanRegistry.createLoan(

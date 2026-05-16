@@ -25,6 +25,7 @@ contract CollateralVault {
     mapping(uint256 => Vault) public vaults;
 
     event CollateralDeposited(uint256 indexed loanId, address indexed borrower, uint256 amount);
+    event CollateralToppedUp(uint256 indexed loanId, address indexed borrower, uint256 amount, uint256 newTotalAmount);
     event CollateralReleased(uint256 indexed loanId, uint256 amount);
     event CollateralLiquidated(uint256 indexed loanId, uint256 amount);
     event LiquidationEngineSet(address indexed oldEngine, address indexed newEngine);
@@ -52,10 +53,20 @@ contract CollateralVault {
         ILoanRegistry.Loan memory loan = loanRegistry.getLoan(loanId);
         require(loan.loanId != 0, "Loan not found");
         require(msg.sender == loan.borrower, "Only borrower can deposit");
-        require(loan.status == uint8(ILoanRegistry.LoanStatus.Requested) || loan.status == uint8(ILoanRegistry.LoanStatus.Approved), "Loan not depositable");
+
+        bool isInitialDeposit = loan.status == uint8(ILoanRegistry.LoanStatus.Requested) ||
+            loan.status == uint8(ILoanRegistry.LoanStatus.Approved);
+        bool isTopUp = loan.status == uint8(ILoanRegistry.LoanStatus.Active) ||
+            loan.status == uint8(ILoanRegistry.LoanStatus.MarginCall);
+        require(isInitialDeposit || isTopUp, "Loan not depositable");
 
         Vault storage vault = vaults[loanId];
         require(vault.collateralToken == address(0) || vault.collateralToken == loan.collateralToken, "Collateral token mismatch");
+        require(!vault.liquidated, "Collateral already liquidated");
+        if (isTopUp) {
+            require(vault.loanId != 0, "Vault not found");
+            require(vault.locked, "Vault not locked");
+        }
 
         vault.loanId = loanId;
         vault.collateralToken = loan.collateralToken;
@@ -65,10 +76,17 @@ contract CollateralVault {
 
         require(IERC20(loan.collateralToken).transferFrom(msg.sender, address(this), amount), "Transfer failed");
 
-        loanRegistry.updateCollateralAmount(loanId, loan.collateralAmount + amount);
-        loanRegistry.setLoanStatus(loanId, uint8(ILoanRegistry.LoanStatus.Active));
+        uint256 newCollateralAmount = loan.collateralAmount + amount;
+        loanRegistry.updateCollateralAmount(loanId, newCollateralAmount);
+        if (isInitialDeposit || loan.status == uint8(ILoanRegistry.LoanStatus.MarginCall)) {
+            loanRegistry.setLoanStatus(loanId, uint8(ILoanRegistry.LoanStatus.Active));
+        }
 
-        emit CollateralDeposited(loanId, msg.sender, amount);
+        if (isTopUp) {
+            emit CollateralToppedUp(loanId, msg.sender, amount, newCollateralAmount);
+        } else {
+            emit CollateralDeposited(loanId, msg.sender, amount);
+        }
     }
 
     function releaseCollateral(uint256 loanId) external {

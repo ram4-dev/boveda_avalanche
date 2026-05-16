@@ -162,6 +162,7 @@ function BorrowerWidgetView({ client }: { client: ReturnType<typeof createBoveda
               action={journey.state.action}
               errors={journey.state.errors}
               onDeposit={journey.depositCollateral}
+              onTopUp={journey.topUpCollateral}
               onActivate={journey.activateLoan}
               onAttestPayment={journey.attestPayment}
               onTriggerMarginCall={journey.triggerMarginCall}
