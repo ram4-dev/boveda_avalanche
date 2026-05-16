@@ -135,6 +135,13 @@ export type Loan = {
   liquidationPreview: LiquidationPreview;
 };
 
+export type OnChainReceipt = {
+  txHash: string;
+  blockNumber: number | null;
+  status: 'success' | 'failed' | 'unknown';
+  gasUsed?: string | null;
+};
+
 export type OnChainEvent = {
   eventId: string;
   eventType: EventType;
@@ -143,6 +150,9 @@ export type OnChainEvent = {
   blockNumber: number | null;
   occurredAt: string;
   payload: Record<string, unknown>;
+  txReceipt?: OnChainReceipt;
+  explorerUrl?: string;
+  source?: 'chain' | 'fallback';
 };
 
 export type SeedFile = {

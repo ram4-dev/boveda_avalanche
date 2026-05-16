@@ -129,7 +129,11 @@ function deriveReceiptTokenId(loanId: string): string {
 function createSnowtraceWeb3Adapter(store: DemoStore, apiKey: string, baseUrl: string): Web3Adapter {
   const mock = createMockWeb3Adapter();
 
-  async function fetchTxReceipt(txHash: string): Promise<{ blockNumber: number | null } | null> {
+  async function fetchTxReceipt(txHash: string): Promise<{
+    blockNumber: number | null;
+    status: 'success' | 'failed' | 'unknown';
+    gasUsed?: string | null;
+  } | null> {
     const url = new URL(baseUrl);
     url.searchParams.set('module', 'proxy');
     url.searchParams.set('action', 'eth_getTransactionReceipt');
@@ -152,7 +156,23 @@ function createSnowtraceWeb3Adapter(store: DemoStore, apiKey: string, baseUrl: s
     }
 
     const blockNumber = hexStringToNumber(result.blockNumber);
-    return { blockNumber };
+    const status = typeof result.status === 'string'
+      ? result.status === '0x1'
+        ? 'success'
+        : result.status === '0x0'
+          ? 'failed'
+          : 'unknown'
+      : 'unknown';
+
+    return {
+      blockNumber,
+      status,
+      gasUsed: typeof result.gasUsed === 'string' ? result.gasUsed : null
+    };
+  }
+
+  function buildExplorerUrl(txHash: string): string {
+    return `https://testnet.snowtrace.io/tx/${txHash}`;
   }
 
   return {
@@ -161,9 +181,24 @@ function createSnowtraceWeb3Adapter(store: DemoStore, apiKey: string, baseUrl: s
       const events = store.listEvents().filter((event) => event.txHash && event.blockNumber === null);
       let refreshedEvents = 0;
       for (const event of events) {
-        const receipt = await fetchTxReceipt(event.txHash);
+        const receipt = await fetchTxReceipt(event.txHash as string);
+        const update: Record<string, unknown> = {
+          explorerUrl: buildExplorerUrl(event.txHash as string)
+        };
+
+        if (receipt) {
+          update.blockNumber = receipt.blockNumber;
+          update.txReceipt = {
+            txHash: event.txHash as string,
+            blockNumber: receipt.blockNumber,
+            status: receipt.status,
+            gasUsed: receipt.gasUsed ?? null
+          };
+          update.source = 'chain';
+        }
+
+        store.updateEvent(event.eventId, update as Partial<OnChainEvent>);
         if (receipt?.blockNumber != null) {
-          store.updateEvent(event.eventId, { blockNumber: receipt.blockNumber });
           refreshedEvents += 1;
         }
       }
