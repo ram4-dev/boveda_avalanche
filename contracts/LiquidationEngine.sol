@@ -10,6 +10,8 @@ contract LiquidationEngine {
     IERC20 public proceedsToken;
     address public admin;
     uint16 public originatorFeeBps;
+    uint16 public adminExpenseBps;
+    uint16 public constant CRITICAL_COVERAGE_BUFFER_BPS = 1000; // 10%
 
     event LoanLiquidated(
         uint256 indexed loanId,
@@ -41,6 +43,7 @@ contract LiquidationEngine {
         collateralVault = CollateralVault(collateralVaultAddress);
         proceedsToken = IERC20(proceedsTokenAddress);
         originatorFeeBps = feeBps;
+        adminExpenseBps = 0;
         admin = msg.sender;
     }
 
@@ -49,9 +52,68 @@ contract LiquidationEngine {
         originatorFeeBps = feeBps;
     }
 
+    function setAdminExpenseBps(uint16 feeBps) external onlyAdmin {
+        require(feeBps <= 10000, "Invalid fee basis points");
+        adminExpenseBps = feeBps;
+    }
+
     function setProceedsToken(address token) external onlyAdmin {
         require(token != address(0), "Invalid token address");
         proceedsToken = IERC20(token);
+    }
+
+    function canLiquidate(
+        uint256 loanId,
+        uint256 collateralPrice,
+        uint256 priceDecimals
+    ) public view returns (bool allowed, string memory reason) {
+        if (collateralPrice == 0) {
+            return (false, "LiquidationEngine: invalid collateral price");
+        }
+        if (priceDecimals > 36) {
+            return (false, "LiquidationEngine: invalid price decimals");
+        }
+
+        ILoanRegistry.Loan memory loan = loanRegistry.getLoan(loanId);
+        if (loan.loanId == 0) {
+            return (false, "LiquidationEngine: loan not found");
+        }
+
+        uint8 active = uint8(ILoanRegistry.LoanStatus.Active);
+        uint8 marginCall = uint8(ILoanRegistry.LoanStatus.MarginCall);
+        uint8 defaulted = uint8(ILoanRegistry.LoanStatus.Defaulted);
+        if (
+            loan.status != active &&
+            loan.status != marginCall &&
+            loan.status != defaulted
+        ) {
+            return (false, "LiquidationEngine: loan status not liquidatable");
+        }
+
+        CollateralVault.Vault memory vault = collateralVault.getVault(loanId);
+        if (vault.loanId == 0) {
+            return (false, "LiquidationEngine: vault not found");
+        }
+        if (vault.amount == 0) {
+            return (false, "LiquidationEngine: no collateral to liquidate");
+        }
+        if (vault.liquidated) {
+            return (false, "LiquidationEngine: collateral already liquidated");
+        }
+
+        uint256 collateralValue = (vault.amount * collateralPrice) / (10 ** priceDecimals);
+        if (collateralValue == 0) {
+            return (false, "LiquidationEngine: invalid proceeds amount");
+        }
+
+        uint256 repaymentObligation = _repaymentObligation(loan.loanAmount);
+        uint256 criticalCoverageThreshold = (repaymentObligation * (10000 + CRITICAL_COVERAGE_BUFFER_BPS)) / 10000;
+
+        if (collateralValue <= criticalCoverageThreshold) {
+            return (true, "LiquidationEngine: critical coverage threshold reached");
+        }
+
+        return (false, "LiquidationEngine: non-critical coverage, margin call first");
     }
 
     function liquidateLoan(
@@ -61,8 +123,6 @@ contract LiquidationEngine {
         address fundingPartner
     ) external {
         require(fundingPartner != address(0), "Invalid funding partner");
-        require(collateralPrice > 0, "Invalid collateral price");
-        require(priceDecimals <= 36, "Invalid price decimals");
 
         ILoanRegistry.Loan memory loan = loanRegistry.getLoan(loanId);
         require(loan.loanId != 0, "Loan not found");
@@ -70,20 +130,12 @@ contract LiquidationEngine {
             msg.sender == loan.originator,
             "LiquidationEngine: only originator can initiate liquidation"
         );
-        require(
-            loan.status == uint8(ILoanRegistry.LoanStatus.Active) ||
-            loan.status == uint8(ILoanRegistry.LoanStatus.MarginCall) ||
-            loan.status == uint8(ILoanRegistry.LoanStatus.Defaulted),
-            "Loan not liquidatable"
-        );
+
+        (bool allowed, string memory reason) = canLiquidate(loanId, collateralPrice, priceDecimals);
+        require(allowed, reason);
 
         CollateralVault.Vault memory vault = collateralVault.getVault(loanId);
-        require(vault.loanId != 0, "Vault not found");
-        require(vault.amount > 0, "No collateral to liquidate");
-        require(!vault.liquidated, "Collateral already liquidated");
-
         uint256 proceedsAmount = (vault.amount * collateralPrice) / (10 ** priceDecimals);
-        require(proceedsAmount > 0, "Invalid proceeds amount");
 
         collateralVault.liquidateCollateral(loanId);
 
@@ -122,5 +174,9 @@ contract LiquidationEngine {
             originatorFeeAmount,
             borrowerRemainderAmount
         );
+    }
+
+    function _repaymentObligation(uint256 loanAmount) internal view returns (uint256) {
+        return loanAmount + ((loanAmount * adminExpenseBps) / 10000);
     }
 }

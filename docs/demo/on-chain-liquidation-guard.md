@@ -91,15 +91,32 @@ Implementation must choose one of these before coding:
 
 Recommended first implementation: minimal demo guard using `loan.loanAmount` plus configurable admin/fee bps, then document the approximation.
 
-## Implementation checklist
+## Implementation status (Batch 10 in this branch)
 
-- [ ] Add contract-level liquidation guard API.
-- [ ] Enforce guard inside `LiquidationEngine.liquidateLoan`.
-- [ ] Decide and document repayment-obligation formula.
-- [ ] Keep proceeds distribution: lender repayment first, configured fee/admin deductions, borrower surplus return.
-- [ ] Add Foundry tests for rejection and critical-coverage acceptance cases.
-- [ ] Update keeper dry-run docs to say its rule mirrors contract enforcement.
-- [ ] Run `forge test` in a Foundry-enabled environment before enabling real keeper transactions.
+- [x] Added contract-level liquidation guard API via `canLiquidate(...)`.
+- [x] Enforced guard inside `LiquidationEngine.liquidateLoan(...)`.
+- [x] Kept proceeds distribution order: funding partner repayment first, originator fee from remainder, borrower surplus last.
+- [x] Restricted `CollateralVault.liquidateCollateral(...)` to the configured `LiquidationEngine`, so direct originator calls cannot bypass the guard.
+- [x] Aligned `CollateralVault` so `Active`, `MarginCall`, and `Defaulted` loans can be liquidated only through the guarded engine path.
+- [x] Added Foundry tests for non-critical rejection, critical acceptance, defaulted critical liquidation, and admin-expense threshold behavior in `test/LiquidationEngine.t.sol`.
+- [x] Updated docs to mark keeper policy as contract-enforced dependency.
+- [x] Ran targeted and full Foundry tests in this environment after installing Foundry locally.
+
+## Implemented demo formula
+
+Current on-chain repayment obligation formula is intentionally minimal and explicit:
+
+```text
+repayment_obligation = loan.loanAmount + (loan.loanAmount * adminExpenseBps / 10000)
+```
+
+Critical liquidation guard uses:
+
+```text
+collateral_value <= repayment_obligation * 110%
+```
+
+`adminExpenseBps` is configurable in `LiquidationEngine` (`setAdminExpenseBps`) and defaults to `0`.
 
 ## Acceptance criteria
 

@@ -121,13 +121,11 @@ contract CollateralVault {
 
         ILoanRegistry.Loan memory loan = loanRegistry.getLoan(loanId);
         require(loan.loanId != 0, "Loan not found");
-        require(
-            msg.sender == loan.originator || msg.sender == liquidationEngine,
-            "Only originator or liquidation engine can liquidate"
-        );
+        require(msg.sender == liquidationEngine, "Only liquidation engine can liquidate");
         require(
             loan.status == uint8(ILoanRegistry.LoanStatus.Active) ||
-            loan.status == uint8(ILoanRegistry.LoanStatus.MarginCall),
+            loan.status == uint8(ILoanRegistry.LoanStatus.MarginCall) ||
+            loan.status == uint8(ILoanRegistry.LoanStatus.Defaulted),
             "Loan not liquidatable"
         );
 

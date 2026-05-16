@@ -8,7 +8,7 @@ import "../contracts/mocks/MockERC20.sol";
 
 interface Vm {
     function prank(address actor) external;
-    function addr(uint256 privateKey) external returns (address);
+    function expectRevert(bytes calldata reason) external;
 }
 
 contract LiquidationEngineTest {
@@ -40,7 +40,60 @@ contract LiquidationEngineTest {
         usdc.mint(address(liquidationEngine), 200e18);
     }
 
-    function testLiquidateLoanDistributesProceeds() public {
+    function testRejectsNonCriticalLiquidationForActiveLoan() public {
+        uint256 loanId = _createActiveLoanWithCollateral(100e18, 50e18);
+
+        // Collateral value = 100; repayment obligation = 50; critical threshold = 55.
+        (bool allowed, string memory reason) = liquidationEngine.canLiquidate(loanId, 1e18, 18);
+        assert(allowed == false);
+        assertEq(reason, "LiquidationEngine: non-critical coverage, margin call first");
+
+        vm.prank(originator);
+        vm.expectRevert(bytes("LiquidationEngine: non-critical coverage, margin call first"));
+        liquidationEngine.liquidateLoan(loanId, 1e18, 18, fundingPartner);
+    }
+
+    function testCanLiquidateRejectsInvalidStatusAndPrice() public {
+        uint256 loanId = _createActiveLoanWithCollateral(100e18, 50e18);
+
+        loanRegistry.setLoanStatus(loanId, uint8(ILoanRegistry.LoanStatus.Repaid));
+        (bool repaidAllowed, string memory repaidReason) = liquidationEngine.canLiquidate(loanId, 1e18, 18);
+        assert(repaidAllowed == false);
+        assertEq(repaidReason, "LiquidationEngine: loan status not liquidatable");
+
+        (bool priceAllowed, string memory priceReason) = liquidationEngine.canLiquidate(loanId, 0, 18);
+        assert(priceAllowed == false);
+        assertEq(priceReason, "LiquidationEngine: invalid collateral price");
+    }
+
+    function testLiquidatesDefaultedLoanWhenCriticalCoverage() public {
+        uint256 loanId = _createActiveLoanWithCollateral(100e18, 50e18);
+        loanRegistry.setLoanStatus(loanId, uint8(ILoanRegistry.LoanStatus.Defaulted));
+
+        (bool allowed, string memory reason) = liquidationEngine.canLiquidate(loanId, 0.5e18, 18);
+        assert(allowed == true);
+        assertEq(reason, "LiquidationEngine: critical coverage threshold reached");
+
+        vm.prank(originator);
+        liquidationEngine.liquidateLoan(loanId, 0.5e18, 18, fundingPartner);
+
+        assert(loanRegistry.getLoanStatus(loanId) == uint8(ILoanRegistry.LoanStatus.Liquidated));
+    }
+
+    function testAdminExpenseBpsCanMakeCoverageCritical() public {
+        uint256 loanId = _createActiveLoanWithCollateral(100e18, 50e18);
+
+        (bool beforeAllowed, string memory beforeReason) = liquidationEngine.canLiquidate(loanId, 0.56e18, 18);
+        assert(beforeAllowed == false);
+        assertEq(beforeReason, "LiquidationEngine: non-critical coverage, margin call first");
+
+        liquidationEngine.setAdminExpenseBps(2000);
+        (bool afterAllowed, string memory afterReason) = liquidationEngine.canLiquidate(loanId, 0.56e18, 18);
+        assert(afterAllowed == true);
+        assertEq(afterReason, "LiquidationEngine: critical coverage threshold reached");
+    }
+
+    function testLiquidateLoanDistributesProceedsWhenCriticalCoverage() public {
         uint256 dueDate = block.timestamp + 365 days;
         uint256 loanId = loanRegistry.createLoan(
             borrower,
@@ -63,8 +116,13 @@ contract LiquidationEngineTest {
 
         assert(loanRegistry.getLoanStatus(loanId) == uint8(ILoanRegistry.LoanStatus.Active));
 
-        uint256 price = 1e18;
+        // Critical path: collateral value = 50 and threshold = 55.
+        uint256 price = 0.5e18;
         uint256 priceDecimals = 18;
+
+        (bool allowed, string memory reason) = liquidationEngine.canLiquidate(loanId, price, priceDecimals);
+        assert(allowed == true);
+        assertEq(reason, "LiquidationEngine: critical coverage threshold reached");
 
         vm.prank(originator);
         liquidationEngine.liquidateLoan(loanId, price, priceDecimals, fundingPartner);
@@ -73,7 +131,30 @@ contract LiquidationEngineTest {
         CollateralVault.Vault memory vault = collateralVault.getVault(loanId);
         assert(vault.liquidated == true);
         assert(usdc.balanceOf(fundingPartner) == 50e18);
-        assert(usdc.balanceOf(originator) == 5e18);
-        assert(usdc.balanceOf(borrower) == 45e18);
+        assert(usdc.balanceOf(originator) == 0);
+        assert(usdc.balanceOf(borrower) == 0);
+    }
+
+    function _createActiveLoanWithCollateral(uint256 collateralAmount, uint256 loanAmount) internal returns (uint256 loanId) {
+        uint256 dueDate = block.timestamp + 365 days;
+        loanId = loanRegistry.createLoan(
+            borrower,
+            originator,
+            address(collateralToken),
+            0,
+            loanAmount,
+            5000,
+            dueDate
+        );
+
+        collateralToken.mint(borrower, collateralAmount);
+        vm.prank(borrower);
+        collateralToken.approve(address(collateralVault), collateralAmount);
+        vm.prank(borrower);
+        collateralVault.depositCollateral(loanId, collateralAmount);
+    }
+
+    function assertEq(string memory a, string memory b) internal pure {
+        require(keccak256(bytes(a)) == keccak256(bytes(b)), "strings not equal");
     }
 }
