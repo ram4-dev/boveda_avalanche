@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import type { Web3Adapter } from '../../adapters/web3.js';
+import { Web3UnavailableError, type Web3Adapter } from '../../adapters/web3.js';
 import { loanScenarioValues, loanStatusValues } from '../../api/schemas.js';
 import { hasJsonObjectBody, sendApiError, sendInvalidRequestBody } from '../../api/errors.js';
+import { buildLoanEvidenceMetadata } from '../../domain/evidence.js';
 import { shortHash } from '../../domain/hashing.js';
 import { canTransition } from '../../domain/stateMachine.js';
 import type { Borrower, Collateral, CollateralTerms, FundingPartner, Loan, OnChainEvent, Originator, Principal, ProceedsDistribution } from '../../domain/types.js';
@@ -42,7 +43,7 @@ type DepositBody = {
 
 type ActivateBody = {
   receiptTokenId?: string;
-  activationTxHash?: string;
+  activationTxHash?: `0x${string}`;
 };
 
 type MarginCallBody = {
@@ -206,7 +207,23 @@ export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore,
       return sendApiError(reply, 409, 'INVALID_TRANSITION', 'Loan activation requires recorded collateral depositTxHash and vaultAddress');
     }
 
-    const activation = await web3.activateLoan({ loan, receiptTokenId: request.body?.receiptTokenId });
+    let activation;
+    try {
+      activation = await web3.activateLoan({ loan, receiptTokenId: request.body?.receiptTokenId });
+    } catch (error) {
+      if (error instanceof Web3UnavailableError) {
+        return sendApiError(reply, 503, error.code, error.message);
+      }
+      return sendApiError(reply, 502, 'WEB3_ACTION_FAILED', error instanceof Error ? error.message : 'Web3 activation failed');
+    }
+
+    const activationTxHash = request.body?.activationTxHash ?? activation.txHash;
+    const activationEvidence = buildLoanEvidenceMetadata(web3.evidenceSource ?? 'demo-simulated', {
+      txHash: activationTxHash,
+      blockNumber: activation.blockNumber,
+      vaultAddress: activation.vaultAddress
+    });
+
     const nextLoan: Loan = {
       ...loan,
       status: 'Active',
@@ -217,12 +234,13 @@ export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore,
       }
     };
     store.replaceLoan(nextLoan);
-    store.appendEvent(baseEvent('LoanActivated', nextLoan.loanId, request.body?.activationTxHash ?? activation.txHash, {
+    store.appendEvent(baseEvent('LoanActivated', nextLoan.loanId, activationTxHash, {
       eventType: 'LoanActivated',
       loanId: nextLoan.loanId,
       vaultAddress: activation.vaultAddress,
       receiptTokenId: activation.receiptTokenId,
-      status: 'Active'
+      status: 'Active',
+      evidence: activationEvidence
     }));
     store.appendEvent(baseEvent('ReceiptIssued', nextLoan.loanId, null, {
       eventType: 'ReceiptIssued',
@@ -231,7 +249,14 @@ export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore,
       owner: activation.ownerWallet,
       soulbound: true
     }));
-    return nextLoan;
+    return {
+      ...nextLoan,
+      txHash: activationTxHash,
+      blockNumber: activation.blockNumber,
+      activationTxHash,
+      activationBlockNumber: activation.blockNumber,
+      activationEvidence
+    };
   });
 
   app.post('/loans/:loanId/margin-call', async (request: FastifyRequest<{ Params: LoanParams; Body: MarginCallBody }>, reply) => {
@@ -300,25 +325,45 @@ export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore,
         liquidationTxHash: request.body.liquidationTxHash
       });
       const nextLoan: Loan = { ...loan, status: 'Liquidated' };
+      const evidence = buildLoanEvidenceMetadata(web3.evidenceSource ?? 'demo-simulated', {
+        txHash: liquidation.txHash,
+        blockNumber: liquidation.blockNumber,
+        vaultAddress: loan.collateral.vaultAddress
+      });
       store.replaceLoan(nextLoan);
       store.appendEvent(baseEvent('Liquidated', nextLoan.loanId, liquidation.txHash, {
         eventType: 'Liquidated',
         loanId: nextLoan.loanId,
+        reason: request.body.reason,
         liquidationTxHash: liquidation.txHash,
         proceedsAmount: liquidation.proceedsAmount,
         proceedsCurrency: 'USDC',
         distribution: liquidation.distribution,
-        status: 'Liquidated'
+        trigger: {
+          fromStatus: loan.status,
+          outcome: 'LIQUIDATED'
+        },
+        status: 'Liquidated',
+        evidence
       }));
       return {
         loanId: nextLoan.loanId,
         status: 'Liquidated',
         liquidationTxHash: liquidation.txHash,
+        blockNumber: liquidation.blockNumber,
         proceedsAmount: liquidation.proceedsAmount,
         proceedsCurrency: 'USDC',
-        distribution: liquidation.distribution
+        distribution: liquidation.distribution,
+        trigger: {
+          fromStatus: loan.status,
+          outcome: 'LIQUIDATED'
+        },
+        evidence
       };
     } catch (error) {
+      if (error instanceof Web3UnavailableError) {
+        return sendApiError(reply, 503, error.code, error.message);
+      }
       return sendApiError(reply, 502, 'WEB3_ACTION_FAILED', error instanceof Error ? error.message : 'Web3 liquidation failed');
     }
   });

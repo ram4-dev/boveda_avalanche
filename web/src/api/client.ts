@@ -1,21 +1,24 @@
 import { ApiClientError } from './errors.js';
-import type { ActivateLoanRequest, CollateralDepositRequest, DashboardSummary, EventsResponse, LiquidationRequest, Loan, LoanScenario, LoansResponse, LoanStatus, MarginCallRequest, PaymentAttestationRequest, QuoteRequest, RiskAssessmentRequest } from './types.js';
+import type { ActivateLoanRequest, CollateralDepositRequest, DashboardSummary, EventsResponse, FujiReadOnlyStatus, LiquidationRequest, Loan, LoanScenario, LoansResponse, LoanStatus, MarginCallRequest, PaymentAttestationRequest, QuoteRequest, RiskAssessmentRequest, RuntimeMetadata, RuntimeMode } from './types.js';
 export { ApiClientError } from './errors.js';
 export type * from './types.js';
 
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
-type ClientOptions = { baseUrl?: string; fetch?: FetchLike };
+type ClientOptions = { baseUrl?: string; fetch?: FetchLike; runtimeMode?: RuntimeMode };
 
-export function resolveApiBaseUrl(env: Record<string, string | undefined> = (import.meta as unknown as { env?: Record<string, string> }).env ?? {}): string {
-  return (env.VITE_BOVEDA_API_BASE_URL ?? '').replace(/\/$/, '');
+export function resolveApiBaseUrl(env: Record<string, string | undefined> = (import.meta as unknown as { env?: Record<string, string> }).env ?? {}, runtimeMode: RuntimeMode = 'fuji'): string {
+  const modeSpecific = runtimeMode === 'demo' ? env.VITE_BOVEDA_DEMO_API_BASE_URL : env.VITE_BOVEDA_FUJI_API_BASE_URL;
+  return (modeSpecific ?? env.VITE_BOVEDA_API_BASE_URL ?? '').replace(/\/$/, '');
 }
 
 export function createBovedaApiClient(options: ClientOptions = {}) {
-  const baseUrl = (options.baseUrl ?? resolveApiBaseUrl()).replace(/\/$/, '');
+  const baseUrl = (options.baseUrl ?? resolveApiBaseUrl(undefined, options.runtimeMode)).replace(/\/$/, '');
   const fetcher = options.fetch ?? fetch.bind(globalThis);
 
   return {
+    getRuntime: (): Promise<RuntimeMetadata> => request(fetcher, url(baseUrl, '/runtime'), { method: 'GET' }) as Promise<RuntimeMetadata>,
+    getFujiReadOnlyStatus: (): Promise<FujiReadOnlyStatus> => request(fetcher, url(baseUrl, '/runtime/fuji-smoke'), { method: 'GET' }) as Promise<FujiReadOnlyStatus>,
     getDashboardSummary: (): Promise<DashboardSummary> => request(fetcher, url(baseUrl, '/dashboard/summary'), { method: 'GET' }) as Promise<DashboardSummary>,
     listLoans: (filter?: { scenario?: LoanScenario; status?: LoanStatus }): Promise<LoansResponse> => request(fetcher, url(baseUrl, '/loans', filter), { method: 'GET' }) as Promise<LoansResponse>,
     getLoan: (loanId: string): Promise<Loan> => request(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}`), { method: 'GET' }) as Promise<Loan>,

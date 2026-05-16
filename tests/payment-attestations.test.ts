@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildFastifyApp } from '../src/app.js';
+import type { Web3Adapter } from '../src/adapters/web3.js';
+import { buildFujiRuntimeConfig } from '../src/config/runtime.js';
 import type { Loan, LoanStatus, SeedFile } from '../src/domain/types.js';
 import { DemoStore } from '../src/store/demoStore.js';
 import { loadSeedFileSync } from '../src/store/seedLoader.js';
@@ -29,6 +31,14 @@ describe('payment attestation API', () => {
       installmentId: 'inst-demo-001',
       amount: '12500',
       currency: 'USD',
+      txHash: expect.stringMatching(/^0x[a-f0-9]{64}$/),
+      blockNumber: null,
+      evidence: {
+        mode: 'demo',
+        source: 'demo-simulated',
+        status: 'simulated',
+        label: 'Simulated demo evidence'
+      },
       remainingPrincipal: '137500',
       status: 'Active'
     });
@@ -51,7 +61,12 @@ describe('payment attestation API', () => {
         paymentRail: 'WIRE_SIMULATED',
         attestationHash: first.json().attestationHash,
         remainingPrincipal: '137500',
-        status: 'Active'
+        status: 'Active',
+        evidence: {
+          source: 'demo-simulated',
+          mode: 'demo',
+          status: 'simulated'
+        }
       }
     });
 
@@ -105,6 +120,62 @@ describe('payment attestation API', () => {
     expect(marginCallPayment.json()).toMatchObject({ remainingPrincipal: '145000', status: 'MarginCall' });
     const marginCallLoan = await marginCallApp.inject({ method: 'GET', url: '/loans/loan-web3-001' });
     expect(marginCallLoan.json()).toMatchObject({ status: 'MarginCall', currentMetrics: { outstandingPrincipal: '145000' } });
+  });
+
+  it('returns WEB3_UNAVAILABLE for fuji payment attestation without fabricated live hashes', async () => {
+    const app = buildFastifyApp({ runtime: buildFujiRuntimeConfig({ prerequisites: 'missing' }) });
+    const unavailable = await app.inject({
+      method: 'POST',
+      url: '/loans/loan-web3-001/payments/attest',
+      payload: partialPaymentPayload
+    });
+
+    expect(unavailable.statusCode).toBe(503);
+    expect(unavailable.json().error.code).toBe('WEB3_UNAVAILABLE');
+    expect(unavailable.json().error.message).toContain('Fuji web3 adapter is unavailable');
+    expect(unavailable.json().error.message).not.toContain('0x');
+  });
+
+  it('records unavailable evidence metadata when adapter succeeds but Fuji evidence is still unavailable', async () => {
+    const unavailableButSuccessfulWeb3: Web3Adapter = {
+      evidenceSource: 'fuji-unavailable',
+      async activateLoan() {
+        throw new Error('not used in this test');
+      },
+      async registerPaymentAttestation(input) {
+        return {
+          ok: true,
+          txHash: `0x${'a'.repeat(64)}`,
+          blockNumber: null,
+          attestationHash: input.attestation.attestationHash
+        };
+      },
+      async liquidateLoan() {
+        throw new Error('not used in this test');
+      },
+      async refreshPendingEvents() {
+        return { refreshedEvents: 0 };
+      }
+    };
+
+    const app = buildFastifyApp({ web3: unavailableButSuccessfulWeb3, runtime: buildFujiRuntimeConfig({ prerequisites: 'missing' }) });
+    const response = await app.inject({
+      method: 'POST',
+      url: '/loans/loan-web3-001/payments/attest',
+      payload: { ...partialPaymentPayload, installmentId: 'inst-unavailable-001' }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      loanId: 'loan-web3-001',
+      status: 'Active',
+      evidence: {
+        mode: 'fuji',
+        source: 'fuji-unavailable',
+        status: 'unavailable',
+        label: 'Fuji evidence pending/unavailable'
+      }
+    });
   });
 
   it('changes hash when payment evidence changes and rejects invalid payment mutations without changing state', async () => {

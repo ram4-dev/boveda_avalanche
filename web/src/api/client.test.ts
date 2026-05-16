@@ -9,10 +9,18 @@ function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
 }
 
 describe('createBovedaApiClient', () => {
+  it('resolves API base URLs by runtime mode priority', () => {
+    expect(resolveApiBaseUrl({ VITE_BOVEDA_FUJI_API_BASE_URL: 'http://fuji.local/', VITE_BOVEDA_API_BASE_URL: 'http://legacy.local' }, 'fuji')).toBe('http://fuji.local');
+    expect(resolveApiBaseUrl({ VITE_BOVEDA_DEMO_API_BASE_URL: 'http://demo.local/', VITE_BOVEDA_API_BASE_URL: 'http://legacy.local' }, 'demo')).toBe('http://demo.local');
+    expect(resolveApiBaseUrl({ VITE_BOVEDA_API_BASE_URL: 'http://legacy.local/' }, 'demo')).toBe('http://legacy.local');
+    expect(resolveApiBaseUrl({}, 'fuji')).toBe('');
+  });
+
   it('uses canonical Batch 2 paths and methods', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const method = init?.method ?? 'GET';
+      if (url.endsWith('/runtime') && method === 'GET') return jsonResponse({ mode: 'demo', evidenceSource: 'demo-simulated', prerequisites: 'ready' });
       if (url.endsWith('/dashboard/summary') && method === 'GET') return jsonResponse({ activePrincipalUsd: '150000', activeVaults: 1, averageLtvBps: 5000, loansInMarginCall: 0, paymentsAttested: 1, liquidationsExecuted: 0, exposureByAsset: [], recentEvents: [] });
       if (url.endsWith('/loans?scenario=WEB3_BRIDGE') && method === 'GET') return jsonResponse({ loans: [] });
       if (url.endsWith('/loans/loan-web3-001') && method === 'GET') return jsonResponse({ loanId: 'loan-web3-001' });
@@ -28,6 +36,7 @@ describe('createBovedaApiClient', () => {
     });
     const client = createBovedaApiClient({ baseUrl: 'http://api.local', fetch: fetchMock });
 
+    await client.getRuntime();
     await client.getDashboardSummary();
     await client.listLoans({ scenario: 'WEB3_BRIDGE' });
     await client.getLoan('loan-web3-001');
@@ -41,6 +50,7 @@ describe('createBovedaApiClient', () => {
     await client.listEvents({ loanId: 'loan-web3-001' });
 
     expect(fetchMock.mock.calls.map(([input, init]) => `${init?.method ?? 'GET'} ${String(input).replace('http://api.local', '')}`)).toEqual([
+      'GET /runtime',
       'GET /dashboard/summary',
       'GET /loans?scenario=WEB3_BRIDGE',
       'GET /loans/loan-web3-001',

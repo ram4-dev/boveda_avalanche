@@ -15,16 +15,20 @@ const liquidatedEvent = (payload: Record<string, unknown>): OnChainEvent => ({
 
 describe('EventTimeline', () => {
   it('does not render non-USDC Liquidated event proceeds as valid proceeds', () => {
-    render(<EventTimeline events={[liquidatedEvent({ proceedsAmount: '154200', proceedsCurrency: 'DAI' })]} />);
+    render(<EventTimeline events={[liquidatedEvent({ proceedsAmount: '154200', proceedsCurrency: 'DAI', evidence: { source: 'demo-simulated' } })]} />);
 
     expect(screen.getByText(/Unsupported liquidation currency DAI/i)).toBeInTheDocument();
+    expect(screen.getByText('Simulated demo evidence')).toBeInTheDocument();
     expect(screen.queryByText('Proceeds 154200 DAI')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'View Fuji tx' })).not.toBeInTheDocument();
   });
 
-  it('renders valid USDC Liquidated event proceeds', () => {
-    render(<EventTimeline events={[liquidatedEvent({ proceedsAmount: '154200', proceedsCurrency: 'USDC' })]} />);
+  it('renders valid USDC Liquidated event proceeds with Fuji links in live evidence mode', () => {
+    render(<EventTimeline events={[liquidatedEvent({ proceedsAmount: '154200', proceedsCurrency: 'USDC', evidence: { source: 'fuji-live', explorerUrl: 'https://testnet.snowtrace.io' } })]} />);
 
     expect(screen.getByText('Proceeds 154200 USDC')).toBeInTheDocument();
+    expect(screen.getByText('Fuji live evidence')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View Fuji tx' })).toHaveAttribute('href', expect.stringContaining('/tx/'));
     expect(screen.queryByText(/Unsupported liquidation currency/i)).not.toBeInTheDocument();
   });
 });

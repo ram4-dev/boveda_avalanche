@@ -50,7 +50,19 @@ export type Web3RefreshOutcome = {
   refreshedEvents: number;
 };
 
+export type Web3EvidenceSource = 'demo-simulated' | 'fuji-live' | 'fuji-unavailable';
+
+export class Web3UnavailableError extends Error {
+  readonly code = 'WEB3_UNAVAILABLE' as const;
+
+  constructor(reason: string) {
+    super(`Fuji web3 adapter is unavailable: ${reason}`);
+    this.name = 'Web3UnavailableError';
+  }
+}
+
 export interface Web3Adapter {
+  evidenceSource?: Web3EvidenceSource;
   activateLoan(input: ActivationInput): Promise<ActivationOutcome>;
   registerPaymentAttestation(input: PaymentRegistrationInput): Promise<PaymentRegistrationOutcome>;
   liquidateLoan(input: LiquidationInput): Promise<LiquidationOutcome>;
@@ -59,6 +71,7 @@ export interface Web3Adapter {
 
 export function createMockWeb3Adapter(): Web3Adapter {
   return {
+    evidenceSource: 'demo-simulated',
     async activateLoan(input) {
       return {
         ok: true,
@@ -86,6 +99,24 @@ export function createMockWeb3Adapter(): Web3Adapter {
         proceedsCurrency: 'USDC',
         distribution: input.distribution
       };
+    },
+    async refreshPendingEvents() {
+      return { refreshedEvents: 0 };
+    }
+  };
+}
+
+export function createUnavailableWeb3Adapter(reason: string): Web3Adapter {
+  return {
+    evidenceSource: 'fuji-unavailable',
+    async activateLoan() {
+      throw new Web3UnavailableError(reason);
+    },
+    async registerPaymentAttestation() {
+      throw new Web3UnavailableError(reason);
+    },
+    async liquidateLoan() {
+      throw new Web3UnavailableError(reason);
     },
     async refreshPendingEvents() {
       return { refreshedEvents: 0 };

@@ -1,7 +1,9 @@
-import type { Loan, OnChainEvent } from '../api/types.js';
+import type { EvidenceSource, Loan, OnChainEvent } from '../api/types.js';
 import { formatBps, formatMoney } from './format.js';
 import { StatusPill } from './StatusPill.js';
 import { selectLoanDetailViewModel } from '../state/dashboardSelectors.js';
+import { EvidenceBadge } from './EvidenceBadge.js';
+import { ExplorerLink } from './ExplorerLink.js';
 
 type LoanDetailPanelProps = {
   loan: Loan | null;
@@ -18,6 +20,11 @@ export function LoanDetailPanel({ loan, events, errorMessage }: LoanDetailPanelP
   }
 
   const detail = selectLoanDetailViewModel(loan, events);
+  const explorerBaseUrl = 'https://testnet.snowtrace.io';
+  const collateralSource: EvidenceSource = loan.collateralEvidence?.source ?? (detail.collateral.depositTxHash ? 'fuji-live' : 'demo-simulated');
+  const activationSource: EvidenceSource = loan.activationEvidence?.source ?? 'demo-simulated';
+  const receiptSource: EvidenceSource = loan.receiptEvidence?.source ?? activationSource;
+  const liquidationSource: EvidenceSource = detail.liquidationEvidence.evidenceSource;
 
   return <section className="dashboard-card" aria-label="Loan detail">
     <header className="card-title-row">
@@ -43,11 +50,23 @@ export function LoanDetailPanel({ loan, events, errorMessage }: LoanDetailPanelP
       <p><strong>Repayment frequency:</strong> {detail.terms.repaymentFrequency}</p>
       <p><strong>Vault address:</strong> {detail.collateral.vaultAddress ? <span className="mono-cell">{detail.collateral.vaultAddress}</span> : 'Unavailable — no vault address recorded'}</p>
       <p><strong>Deposit tx hash:</strong> {detail.collateral.depositTxHash ? <span className="mono-cell">{detail.collateral.depositTxHash}</span> : 'Unavailable — no deposit tx hash recorded'}</p>
+      <EvidenceBadge source={collateralSource} />
+      <div className="button-row">
+        <ExplorerLink entity="tx" value={detail.collateral.depositTxHash} source={collateralSource} explorerBaseUrl={explorerBaseUrl} />
+        <ExplorerLink entity="address" value={detail.collateral.vaultAddress} source={collateralSource} explorerBaseUrl={explorerBaseUrl} />
+      </div>
       <p><strong>Receipt:</strong> {detail.receipt.receiptTokenId ?? detail.receipt.emptyLabel}</p>
       <p><strong>Receipt owner wallet:</strong> {detail.receipt.ownerWallet ? <span className="mono-cell">{detail.receipt.ownerWallet}</span> : 'Unavailable — no receipt owner wallet'}</p>
       <p><strong>Soulbound status:</strong> {detail.receipt.soulbound === null ? 'Unavailable — receipt not minted yet' : detail.receipt.soulbound ? 'Soulbound (non-transferable)' : 'Transferable'}</p>
+      <EvidenceBadge source={receiptSource} />
+      <EvidenceBadge source={activationSource} />
       <p><strong>Liquidation proceeds:</strong> {formatMoney(detail.liquidation.proceedsAmount, detail.liquidation.proceedsCurrency)}</p>
       <p><strong>Liquidation currency:</strong> {detail.liquidation.proceedsCurrency}</p>
+      <EvidenceBadge source={liquidationSource} />
+      <div className="button-row">
+        <ExplorerLink entity="tx" value={detail.liquidationEvidence.txHash} source={liquidationSource} explorerBaseUrl={explorerBaseUrl} />
+        <ExplorerLink entity="block" value={detail.liquidationEvidence.blockNumber} source={liquidationSource} explorerBaseUrl={explorerBaseUrl} />
+      </div>
     </div>
 
     <h3>Payment evidence</h3>
@@ -55,6 +74,11 @@ export function LoanDetailPanel({ loan, events, errorMessage }: LoanDetailPanelP
       {detail.paymentEvidence.map((payment) => <li key={payment.eventId}>
         <span>{payment.eventId}</span>
         <code>{payment.occurredAt}</code>
+        <EvidenceBadge source={payment.evidenceSource} />
+        <div className="button-row">
+          <ExplorerLink entity="tx" value={payment.txHash} source={payment.evidenceSource} explorerBaseUrl={explorerBaseUrl} />
+          <ExplorerLink entity="block" value={payment.blockNumber} source={payment.evidenceSource} explorerBaseUrl={explorerBaseUrl} />
+        </div>
         {payment.highlights.length ? <ul className="audit-highlights" aria-label={`Payment highlights ${payment.eventId}`}>
           {payment.highlights.map((highlight) => <li key={`${payment.eventId}-${highlight.label}`}>
             <span>{highlight.label}</span>
