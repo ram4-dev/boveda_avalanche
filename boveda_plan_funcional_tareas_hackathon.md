@@ -269,6 +269,73 @@ Los batches están pensados para correr en paralelo, pero con puntos de integrac
 
 **Criterio de aceptación:** la presentación puede defender qué es Bóveda, por qué Avalanche importa, dónde entra Wavy Node y por qué el MVP es realista.
 
+## Batch 7 — Riesgo on-chain, top-up y automatización
+
+**Objetivo:** cerrar la brecha entre demo mock-first e infraestructura operable: precios on-chain, monitoreo automático de LTV, liquidación por keeper y adición de colateral para reducir riesgo.
+
+**Duración sugerida:** 8-12 horas.
+
+**Dependencias:** Batch 1 mergeado/integrado, Batch 2 con adapter web3, Batch 3 para la acción borrower.
+
+| Tarea                                    | Descripción                                                                            | Entregable                                      | Dependencias     |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------- |
+| B7.1 Implementar `OracleAdapter`         | Leer precio/LTV desde Chainlink Fuji o adapter controlado, con interfaz reemplazable.  | Adapter + tests + fuente de precio documentada. | B1 + B2.5        |
+| B7.2 Keeper de margin call/liquidación   | Servicio/bot que monitorea LTV y dispara margin call o liquidación cuando corresponde. | Keeper runnable, dry-run y runbook.             | B7.1 + B1.5 + B2 |
+| B7.3 Adición de colateral en web3        | Permitir agregar colateral a un préstamo activo o en margin call para bajar LTV.       | Función/flujo contrato-vault + evento.          | B1.2 + B7.1      |
+| B7.4 Adición de colateral en backend     | Exponer acción backend para top-up, llamar web3 adapter y refrescar estado/eventos.    | Endpoint/servicio de top-up + tests.            | B7.3 + B2        |
+| B7.5 Adición de colateral en borrower UI | Mostrar acción para agregar colateral, resultado de tx/evento y LTV actualizado.       | Control UI + estado visible post-top-up.        | B7.4 + B3        |
+
+**Criterio de aceptación:** se puede mostrar un préstamo en riesgo, agregar colateral para bajar LTV, o dejar que el keeper dispare margin call/liquidación usando precios de una fuente definida y trazable.
+
+**Recorte permitido:** si Chainlink o el keeper completo consumen demasiado tiempo, usar un adapter de precio controlado y un keeper manual/dry-run, pero mantener las interfaces reales, eventos y runbook para reemplazo posterior.
+
+## Batch 8 — Dashboard institucional con fuentes reales
+
+**Objetivo:** conectar el dashboard institucional ya construido en otro worktree a fuentes de verdad reales, evitando que loans, métricas y audit trail salgan de mocks en el camino demo/productivo.
+
+**Duración sugerida:** 6-10 horas.
+
+**Dependencias:** Batch 4 dashboard UI, Batch 5 integración, y decisión de fuente al iniciar este batch.
+
+| Tarea                                     | Descripción                                                                                                                | Entregable                               | Dependencias |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------ |
+| B8.1 Definir fuente de verdad por dato    | Decidir, al hacer el batch, si loans, audit trail, receipts, pagos y métricas salen de blockchain, DB o enfoque híbrido.   | Matriz dato → fuente → fallback → dueño. | B1-B5        |
+| B8.2 Capa de lectura real para dashboard  | Implementar adapters/repositorios para leer datos desde las fuentes definidas, no desde mocks del frontend.                | API/data layer real para dashboard.      | B8.1         |
+| B8.3 Audit trail real                     | Mostrar eventos, tx hashes, receipts y liquidaciones desde chain/indexer/DB según la decisión de fuente.                   | Audit trail trazable y verificable.      | B8.1 + B8.2  |
+| B8.4 Wiring del dashboard institucional   | Conectar el dashboard del otro worktree a la API/data layer real y remover mocks del camino principal.                     | Dashboard consumiendo fuentes reales.    | B4 + B8.2    |
+| B8.5 Estados de sincronización y fallback | Mostrar pending/stale/unavailable cuando falte una fuente; cualquier fixture debe quedar explícitamente marcado como demo. | UX de estado y fallback honesto.         | B8.3 + B8.4  |
+
+**Criterio de aceptación:** el dashboard institucional puede explicar de dónde sale cada dato crítico y mostrar loans, exposición, LTV, pagos, liquidaciones y audit trail desde la fuente definida para ese dato.
+
+**Decisión diferida explícita:** este batch debe empezar definiendo si cada dato vive en blockchain, DB/indexer o ambos. No asumir una fuente única antes de revisar el estado real de contratos, backend y dashboard.
+
+**Recorte permitido:** mantener fixtures solo para backup de presentación, etiquetados como demo/fallback, nunca como fuente principal del dashboard institucional.
+
+## Batch 9 — Live demo transaccional para jurado
+
+**Objetivo:** permitir que una persona del jurado opere una demo en vivo desde el dashboard institucional y vea movimientos reales de fondos/estado en testnet, con trazabilidad directa a explorer.
+
+**Duración sugerida:** 6-10 horas.
+
+**Dependencias:** Batch 1 deployado, Batch 5 integración, Batch 8 dashboard con fuentes reales, y wallet demo fondeada en testnet.
+
+| Tarea                                        | Descripción                                                                                                                                             | Entregable                                         | Dependencias |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ------------ |
+| B9.1 Wallet demo fondeada/preautorizada      | Preparar una wallet de demo con fondos de testnet suficientes y mecanismo seguro de firma; nunca exponer private keys en frontend, repo, logs o docs.   | Wallet demo operativa + runbook seguro.            | B1.6 + B5.1  |
+| B9.2 Operaciones live desde dashboard        | Permitir disparar desde el dashboard las acciones principales: crear/aprobar préstamo, depositar/top-up, activar, atestar pago, margin call y liquidar. | Panel de operaciones live para jurado/presentador. | B5 + B7 + B8 |
+| B9.3 Estado y fondos visibles en tiempo real | Refrescar balances, estado de préstamo, eventos, tx hashes y proceeds después de cada operación.                                                        | Vista live con pending/success/error trazable.     | B8.2 + B8.3  |
+| B9.4 Links a explorer para addresses/txs     | Cada address, vault, wallet, contrato, receipt y tx hash visible debe tener link al explorer elegido.                                                   | Helper de explorer links + cobertura UI.           | B1.6 + B8    |
+| B9.5 Definir explorer canónico               | Decidir al implementar si se usa Snowtrace, Avascan, Routescan u otro explorer para Fuji/mainnet.                                                       | Decisión documentada en config/runbook.            | B9.4         |
+| B9.6 Modo jurado y límites de seguridad      | Agregar guardrails para evitar operaciones destructivas/repetidas accidentalmente y mostrar claramente que son fondos testnet/demo.                     | Modo live demo con confirmaciones y límites.       | B9.1 + B9.2  |
+
+**Criterio de aceptación:** un jurado puede entrar al dashboard, ejecutar o presenciar operaciones con una wallet demo fondeada, ver cambios de balances/estado, y abrir links de explorer para confirmar que las addresses y transacciones existen.
+
+**Duda explícita:** el explorer canónico queda por definir al hacer este batch (`Snowtrace`, `Avascan`, `Routescan` u otro según soporte Fuji/mainnet y UX). El plan solo exige que todos los links salgan de una configuración centralizada.
+
+**Regla de seguridad:** la wallet puede estar preconectada o preautorizada para la live demo, pero la private key, seed phrase o credencial de firma no debe vivir en el frontend ni quedar documentada en texto plano. Usar secret manager, signer backend controlado, wallet session o mecanismo equivalente.
+
+**Recorte permitido:** si no hay tiempo para que el jurado dispare todas las acciones, dejar un modo presenter-driven: el jurado observa el dashboard y abre explorer links mientras el presentador confirma cada operación.
+
 ## Orden recomendado por olas
 
 ### Ola 1 — Contrato de trabajo común
@@ -313,24 +380,45 @@ Los batches están pensados para correr en paralelo, pero con puntos de integrac
 
 **Salida:** demo muestra valor diferencial, no solo originación.
 
-### Ola 5 — Pulido y congelamiento
+### Ola 5 — Integración real avanzada
+
+- B7.1 OracleAdapter.
+- B7.2 Keeper de margin call/liquidación.
+- B7.3/B7.4/B7.5 Adición de colateral en web3, backend y UI.
+- B8.1 Definir fuente de verdad por dato del dashboard.
+- B8.2-B8.4 Conectar dashboard institucional a fuentes reales.
+
+**Salida:** demo con riesgo automatizable, top-up de colateral y dashboard institucional trazable.
+
+### Ola 6 — Live demo transaccional
+
+- B9.1 Wallet demo fondeada/preautorizada.
+- B9.2 Operaciones live desde dashboard.
+- B9.3 Estado y fondos visibles en tiempo real.
+- B9.4/B9.5 Links a explorer y explorer canónico.
+- B9.6 Modo jurado y límites de seguridad.
+
+**Salida:** jurado puede ver operaciones reales de testnet, fondos, estados y txs verificables en explorer.
+
+### Ola 7 — Pulido y congelamiento
 
 - B5.5 Reset demo.
 - B5.6 Congelar scope.
 - B6.4 Riesgos y recortes.
 - B6.5 Ensayo.
 - B6.6 Plan B.
+- B8.5 Estados de sincronización y fallback honesto.
 
 **Salida:** demo repetible y pitch coherente.
 
 ## Asignación sugerida para equipo de 4 personas
 
-| Persona | Foco primario                   | Foco secundario                    |
-| ------- | ------------------------------- | ---------------------------------- |
-| Dev A   | Smart contracts / Fuji          | ABI, eventos, deploy scripts       |
-| Dev B   | Backend / API / atestaciones    | Wavy Node mock, dashboard data     |
-| Dev C   | Frontend Borrower Widget        | Wallet, flujo de usuario, polish   |
-| Dev D   | Institutional Dashboard / pitch | Demo script, slides, datos semilla |
+| Persona | Foco primario                   | Foco secundario                                                           |
+| ------- | ------------------------------- | ------------------------------------------------------------------------- |
+| Dev A   | Smart contracts / Fuji          | ABI, eventos, deploy scripts, OracleAdapter, keeper                       |
+| Dev B   | Backend / API / atestaciones    | Wavy Node mock, top-up backend, signer/live ops, fuentes reales dashboard |
+| Dev C   | Frontend Borrower Widget        | Wallet, top-up UI, explorer links, flujo de usuario, polish               |
+| Dev D   | Institutional Dashboard / pitch | Dashboard real-data wiring, live demo panel, demo script, slides          |
 
 ### Si el equipo es de 3 personas
 
@@ -351,14 +439,17 @@ Recorte obligatorio con 2 personas: dashboard con fixtures, liquidación simulad
 
 ## Matriz de dependencias
 
-| Módulo          | Depende de                      | Puede empezar con mocks | Bloquea a                     |
-| --------------- | ------------------------------- | ----------------------: | ----------------------------- |
-| Smart contracts | Batch 0                         |                      No | Integración real, audit trail |
-| Backend         | Batch 0                         |                      Sí | Frontend dinámico, dashboard  |
-| Borrower Widget | Batch 0                         |                      Sí | Demo de usuario               |
-| Dashboard       | Batch 0                         |                      Sí | Demo institucional            |
-| Demo/pitch      | Documento canónico              |                      Sí | Presentación final            |
-| Integración E2E | Contratos + backend + UI mínima |                      No | Ensayo final                  |
+| Módulo              | Depende de                                               | Puede empezar con mocks | Bloquea a                                 |
+| ------------------- | -------------------------------------------------------- | ----------------------: | ----------------------------------------- |
+| Smart contracts     | Batch 0                                                  |                      No | Integración real, audit trail             |
+| Backend             | Batch 0                                                  |                      Sí | Frontend dinámico, dashboard              |
+| Borrower Widget     | Batch 0                                                  |                      Sí | Demo de usuario                           |
+| Dashboard           | Batch 0                                                  |                      Sí | Demo institucional                        |
+| Integración E2E     | Contratos + backend + UI mínima                          |                      No | Ensayo final                              |
+| Riesgo automatizado | Contratos + backend web3 + oracle                        |            Parcialmente | Top-up, keeper, liquidación automatizable |
+| Dashboard real-data | Dashboard UI + contratos/backend/DB                      |            Parcialmente | Demo institucional con trazabilidad real  |
+| Live demo           | Dashboard real-data + wallet demo + contratos deployados |                      No | Validación del jurado en vivo             |
+| Demo/pitch          | Documento canónico y avances de demo                     |                      Sí | Presentación final                        |
 
 ## Checklist de aceptación por demo
 
@@ -393,19 +484,28 @@ Recorte obligatorio con 2 personas: dashboard con fixtures, liquidación simulad
 - [ ] Demo reset documentado.
 - [ ] No hay dependencia de KYC/SPEI/off-ramp real.
 - [ ] Wavy Node aparece como input central, aunque sea mock/adaptador.
+- [ ] `OracleAdapter` definido e integrado o recortado explícitamente con adapter controlado.
+- [ ] Keeper de margin call/liquidación runnable o documentado como dry-run/manual.
+- [ ] Adición de colateral para bajar LTV cubierta en web3, backend y UI, o brecha documentada.
+- [ ] Dashboard institucional consume fuentes reales definidas para loans, métricas y audit trail, o muestra fallback demo etiquetado.
+- [ ] Wallet demo fondeada/preautorizada documentada sin exponer private key, seed phrase ni credenciales.
+- [ ] Dashboard puede disparar u observar operaciones live con estados pending/success/error.
+- [ ] Addresses y tx hashes visibles tienen links a explorer desde configuración centralizada.
 - [ ] Avalanche aparece en los eventos, vaults y narrativa técnica.
 
 ## Cut line: qué se elimina si falta tiempo
 
 Eliminar en este orden:
 
-1. Oracle real con fallback múltiple.
+1. Oracle real con fallback múltiple; mantener `OracleAdapter` mínimo o controlado.
 2. Swap real en DEX para liquidación.
-3. Listener automático de eventos.
-4. Vista de detalle avanzada del dashboard.
-5. Multi-activo amplio.
-6. Receipt NFT metadata completa.
-7. Segundo caso de uso con transacciones reales; mantenerlo como fixture narrativo si hace falta.
+3. Keeper completamente autónomo; mantener dry-run/manual si falta tiempo.
+4. Listener automático de eventos; mantener refresh o indexación mínima si el dashboard necesita trazabilidad.
+5. Jurado disparando operaciones directamente; mantener modo presenter-driven si falta tiempo.
+6. Vista de detalle avanzada del dashboard.
+7. Multi-activo amplio.
+8. Receipt NFT metadata completa.
+9. Segundo caso de uso con transacciones reales; mantenerlo como fixture narrativo si hace falta.
 
 No eliminar:
 
@@ -413,21 +513,26 @@ No eliminar:
 - Estado de préstamo.
 - Atestación de pago por hash/evento.
 - Dashboard institucional básico.
+- Fuente de verdad definida para datos críticos del dashboard, aunque el fallback sea demo etiquetado.
+- Links a explorer para addresses/txs críticos, aunque el explorer canónico quede configurable.
 - Narrativa Wavy Node + Avalanche.
 - Demo de liquidación aunque sea simulada.
+- Camino de top-up de colateral o brecha explícita web3/backend/UI.
 
 ## Entregables finales
 
-| Entregable              | Descripción                                                       |
-| ----------------------- | ----------------------------------------------------------------- |
-| Smart contracts         | Contratos MVP, deploy scripts, addresses Fuji/local.              |
-| Backend/API             | Endpoints para quote, risk, payments, dashboard y contract calls. |
-| Borrower Widget         | Flujo de solicitud, wallet, depósito, estado, pago/liquidación.   |
-| Institutional Dashboard | Métricas institucionales, audit trail, cartera y exposición.      |
-| Demo script             | Guion paso a paso con fallback.                                   |
-| Deck                    | Slides de pitch.                                                  |
-| README                  | Cómo correr, qué está mockeado y qué es real.                     |
-| Backup assets           | Screenshots/video por si falla infraestructura en vivo.           |
+| Entregable              | Descripción                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| Smart contracts         | Contratos MVP, deploy scripts, addresses Fuji/local.                                 |
+| Backend/API             | Endpoints para quote, risk, payments, dashboard, top-up y contract calls.            |
+| Borrower Widget         | Flujo de solicitud, wallet, depósito, top-up, estado, pago/liquidación.              |
+| Institutional Dashboard | Métricas institucionales, audit trail, cartera y exposición desde fuentes definidas. |
+| Oracle/Keeper           | Adapter de precio/LTV y keeper o dry-run de margin call/liquidación.                 |
+| Live demo kit           | Wallet demo fondeada, panel de operaciones live, explorer links y runbook seguro.    |
+| Demo script             | Guion paso a paso con fallback.                                                      |
+| Deck                    | Slides de pitch.                                                                     |
+| README                  | Cómo correr, qué está mockeado y qué es real.                                        |
+| Backup assets           | Screenshots/video por si falla infraestructura en vivo.                              |
 
 ## Resumen ejecutivo de ejecución
 
@@ -435,6 +540,8 @@ No eliminar:
 2. Después se construyen contratos, backend, borrower widget y dashboard en paralelo.
 3. La primera integración debe priorizar originación feliz.
 4. La segunda integración agrega pago atestado y liquidación.
-5. Al final se congela scope, se ensaya y se presenta con backup.
+5. La integración avanzada agrega OracleAdapter, keeper, top-up de colateral y dashboard con fuentes reales definidas.
+6. La live demo agrega wallet demo fondeada, operaciones desde dashboard y links a explorer para ver fondos/txs.
+7. Al final se congela scope, se ensaya y se presenta con backup.
 
 La clave no es construir todo Bóveda. La clave es demostrar una infraestructura institucional creíble: colateral programable en Avalanche, riesgo wallet vía Wavy Node, pagos fiat/USDC atestados, monitoreo de LTV y liquidación automática visible para originadores y fondeadores.
