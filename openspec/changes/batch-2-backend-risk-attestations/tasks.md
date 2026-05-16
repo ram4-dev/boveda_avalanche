@@ -169,4 +169,4 @@ Use targeted Vitest file commands during RED/GREEN, for example `npm test -- --r
 - [x] No real Wavy, RPC, ABI, contract address, private key, or secret dependency is required for local demo success.
 - [x] Liquidation previews/results/events report proceeds in `USDC`.
 - [x] Dashboard values are derived from loans/events, not unrelated hard-coded summaries.
-- [ ] `openspec/changes/batch-2-backend-risk-attestations/verify-report.md` is prepared during verify with command outputs and spec coverage notes.
+- [x] `openspec/changes/batch-2-backend-risk-attestations/verify-report.md` is prepared during verify with command outputs and spec coverage notes.
