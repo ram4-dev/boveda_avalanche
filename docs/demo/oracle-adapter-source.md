@@ -49,11 +49,32 @@ When `priceOracle` is not configured:
 LiquidationEngine uses the explicit collateralPrice/priceDecimals arguments as the controlled demo fallback.
 ```
 
+## Setup path in this branch
+
+`script/Deploy.s.sol` now deploys `ChainlinkPriceOracle` and can connect it to `LiquidationEngine` during Fuji deploy.
+
+Required env/config inputs for a real feed:
+
+```bash
+CHAINLINK_MAX_STALENESS_SECONDS=86400
+COLLATERAL_TOKEN_ADDRESS=0x...
+COLLATERAL_USD_FEED_ADDRESS=0x...
+```
+
+If both collateral/feed addresses are present, deploy executes:
+
+```solidity
+priceOracle.setFeed(COLLATERAL_TOKEN_ADDRESS, COLLATERAL_USD_FEED_ADDRESS);
+liquidationEngine.setPriceOracle(address(priceOracle));
+```
+
+If they are missing or zero, the oracle is deployed but not connected, and `LiquidationEngine` remains in controlled manual-price fallback mode.
+
 ## Next operational step
 
 Before enabling real keeper transactions on Fuji:
 
-1. Deploy `ChainlinkPriceOracle`.
-2. Configure each collateral token feed with `setFeed(token, feed)`.
-3. Configure `LiquidationEngine.setPriceOracle(oracle)`.
+1. Verify official Chainlink Avalanche Fuji feed addresses for each collateral token.
+2. Set `COLLATERAL_TOKEN_ADDRESS` and `COLLATERAL_USD_FEED_ADDRESS` before deploy, or call `setFeed(token, feed)` after deploy.
+3. Confirm `LiquidationEngine.setPriceOracle(oracle)` was called.
 4. Verify `canLiquidateFromOracle(loanId)` before sending liquidation txs.

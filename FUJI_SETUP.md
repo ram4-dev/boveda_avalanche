@@ -47,9 +47,54 @@ cast wallet address --private-key YOUR_PRIVATE_KEY
 # Debería mostrarte tu address (ej: 0x...)
 ```
 
-## Paso 5: Deploying (después)
+## Paso 5: Configurar oracle Chainlink-compatible
 
-Una vez tengamos B1.1 listo:
+El deploy script ahora puede dejar el oracle on-chain funcionando si pasás token colateral + feed Chainlink.
+
+### Variables requeridas para oracle real
+
+```bash
+CHAINLINK_MAX_STALENESS_SECONDS=86400
+COLLATERAL_TOKEN_ADDRESS=0x...      # token que se guarda como loan.collateralToken
+COLLATERAL_USD_FEED_ADDRESS=0x...   # feed Chainlink AggregatorV3 token/USD en Fuji
+```
+
+Reglas:
+
+- `COLLATERAL_TOKEN_ADDRESS` debe ser exactamente el token que usan los loans como colateral.
+- `COLLATERAL_USD_FEED_ADDRESS` debe ser un feed oficial/verificado de Chainlink en Avalanche Fuji.
+- No hardcodeamos feeds en contrato para evitar direcciones stale o de red equivocada.
+- Si esas variables quedan en cero, el script deploya `ChainlinkPriceOracle` pero no lo conecta a `LiquidationEngine`; el engine queda en modo fallback/manual para demo.
+
+### Qué hace el deploy script
+
+Si ambas addresses están seteadas:
+
+```solidity
+priceOracle.setFeed(COLLATERAL_TOKEN_ADDRESS, COLLATERAL_USD_FEED_ADDRESS);
+liquidationEngine.setPriceOracle(address(priceOracle));
+```
+
+Desde ese momento `LiquidationEngine` ignora precios manuales del caller y usa `ChainlinkPriceOracle.getPrice(loan.collateralToken)`.
+
+### Verificación post-deploy
+
+1. Guardá la address logueada de `ChainlinkPriceOracle`.
+2. Confirmá que `LiquidationEngine` loguea una oracle address no-cero.
+3. Para cada colateral adicional, configurar feed post-deploy con una tx admin:
+
+```bash
+cast send <CHAINLINK_PRICE_ORACLE> \
+  "setFeed(address,address)" \
+  <COLLATERAL_TOKEN_ADDRESS> \
+  <COLLATERAL_USD_FEED_ADDRESS> \
+  --rpc-url fuji \
+  --private-key <DEPLOYER_PRIVATE_KEY>
+```
+
+No pegues private keys en docs, PRs, issues ni logs compartidos.
+
+## Paso 6: Deploying
 
 ```bash
 forge script script/Deploy.s.sol --rpc-url fuji --broadcast --verify
@@ -64,3 +109,7 @@ forge script script/Deploy.s.sol --rpc-url fuji --broadcast --verify
 - [ ] `.env` creado con DEPLOYER_PRIVATE_KEY
 - [ ] AVAX en Fuji testnet (mín 0.5 AVAX)
 - [ ] `.env` NO está en git (verificar .gitignore)
+- [ ] `COLLATERAL_TOKEN_ADDRESS` definido para el token real usado en loans
+- [ ] `COLLATERAL_USD_FEED_ADDRESS` verificado contra docs oficiales Chainlink/Fuji
+- [ ] `CHAINLINK_MAX_STALENESS_SECONDS` definido según tolerancia demo
+- [ ] Deploy log muestra `ChainlinkPriceOracle` y, si hubo feed, `Configured Chainlink USD feed`

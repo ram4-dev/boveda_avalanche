@@ -9,6 +9,7 @@ import "../contracts/CollateralVault.sol";
 import "../contracts/LoanReceiptNFT.sol";
 import "../contracts/PaymentAttestation.sol";
 import "../contracts/LiquidationEngine.sol";
+import "../contracts/ChainlinkPriceOracle.sol";
 import "../contracts/mocks/MockERC20.sol";
 
 contract DeployBoveda is Script {
@@ -31,7 +32,7 @@ contract DeployBoveda is Script {
             deployer
         );
 
-        address proceedsTokenAddress = vm.envAddress("USDC_ADDRESS");
+        address proceedsTokenAddress = vm.envOr("USDC_ADDRESS", address(0));
         MockERC20 proceedsToken;
 
         if (proceedsTokenAddress == address(0)) {
@@ -49,6 +50,20 @@ contract DeployBoveda is Script {
             200
         );
 
+        uint256 maxStalenessSeconds = vm.envOr("CHAINLINK_MAX_STALENESS_SECONDS", uint256(1 days));
+        ChainlinkPriceOracle priceOracle = new ChainlinkPriceOracle(maxStalenessSeconds);
+        address collateralTokenAddress = vm.envOr("COLLATERAL_TOKEN_ADDRESS", address(0));
+        address collateralUsdFeedAddress = vm.envOr("COLLATERAL_USD_FEED_ADDRESS", address(0));
+
+        if (collateralTokenAddress != address(0) && collateralUsdFeedAddress != address(0)) {
+            priceOracle.setFeed(collateralTokenAddress, collateralUsdFeedAddress);
+            liquidationEngine.setPriceOracle(address(priceOracle));
+            console.log("Configured Chainlink collateral token:", collateralTokenAddress);
+            console.log("Configured Chainlink USD feed:", collateralUsdFeedAddress);
+        } else {
+            console.log("Oracle deployed but not connected; set COLLATERAL_TOKEN_ADDRESS and COLLATERAL_USD_FEED_ADDRESS to enable it");
+        }
+
         collateralVault.setLiquidationEngine(address(liquidationEngine));
 
         console.log("Deployer:", deployer);
@@ -57,6 +72,8 @@ contract DeployBoveda is Script {
         console.log("LoanReceiptNFT:", address(loanReceiptNFT));
         console.log("PaymentAttestation:", address(paymentAttestation));
         console.log("LiquidationEngine:", address(liquidationEngine));
+        console.log("ChainlinkPriceOracle:", address(priceOracle));
+        console.log("OracleMaxStalenessSeconds:", maxStalenessSeconds);
         console.log("ProceedsToken:", proceedsTokenAddress);
 
         vm.stopBroadcast();
