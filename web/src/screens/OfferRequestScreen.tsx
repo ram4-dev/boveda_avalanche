@@ -10,6 +10,8 @@ import { StatusPill } from '../components/StatusPill.js';
 import { formatBps, formatMoney } from '../components/format.js';
 import { getStatusGuidance, type JourneyAction } from '../state/borrowerJourney.js';
 
+type DemoOfferStage = 'request' | 'risk' | 'offer';
+
 type Props = {
   loan: Loan;
   wallet: WalletConnection;
@@ -17,12 +19,16 @@ type Props = {
   risk: RiskAssessment | null;
   action: JourneyAction;
   errors: Partial<Record<'quote' | 'risk', BorrowerFacingError>>;
+  demoStage?: DemoOfferStage;
   onConnectWallet: () => void;
   onCreateQuote: () => void;
   onAssessRisk: () => void;
 };
 
-export function OfferRequestScreen({ loan, wallet, quote, risk, action, errors, onConnectWallet, onCreateQuote, onAssessRisk }: Props) {
+export function OfferRequestScreen({ loan, wallet, quote, risk, action, errors, demoStage = 'offer', onConnectWallet, onCreateQuote, onAssessRisk }: Props) {
+  if (demoStage === 'request') return <RequestStage loan={loan} wallet={wallet} onConnectWallet={onConnectWallet} />;
+  if (demoStage === 'risk') return <RiskStage loan={loan} wallet={wallet} risk={risk} action={action} errors={errors} onConnectWallet={onConnectWallet} onAssessRisk={onAssessRisk} />;
+
   return (
     <section className="screen-grid" aria-labelledby="borrower-offer-title">
       <article className="card">
@@ -120,6 +126,62 @@ export function OfferRequestScreen({ loan, wallet, quote, risk, action, errors, 
             {risk.amlStatus === 'PASS' ? 'Risk passed' : risk.amlStatus === 'REVIEW' ? 'Requires review' : 'Blocked'} — score {risk.riskScore}, max LTV {formatBps(risk.maxLtvBps)}, hash {risk.assessmentHash}
           </Alert>
         ) : null}
+      </article>
+    </section>
+  );
+}
+
+function RequestStage({ loan, wallet, onConnectWallet }: { loan: Loan; wallet: WalletConnection; onConnectWallet: () => void }) {
+  return (
+    <section className="screen-grid" aria-labelledby="borrower-request-title">
+      <article className="card">
+        <div className="card-title-row">
+          <div>
+            <span className="card-kicker">Loan request</span>
+            <h2 id="borrower-request-title">Borrower request</h2>
+          </div>
+          <StatusPill status="Requested" />
+        </div>
+        <div className="metric-grid">
+          <MetricTile hero label="Requested principal" value={formatMoney(loan.principal.amount, loan.principal.currency)} detail={loan.principal.fiatRail} />
+          <MetricTile label="Collateral token" value={loan.collateral.token} detail="Collateral terms pending offer" />
+        </div>
+        <p className="muted">Step 1: the borrower submits the loan request. Offer terms, collateral requirement, and risk score are not shown until the next demo steps.</p>
+      </article>
+      <article className="card">
+        <span className="card-kicker">Wallet</span>
+        <h2>Injected wallet</h2>
+        {wallet.status === 'connected' ? <p title={wallet.address}><strong>{shortenAddress(wallet.address)}</strong> connected for the borrower request.</p> : null}
+        {wallet.status === 'unavailable' ? <Alert>Real wallet connection is unavailable in this browser. You can still review the local API simulation without private keys or seed phrases.</Alert> : null}
+        <ActionButton variant="secondary" onClick={onConnectWallet} loading={wallet.status === 'connecting'}>Connect injected wallet</ActionButton>
+      </article>
+    </section>
+  );
+}
+
+function RiskStage({ loan, wallet, risk, action, errors, onConnectWallet, onAssessRisk }: { loan: Loan; wallet: WalletConnection; risk: RiskAssessment | null; action: JourneyAction; errors: Partial<Record<'quote' | 'risk', BorrowerFacingError>>; onConnectWallet: () => void; onAssessRisk: () => void }) {
+  return (
+    <section className="screen-grid" aria-labelledby="risk-check-title">
+      <article className="card">
+        <div className="card-title-row">
+          <div>
+            <span className="card-kicker">Risk check</span>
+            <h2 id="risk-check-title">Wallet risk check</h2>
+          </div>
+          <StatusPill status={loan.status} />
+        </div>
+        <p className="muted">Step 2: Bóveda checks wallet risk before presenting the final offer and collateral requirement.</p>
+        {wallet.status === 'connected' ? <p title={wallet.address}><strong>{shortenAddress(wallet.address)}</strong> connected for risk scoring.</p> : null}
+        {errors.risk ? <Alert tone="danger">{errors.risk.code}: {errors.risk.message}</Alert> : null}
+        {risk ? (
+          <Alert tone={risk.amlStatus === 'PASS' ? 'success' : risk.amlStatus === 'REVIEW' ? 'warning' : 'danger'}>
+            {risk.amlStatus === 'PASS' ? 'Risk passed' : risk.amlStatus === 'REVIEW' ? 'Requires review' : 'Blocked'} — score {risk.riskScore}, max LTV {formatBps(risk.maxLtvBps)}, hash {risk.assessmentHash}
+          </Alert>
+        ) : null}
+        <div className="button-row">
+          <ActionButton variant="secondary" onClick={onConnectWallet} loading={wallet.status === 'connecting'}>Connect injected wallet</ActionButton>
+          <ActionButton onClick={onAssessRisk} loading={action === 'risking'}>Assess wallet risk</ActionButton>
+        </div>
       </article>
     </section>
   );

@@ -444,6 +444,102 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   font-weight: 700;
 }
 
+/* ---------- Demo controls ---------- */
+.demo-controls {
+  gap: var(--space-md);
+}
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+.control-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.control-field span {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.control-field input,
+.control-field select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 9px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+}
+.control-field input:focus,
+.control-field select:focus {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+}
+.demo-button-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-sm);
+}
+.demo-button-grid .button,
+.reset-demo-button {
+  width: 100%;
+  min-height: 38px;
+  font-size: 12px;
+  padding: 8px 10px;
+}
+.reset-demo-button {
+  border-style: dashed;
+}
+.path-current-step {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-accent-soft);
+  border-radius: var(--radius-control);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+.path-step-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.path-step-list li {
+  display: grid;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+.path-step-list li.active {
+  border-color: var(--color-accent);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+.path-step-list li.complete {
+  border-color: var(--color-positive-border);
+  background: var(--color-positive-bg);
+}
+.path-step-list span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-strong);
+}
+.path-step-list small {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--color-muted);
+}
+
 /* ---------- Event timeline ---------- */
 .event-list {
   list-style: none;
