@@ -2,6 +2,11 @@
 .atl/
 .pi/
 
+# Node/Fastify backend artifacts
+node_modules/
+dist/
+coverage/
+
 # Secrets and local credentials
 .env
 .env.*

@@ -1,0 +1,135 @@
+project:
+  name: boveda_avalanche
+  repository: /Users/rcarnicer/Desktop/hackathon_avalance
+  branch: feature/batch-2
+  type: hackathon-demo-backend
+  description: >-
+    Bóveda Avalanche demo backend for Batch 2: API orchestration, wallet risk,
+    payment attestations, dashboard aggregation, and mock-first web3 integration.
+  stack:
+    runtime: Node.js
+    language: TypeScript
+    http_framework: Fastify
+    contract_integration: >-
+      Mock web3 adapter for Batch 2 until Batch 1 ABI/addresses are available;
+      real Avalanche Fuji integration is deferred behind the same adapter boundary.
+  current_inventory:
+    status: spec-first repository; no backend package scaffold detected during init
+    docs:
+      - boveda_plan_funcional_tareas_hackathon.md
+      - docs/demo/openapi.yaml
+      - docs/demo/demo-flow.md
+      - docs/demo/states-events.md
+    data:
+      - data/demo/loans.seed.json
+
+sources_of_truth:
+  product_plan: boveda_plan_funcional_tareas_hackathon.md
+  batch_scope: Batch 2 — Backend, riesgo y atestaciones
+  api_contract: docs/demo/openapi.yaml
+  demo_flow: docs/demo/demo-flow.md
+  states_events: docs/demo/states-events.md
+  seed_data: data/demo/loans.seed.json
+  canonical_endpoint_policy: >-
+    docs/demo/openapi.yaml is canonical when plan prose differs; for example use
+    POST /quotes and POST /loans/{loanId}/payments/attest unless a later SDD
+    decision explicitly changes the API contract.
+
+sdd:
+  strict_tdd: true
+  execution_mode: auto
+  artifact_store:
+    primary: openspec
+    memory_requested: engram
+    note: >-
+      Engram persistence was requested for this session; agents must use callable
+      memory tools when exposed by the runtime, otherwise write OpenSpec artifacts
+      and report memory unavailability.
+  change: batch-2-backend-risk-attestations
+  scope:
+    include:
+      - B2.1 API base: health, loans, risk, payments, dashboard
+      - B2.2 deterministic terms/quote calculation
+      - B2.3 Wavy Node mock/adapter for wallet risk
+      - B2.4 payment attestation payload and hash generation
+      - B2.5 mock-first web3 adapter, real ABI/addresses later
+      - B2.6 dashboard aggregation from seeds/events/state
+      - B2.7 simple event listener or manual post-transaction refresh path
+    exclude:
+      - Real KYC, fiat rails, payment processor, accounting reconciliation, off-ramp
+      - Production-grade oracle, DEX liquidation, or real Wavy Node integration
+      - Implementing Batch 2 during init
+  acceptance: >-
+    Backend can complete the minimum demo flow or simulate it consistently, and
+    dashboard metrics are traceable to seeded/recorded loan, risk, payment, and
+    liquidation data.
+  review:
+    pr_strategy: auto-forecast
+    changed_lines_budget: 700
+    guard: >-
+      Pause before sdd-apply if task forecast exceeds the changed-lines budget or
+      requires a chained PR decision.
+  phases:
+    order:
+      - init
+      - explore
+      - proposal
+      - spec
+      - design
+      - tasks
+      - apply
+      - verify
+      - archive
+    rules:
+      init: Capture project context, docs, source-of-truth files, testing plan, and skill registry status.
+      explore: Inspect Batch 0 artifacts, OpenAPI schemas, seeds, and any newly added backend scaffold before proposing.
+      proposal: Define full Batch 2 scope, acceptance criteria, non-goals, dependencies, and mock-vs-real boundaries.
+      spec: Use docs/demo/openapi.yaml as canonical API contract and write testable Given/When/Then requirements.
+      design: Document Fastify module boundaries, state/event storage, risk and attestation algorithms, and web3 adapter interface.
+      tasks: Break work into reviewable TDD slices and forecast changed lines before apply.
+      apply: >-
+        STRICT TDD MODE IS ACTIVE. Follow RED, GREEN, TRIANGULATE, REFACTOR and
+        record evidence. If no test scaffold exists, the first implementation
+        slice must create the test runner and a failing test before production code.
+      verify: Run configured tests and contract/API validation; compare implementation against every accepted spec scenario.
+      archive: Preserve final SDD decisions, artifacts, run commands, and remaining integration gaps.
+
+testing:
+  strict_tdd: true
+  detected_at: "2026-05-16"
+  detection:
+    package_manifest: not_found
+    lockfile: not_found
+    test_config: not_found
+    existing_runnable_command: none
+  planned_for_batch_2:
+    package_manager: npm
+    framework: Vitest
+    http_testing: Fastify inject or light-my-request
+    primary_command: npm test
+    targeted_command: npm test -- --run
+    lint_command: npm run lint
+    typecheck_command: npm run typecheck
+    build_command: npm run build
+  tdd_requirement: >-
+    Because no runnable backend scaffold exists yet, sdd-apply must introduce the
+    Node/TypeScript/Fastify/Vitest scaffold and demonstrate the first RED test
+    before implementing endpoint behavior.
+
+conventions:
+  api_identifiers: English identifiers and enum values per docs/demo/openapi.yaml
+  human_docs_language: Spanish is acceptable for narrative docs already in repo
+  money_and_liquidation: Liquidation proceeds must be reported in USDC
+  status_machine: Follow docs/demo/states-events.md transitions
+  fixture_policy: Use data/demo/loans.seed.json for deterministic demo data until persistent storage is introduced
+  secrets_policy: >-
+    Do not read or expose .env files, private keys, credentials, tokens, passwords,
+    or secret manager outputs. Commit only safe examples/templates.
+
+skill_registry:
+  path: .atl/skill-registry.md
+  status: present
+  relevant_compact_rules: none
+  note: >-
+    Registry exists, but no repository-specific compact standards relevant to this
+    Batch 2 backend init were available from the parent-injected standards.

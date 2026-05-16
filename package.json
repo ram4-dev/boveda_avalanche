@@ -1,0 +1,22 @@
+{
+  "name": "boveda-demo-api",
+  "version": "0.1.0-batch0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit --pretty false",
+    "build": "tsc -p tsconfig.json",
+    "lint": "tsc --noEmit --pretty false"
+  },
+  "dependencies": {
+    "fastify": "^5.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.3"
+  }
+}
