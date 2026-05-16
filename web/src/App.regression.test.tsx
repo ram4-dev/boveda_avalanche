@@ -27,18 +27,30 @@ describe('app borrower + dashboard regression', () => {
 
   afterEach(() => vi.unstubAllGlobals());
 
-  it('keeps borrower view selectable and preserves borrower controls', async () => {
+  it('renders keyboard-reachable borrower controls and keeps borrower/dashboard views selectable', async () => {
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: /Borrower offer/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Borrower request/i })).toBeInTheDocument();
+    expect(screen.getByText(/Offer terms, collateral requirement, and risk score are not shown/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Refresh borrower data/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Connect injected wallet/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Loan activity pending/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /^Loan activity$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Attest simulated payment/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/local API simulation/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Borrower widget/i })).toHaveAttribute('aria-pressed', 'true');
 
     await userEvent.click(screen.getByRole('button', { name: /Institutional dashboard/i }));
     expect(await screen.findByRole('heading', { name: 'Institutional dashboard' })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /Borrower widget/i }));
-    expect(await screen.findByRole('heading', { name: /Borrower offer/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Borrower request/i })).toBeInTheDocument();
+  });
+
+  it('announces API-backed readiness in a polite status region', async () => {
+    render(<App />);
+
+    expect(await screen.findByRole('status', { name: /Borrower data status/i })).toHaveTextContent(/Borrower data loaded from local Batch 2 API/i);
   });
 
   it('renders dashboard summary, portfolio table, risk panel, audit trail, loan detail affordance, and demo toggle', async () => {
@@ -72,5 +84,65 @@ describe('app borrower + dashboard regression', () => {
 
     const dashboardRegion = screen.getByLabelText('Institutional dashboard');
     expect(within(dashboardRegion).getByRole('heading', { name: 'Institutional dashboard' })).toBeInTheDocument();
+  });
+
+  it('reveals risk and then offer terms as the path advances', async () => {
+    render(<App />);
+    await screen.findByRole('heading', { name: /Borrower request/i });
+
+    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
+    expect(screen.getByRole('heading', { name: /Wallet risk check/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Borrower offer/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /^Loan activity$/i })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
+    expect(screen.getByRole('heading', { name: /Borrower offer/i })).toBeInTheDocument();
+    expect(screen.getAllByText('2750 AVAX').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('50.00%').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('heading', { name: /^Loan activity$/i })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
+    expect(screen.getByRole('heading', { name: /^Loan activity$/i })).toBeInTheDocument();
+  });
+
+  it('keeps borrower UI honest, avoids raw JSON dumps, and shows USDC liquidation proceeds copy', async () => {
+    render(<App />);
+
+    await screen.findByRole('heading', { name: /Borrower request/i });
+    await userEvent.click(screen.getByRole('button', { name: /Auto-run path/i }));
+    expect(screen.getAllByText('DemoCollateralReleased').length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toMatch(/\{"|"loanId"|\[object Object\]/);
+  });
+
+  it('announces successful wallet connection and shows review/block risk states distinctly', async () => {
+    vi.stubGlobal('window', Object.assign(window, { ethereum: { request: vi.fn(async () => ['0xA11CE00000000000000000000000000000000001']) } }));
+    render(<App />);
+    await screen.findByRole('heading', { name: /Borrower request/i });
+    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
+
+    await userEvent.click(screen.getByRole('button', { name: /Connect injected wallet/i }));
+    expect(screen.getByText('0xA11C…0001')).toBeInTheDocument();
+
+    const riskRegion = within(screen.getByRole('heading', { name: /Wallet risk check/i }).closest('article')!);
+    expect(riskRegion.getByText(/Risk passed/i)).toBeInTheDocument();
+  });
+
+  it('runs scripted demo paths without changing the API contract path', async () => {
+    const fetchSpy = vi.mocked(fetch);
+    render(<App />);
+    await screen.findByRole('heading', { name: /Demo paths/i });
+
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Demo path' }), 'collateral-crash-liquidation');
+    await userEvent.click(screen.getByRole('button', { name: /Auto-run path/i }));
+
+    expect(screen.getByText('165000 USD')).toBeInTheDocument();
+    expect(screen.getByText('90.91%')).toBeInTheDocument();
+    expect(screen.getByText('DemoAutomaticLiquidation')).toBeInTheDocument();
+    expect(screen.getByText('154200 USDC')).toBeInTheDocument();
+
+    const calledUrls = fetchSpy.mock.calls.map(([input]) => String(input));
+    expect(calledUrls.some((url) => url.includes('/demo'))).toBe(false);
   });
 });
