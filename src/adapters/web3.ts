@@ -21,6 +21,19 @@ export type PaymentRegistrationInput = {
   attestation: PaymentAttestation;
 };
 
+export type CollateralTopUpInput = {
+  loan: Loan;
+  token: string;
+  amount: string;
+  txHash?: `0x${string}`;
+};
+
+export type CollateralTopUpOutcome = {
+  ok: true;
+  txHash: `0x${string}`;
+  blockNumber: number | null;
+};
+
 export type PaymentRegistrationOutcome = {
   ok: true;
   txHash: `0x${string}`;
@@ -52,6 +65,7 @@ export type Web3RefreshOutcome = {
 
 export interface Web3Adapter {
   activateLoan(input: ActivationInput): Promise<ActivationOutcome>;
+  topUpCollateral(input: CollateralTopUpInput): Promise<CollateralTopUpOutcome>;
   registerPaymentAttestation(input: PaymentRegistrationInput): Promise<PaymentRegistrationOutcome>;
   liquidateLoan(input: LiquidationInput): Promise<LiquidationOutcome>;
   refreshPendingEvents?(): Promise<Web3RefreshOutcome>;
@@ -67,6 +81,13 @@ export function createMockWeb3Adapter(): Web3Adapter {
         receiptTokenId: input.receiptTokenId ?? deriveReceiptTokenId(input.loan.loanId),
         ownerWallet: input.loan.borrower.walletAddress,
         vaultAddress: input.loan.collateral.vaultAddress ?? ''
+      };
+    },
+    async topUpCollateral(input) {
+      return {
+        ok: true,
+        txHash: input.txHash ?? sha256Canonical({ operation: 'topUpCollateral', loanId: input.loan.loanId, token: input.token, amount: input.amount }),
+        blockNumber: null
       };
     },
     async registerPaymentAttestation(input) {

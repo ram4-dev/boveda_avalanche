@@ -138,6 +138,27 @@ describe('OpenAPI canonical public path smoke coverage', () => {
     expect(marginCall.statusCode).toBe(200);
     expect(marginCall.json()).toMatchObject({ loanId, status: 'MarginCall' });
 
+    const topUp = await app.inject({
+      method: 'POST',
+      url: `/loans/${loanId}/collateral/top-up`,
+      payload: {
+        token: 'AVAX',
+        amount: '250',
+        txHash: '0x5555555555555555555555555555555555555555555555555555555555555555',
+        resultingLtvBps: 6400
+      }
+    });
+    expect(topUp.statusCode).toBe(200);
+    expect(topUp.json()).toMatchObject({ loanId, status: 'Active', collateral: { amount: '1250' } });
+
+    const marginCallAgain = await app.inject({
+      method: 'POST',
+      url: `/loans/${loanId}/margin-call`,
+      payload: { currentLtvBps: 8100, reason: 'SECOND_COLLATERAL_PRICE_DROP', requiredTopUpAmount: '15000', requiredTopUpCurrency: 'USDC' }
+    });
+    expect(marginCallAgain.statusCode).toBe(200);
+    expect(marginCallAgain.json()).toMatchObject({ loanId, status: 'MarginCall' });
+
     const liquidation = await app.inject({
       method: 'POST',
       url: `/loans/${loanId}/liquidate`,

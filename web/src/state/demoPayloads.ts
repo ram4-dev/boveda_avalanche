@@ -1,4 +1,4 @@
-import type { CollateralDepositRequest, Loan, LoanScenario, LoanStatus, MarginCallRequest, PaymentAttestationRequest, QuoteResponse, RiskAssessment } from '../api/types.js';
+import type { CollateralDepositRequest, CollateralTopUpRequest, Loan, LoanScenario, LoanStatus, MarginCallRequest, PaymentAttestationRequest, QuoteResponse, RiskAssessment } from '../api/types.js';
 
 const now = '2026-06-15T00:00:00Z';
 
@@ -45,6 +45,10 @@ export function sampleRiskAssessment(overrides: Partial<RiskAssessment> = {}): R
 
 export function buildDemoDepositPayload(loan: Loan): CollateralDepositRequest {
   return { token: loan.collateral.token, amount: loan.collateral.amount, txHash: loan.collateral.depositTxHash ?? '0x3333333333333333333333333333333333333333333333333333333333333333', vaultAddress: loan.collateral.vaultAddress ?? '0xB0VEDA0000000000000000000000000000000003' };
+}
+
+export function buildDemoTopUpPayload(loan: Loan): CollateralTopUpRequest {
+  return { token: loan.collateral.token, amount: '250', txHash: '0x4444444444444444444444444444444444444444444444444444444444444444' };
 }
 
 export function buildDemoPaymentPayload(loan: Loan): PaymentAttestationRequest {

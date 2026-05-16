@@ -3,6 +3,7 @@ import type { Web3Adapter } from '../../adapters/web3.js';
 import { loanScenarioValues, loanStatusValues } from '../../api/schemas.js';
 import { hasJsonObjectBody, sendApiError, sendInvalidRequestBody } from '../../api/errors.js';
 import { shortHash } from '../../domain/hashing.js';
+import { normalizeDecimalString } from '../../domain/money.js';
 import { canTransition } from '../../domain/stateMachine.js';
 import type { Borrower, Collateral, CollateralTerms, FundingPartner, Loan, OnChainEvent, Originator, Principal, ProceedsDistribution } from '../../domain/types.js';
 import { isLoanScenario, isLoanStatus, type LoanScenario, type LoanStatus } from '../../domain/types.js';
@@ -43,6 +44,13 @@ type DepositBody = {
 type ActivateBody = {
   receiptTokenId?: string;
   activationTxHash?: string;
+};
+
+type CollateralTopUpBody = {
+  token?: string;
+  amount?: string;
+  txHash?: `0x${string}`;
+  resultingLtvBps?: number;
 };
 
 type MarginCallBody = {
@@ -196,6 +204,66 @@ export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore,
     return nextLoan;
   });
 
+  app.post('/loans/:loanId/collateral/top-up', async (request: FastifyRequest<{ Params: LoanParams; Body: CollateralTopUpBody }>, reply) => {
+    const loan = findLoan(store, request.params.loanId, reply);
+    if (!loan) return reply;
+    if (!hasJsonObjectBody(request.body)) {
+      return sendInvalidRequestBody(reply);
+    }
+    if (loan.status !== 'Active' && loan.status !== 'MarginCall') {
+      return invalidTransition(reply, loan.status, 'CollateralToppedUp');
+    }
+    if (!request.body.token || !request.body.amount) {
+      return sendApiError(reply, 400, 'INVALID_REQUEST', 'Collateral top-up request is missing required canonical fields');
+    }
+    if (request.body.token.toUpperCase() !== loan.collateral.token.toUpperCase()) {
+      return sendApiError(reply, 400, 'INVALID_REQUEST', `Top-up token must match loan collateral token ${loan.collateral.token}`);
+    }
+    if (!loan.collateral.vaultAddress || !loan.collateral.depositTxHash) {
+      return sendApiError(reply, 409, 'INVALID_TRANSITION', 'Collateral top-up requires existing vaultAddress and depositTxHash');
+    }
+
+    const topUpAmount = parsePositiveAmount(request.body.amount, 'Collateral top-up amount', reply);
+    if (topUpAmount === null) {
+      return reply;
+    }
+
+    const topUp = await web3.topUpCollateral({
+      loan,
+      token: request.body.token,
+      amount: topUpAmount,
+      txHash: request.body.txHash
+    });
+
+    const updatedCollateralAmount = normalizeDecimalString(Number(loan.collateral.amount) + Number(topUpAmount));
+    const nextLoan: Loan = {
+      ...loan,
+      status: loan.status === 'MarginCall' ? 'Active' : loan.status,
+      collateral: {
+        ...loan.collateral,
+        amount: updatedCollateralAmount
+      },
+      currentMetrics: {
+        ...loan.currentMetrics,
+        currentLtvBps: request.body.resultingLtvBps ?? loan.currentMetrics.currentLtvBps
+      }
+    };
+
+    store.replaceLoan(nextLoan);
+    store.appendEvent(baseEvent('CollateralToppedUp', nextLoan.loanId, topUp.txHash, {
+      eventType: 'CollateralToppedUp',
+      loanId: nextLoan.loanId,
+      vaultAddress: nextLoan.collateral.vaultAddress,
+      token: request.body.token,
+      amount: topUpAmount,
+      totalCollateralAmount: updatedCollateralAmount,
+      previousStatus: loan.status,
+      status: nextLoan.status
+    }));
+
+    return nextLoan;
+  });
+
   app.post('/loans/:loanId/activate', async (request: FastifyRequest<{ Params: LoanParams; Body: ActivateBody }>, reply) => {
     const loan = findLoan(store, request.params.loanId, reply);
     if (!loan) return reply;
@@ -322,6 +390,15 @@ export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore,
       return sendApiError(reply, 502, 'WEB3_ACTION_FAILED', error instanceof Error ? error.message : 'Web3 liquidation failed');
     }
   });
+}
+
+function parsePositiveAmount(value: string, label: string, reply: FastifyReply): string | null {
+  if (!Number.isFinite(Number(value)) || Number(value) <= 0) {
+    sendApiError(reply, 400, 'INVALID_REQUEST', `${label} must be a positive decimal string`);
+    return null;
+  }
+
+  return normalizeDecimalString(value);
 }
 
 function parseLoanFilter(query: ListLoansQuery, reply: FastifyReply): { scenario?: LoanScenario; status?: LoanStatus } | null {

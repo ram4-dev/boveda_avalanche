@@ -25,6 +25,7 @@ export type QuoteRequest = { scenario: LoanScenario; borrowerWallet: string; req
 export type QuoteResponse = { quoteId?: string; scenario: LoanScenario; suggestedPrincipal: { amount: string; currency: string }; requiredCollateralValueUsd: string; terms: Terms };
 export type RiskAssessmentRequest = { walletAddress: string; scenario: LoanScenario; collateralToken: string };
 export type CollateralDepositRequest = { token: string; amount: string; txHash: string; vaultAddress: string };
+export type CollateralTopUpRequest = { token: string; amount: string; txHash?: string };
 export type ActivateLoanRequest = { receiptTokenId?: string };
 export type PaymentAttestationRequest = { installmentId: string; amount: string; currency: string; paymentRail: PaymentRail; paidAt: string; externalPaymentRef?: string };
 export type PaymentAttestation = { loanId: string; installmentId: string; amount: string; currency: string; paymentRail?: PaymentRail; attestationHash: string; remainingPrincipal: string; status: LoanStatus };
