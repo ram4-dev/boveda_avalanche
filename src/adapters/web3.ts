@@ -72,7 +72,19 @@ export type Web3RefreshOutcome = {
   refreshedEvents: number;
 };
 
+export type Web3EvidenceSource = 'demo-simulated' | 'fuji-live' | 'fuji-unavailable';
+
+export class Web3UnavailableError extends Error {
+  readonly code = 'WEB3_UNAVAILABLE' as const;
+
+  constructor(reason: string) {
+    super(`Fuji web3 adapter is unavailable: ${reason}`);
+    this.name = 'Web3UnavailableError';
+  }
+}
+
 export interface Web3Adapter {
+  evidenceSource?: Web3EvidenceSource;
   activateLoan(input: ActivationInput): Promise<ActivationOutcome>;
   topUpCollateral(input: CollateralTopUpInput): Promise<CollateralTopUpOutcome>;
   registerPaymentAttestation(input: PaymentRegistrationInput): Promise<PaymentRegistrationOutcome>;
@@ -205,6 +217,7 @@ function deriveReceiptTokenId(loanId: string): string {
 // Mock adapter for testing
 export function createMockWeb3Adapter(): Web3Adapter {
   return {
+    evidenceSource: 'demo-simulated',
     async activateLoan(input) {
       return {
         ok: true,

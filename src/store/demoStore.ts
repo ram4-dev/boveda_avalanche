@@ -12,15 +12,16 @@ type EventFilter = {
 };
 
 export class DemoStore {
-  private readonly loans: Loan[];
-  private readonly events: OnChainEvent[];
-  private readonly riskAssessments: Map<string, RiskAssessment>;
+  private loans: Loan[];
+  private events: OnChainEvent[];
+  private riskAssessments: Map<string, RiskAssessment>;
   private readonly paymentAttestations = new Map<string, PaymentAttestation>();
 
   private constructor(seed: SeedFile) {
-    this.loans = clone(seed.loans);
-    this.events = buildSeedEvents(seed);
-    this.riskAssessments = new Map(seed.loans.map((loan) => [loan.riskAssessment.riskAssessmentId, clone(loan.riskAssessment)]));
+    this.loans = [];
+    this.events = [];
+    this.riskAssessments = new Map();
+    this.reset(seed);
   }
 
   static fromSeed(seed: SeedFile): DemoStore {
@@ -80,6 +81,13 @@ export class DemoStore {
   getRiskAssessment(riskAssessmentId: string): RiskAssessment | undefined {
     const assessment = this.riskAssessments.get(riskAssessmentId);
     return assessment ? clone(assessment) : undefined;
+  }
+
+  reset(seed: SeedFile): void {
+    this.loans = clone(seed.loans);
+    this.events = buildSeedEvents(seed);
+    this.riskAssessments = new Map(seed.loans.map((loan) => [loan.riskAssessment.riskAssessmentId, clone(loan.riskAssessment)]));
+    this.paymentAttestations.clear();
   }
 
   savePaymentAttestation(attestation: PaymentAttestation): void {

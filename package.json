@@ -14,7 +14,8 @@
     "build": "npm run build:api && npm run build:web",
     "build:api": "tsc -p tsconfig.json",
     "build:web": "vite build --config vite.config.ts",
-    "lint": "npm run typecheck"
+    "lint": "npm run typecheck",
+    "demo:reset": "node scripts/demo-reset.mjs"
   },
   "dependencies": {
     "ethers": "^6.16.0",

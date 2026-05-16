@@ -10,7 +10,7 @@ const event: OnChainEvent = {
   txHash: null,
   blockNumber: null,
   occurredAt: '2026-06-15T00:00:00Z',
-  payload: { attestationHash: '0xabc', rawSecret: 'hide-me', amount: '12500' }
+  payload: { attestationHash: '0xabc', rawSecret: 'hide-me', amount: '12500', evidence: { source: 'fuji-unavailable', mode: 'fuji', status: 'pending' } }
 };
 
 const summary: DashboardSummary = {
@@ -31,6 +31,7 @@ describe('AuditTrail', () => {
     expect(screen.getByRole('heading', { name: 'Audit trail' })).toBeInTheDocument();
     expect(screen.getByText('InstallmentPaid')).toBeInTheDocument();
     expect(screen.getByText('No tx hash or block recorded')).toBeInTheDocument();
+    expect(screen.getByText('Fuji evidence pending/unavailable')).toBeInTheDocument();
     expect(screen.getByText('attestationHash')).toBeInTheDocument();
     expect(screen.getByText('amount')).toBeInTheDocument();
     expect(screen.queryByText('rawSecret')).not.toBeInTheDocument();
@@ -44,6 +45,10 @@ describe('AuditTrail', () => {
     const list = screen.getByLabelText('Audit events');
     expect(within(list).getByText('InstallmentPaid')).toBeInTheDocument();
     expect(within(list).queryByText('LoanCreated')).not.toBeInTheDocument();
+
+    rerender(<AuditTrail summary={null} events={[{ ...other, txHash: `0x${'3'.repeat(64)}`, blockNumber: 123, payload: { ...other.payload, evidence: { source: 'fuji-live', mode: 'fuji', status: 'confirmed' } } }]} />);
+    expect(screen.getByRole('link', { name: 'View Fuji tx' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View Fuji block' })).toBeInTheDocument();
 
     rerender(<AuditTrail summary={null} events={[]} />);
     expect(screen.getByText(/No canonical events available/i)).toBeInTheDocument();

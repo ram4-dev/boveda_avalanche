@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import type { Web3Adapter } from '../../adapters/web3.js';
+import { Web3UnavailableError, type Web3Adapter } from '../../adapters/web3.js';
 import { hasJsonObjectBody, sendApiError, sendInvalidRequestBody } from '../../api/errors.js';
+import { buildLoanEvidenceMetadata } from '../../domain/evidence.js';
 import { buildCanonicalPaymentPayload, hashPaymentPayload, type PaymentAttestation, type PaymentAttestationRequest } from '../../domain/paymentAttestations.js';
 import { compareDecimalStrings, subtractDecimalStrings } from '../../domain/money.js';
 import type { Loan, PaymentRail } from '../../domain/types.js';
@@ -53,7 +54,16 @@ export async function registerPaymentRoutes(app: FastifyInstance, store: DemoSto
       status
     };
 
-    const registration = await web3.registerPaymentAttestation({ loan, attestation });
+    let registration;
+    try {
+      registration = await web3.registerPaymentAttestation({ loan, attestation });
+    } catch (error) {
+      if (error instanceof Web3UnavailableError) {
+        return sendApiError(reply, 503, error.code, error.message);
+      }
+      return sendApiError(reply, 502, 'WEB3_ACTION_FAILED', error instanceof Error ? error.message : 'Web3 payment attestation failed');
+    }
+
     const nextLoan: Loan = {
       ...loan,
       status,
@@ -63,8 +73,21 @@ export async function registerPaymentRoutes(app: FastifyInstance, store: DemoSto
       }
     };
 
+    const evidence = buildLoanEvidenceMetadata(web3.evidenceSource ?? 'demo-simulated', {
+      txHash: registration.txHash,
+      blockNumber: registration.blockNumber,
+      vaultAddress: loan.collateral.vaultAddress
+    });
+
+    const persistedAttestation: PaymentAttestation = {
+      ...attestation,
+      txHash: registration.txHash,
+      blockNumber: registration.blockNumber,
+      evidence
+    };
+
     store.replaceLoan(nextLoan);
-    store.savePaymentAttestation(attestation);
+    store.savePaymentAttestation(persistedAttestation);
     store.appendEvent({
       eventType: 'InstallmentPaid',
       loanId: nextLoan.loanId,
@@ -79,11 +102,12 @@ export async function registerPaymentRoutes(app: FastifyInstance, store: DemoSto
         paymentRail: canonicalPayload.paymentRail,
         attestationHash,
         remainingPrincipal,
-        status
+        status,
+        evidence
       }
     });
 
-    return attestation;
+    return persistedAttestation;
   });
 }
 
