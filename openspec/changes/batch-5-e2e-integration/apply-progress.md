@@ -213,7 +213,7 @@
 **Scope:** Validation/reporting only; no Solidity, deploy scripts, contract artifacts, live signer/RPC, or scope expansion.
 
 ### Verification
-- `npm test -- --run` — passed (34 files, 126 tests).
+- `npm test -- --run` — passed (34 files, 128 tests) after merging `origin/main`.
 - `npm run typecheck` — passed.
 - `npm run build` — passed.
 - `npm run lint` — passed.

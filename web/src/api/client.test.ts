@@ -27,6 +27,7 @@ describe('createBovedaApiClient', () => {
       if (url.endsWith('/quotes') && method === 'POST') return jsonResponse({ quoteId: 'quote-1' });
       if (url.endsWith('/risk/wallet') && method === 'POST') return jsonResponse({ riskAssessmentId: 'risk-1' });
       if (url.endsWith('/loans/loan-web3-001/collateral/deposit') && method === 'POST') return jsonResponse({ loanId: 'loan-web3-001', status: 'Approved' });
+      if (url.endsWith('/loans/loan-web3-001/collateral/top-up') && method === 'POST') return jsonResponse({ loanId: 'loan-web3-001', status: 'Active' });
       if (url.endsWith('/loans/loan-web3-001/activate') && method === 'POST') return jsonResponse({ loanId: 'loan-web3-001', status: 'Active' });
       if (url.endsWith('/loans/loan-web3-001/payments/attest') && method === 'POST') return jsonResponse({ attestationHash: '0xabc' });
       if (url.endsWith('/loans/loan-web3-001/margin-call') && method === 'POST') return jsonResponse({ loanId: 'loan-web3-001', status: 'MarginCall' });
@@ -43,6 +44,7 @@ describe('createBovedaApiClient', () => {
     await client.createQuote({ scenario: 'WEB3_BRIDGE', borrowerWallet: '0xabc', requestedPrincipal: { amount: '150000', currency: 'USD' }, collateralToken: 'AVAX', collateralValueUsd: '300000' });
     await client.assessWalletRisk({ walletAddress: '0xabc', scenario: 'WEB3_BRIDGE', collateralToken: 'AVAX' });
     await client.depositCollateral('loan-web3-001', { token: 'AVAX', amount: '2750', txHash: '0x1', vaultAddress: '0xvault' });
+    await client.topUpCollateral('loan-web3-001', { token: 'AVAX', amount: '250', txHash: '0x2' });
     await client.activateLoan('loan-web3-001', { receiptTokenId: 'demo-receipt-1' });
     await client.attestPayment('loan-web3-001', { installmentId: 'inst-001', amount: '12500', currency: 'USD', paymentRail: 'WIRE_SIMULATED', paidAt: '2026-06-15T00:00:00Z' });
     await client.createMarginCall('loan-web3-001', { currentLtvBps: 7600, reason: 'COLLATERAL_PRICE_DROP' });
@@ -57,6 +59,7 @@ describe('createBovedaApiClient', () => {
       'POST /quotes',
       'POST /risk/wallet',
       'POST /loans/loan-web3-001/collateral/deposit',
+      'POST /loans/loan-web3-001/collateral/top-up',
       'POST /loans/loan-web3-001/activate',
       'POST /loans/loan-web3-001/payments/attest',
       'POST /loans/loan-web3-001/margin-call',

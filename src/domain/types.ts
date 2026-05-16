@@ -17,6 +17,7 @@ export const EVENT_TYPES = [
   'LoanCreated',
   'LoanApproved',
   'CollateralDeposited',
+  'CollateralToppedUp',
   'LoanActivated',
   'ReceiptIssued',
   'InstallmentPaid',

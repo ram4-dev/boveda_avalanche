@@ -197,6 +197,7 @@ function BorrowerWidgetView({ client, evidenceSource }: { client: ReturnType<typ
               action={journey.state.action}
               errors={journey.state.errors}
               onDeposit={journey.depositCollateral}
+              onTopUp={journey.topUpCollateral}
               onActivate={journey.activateLoan}
               onAttestPayment={journey.attestPayment}
               onTriggerMarginCall={journey.triggerMarginCall}

@@ -50,6 +50,9 @@ export function EventTimeline({ events }: { events: OnChainEvent[] }) {
           {event.payload.attestationHash ? (
             <div className="event-payload">Attestation {String(event.payload.attestationHash)}</div>
           ) : null}
+          {event.eventType === 'CollateralToppedUp' && event.payload.amount ? (
+            <div className="event-payload">Top-up {String(event.payload.amount)} {String(event.payload.token ?? '')}</div>
+          ) : null}
           {event.eventType === 'Liquidated' ? renderLiquidationProceeds(event) : null}
         </li>;
       })}

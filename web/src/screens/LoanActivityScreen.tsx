@@ -16,8 +16,9 @@ type Props = {
   lastPayment: PaymentAttestation | null;
   lastLiquidation: LiquidationResult | null;
   action: JourneyAction;
-  errors: Partial<Record<'deposit' | 'activate' | 'payment' | 'marginCall' | 'liquidation', BorrowerFacingError>>;
+  errors: Partial<Record<'deposit' | 'topUp' | 'activate' | 'payment' | 'marginCall' | 'liquidation', BorrowerFacingError>>;
   onDeposit: () => void;
+  onTopUp: () => void;
   onActivate: () => void;
   onAttestPayment: () => void;
   onTriggerMarginCall: () => void;
@@ -27,8 +28,10 @@ type Props = {
 
 const terminal = new Set(['Repaid', 'Liquidated', 'Cancelled']);
 
-export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation, action, errors, onDeposit, onActivate, onAttestPayment, onTriggerMarginCall, onLiquidate, evidenceSource = 'demo-simulated' }: Props) {
+export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation, action, errors, onDeposit, onTopUp, onActivate, onAttestPayment, onTriggerMarginCall, onLiquidate, evidenceSource = 'demo-simulated' }: Props) {
   const canDeposit = loan.status === 'Approved';
+  const hasRecordedCollateral = Number(loan.collateral.amount) > 0 && Boolean(loan.collateral.vaultAddress);
+  const canTopUp = (loan.status === 'Active' || loan.status === 'MarginCall') && hasRecordedCollateral;
   const canPay = loan.status === 'Active' || loan.status === 'MarginCall';
   const canMarginCall = loan.status === 'Active' && loan.currentMetrics.currentLtvBps >= loan.terms.marginCallLtvBps;
   const canLiquidate = loan.status === 'MarginCall' || loan.status === 'Defaulted';
@@ -91,10 +94,14 @@ export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation,
         <p>{collateralCopy}</p>
         <EvidenceBadge source={loan.collateralEvidence?.source ?? evidenceSource} />
         {errors.deposit ? <Alert tone="danger">{errors.deposit.code}: {errors.deposit.message}</Alert> : null}
+        {errors.topUp ? <Alert tone="danger">{errors.topUp.code}: {errors.topUp.message}</Alert> : null}
         {errors.activate ? <Alert tone="danger">{errors.activate.code}: {errors.activate.message}</Alert> : null}
         <div className="button-row">
           <ActionButton onClick={onDeposit} disabled={!canDeposit || fujiUnavailable} loading={action === 'depositing'}>
             {collateralButtonLabel}
+          </ActionButton>
+          <ActionButton variant="secondary" onClick={onTopUp} disabled={!canTopUp || fujiUnavailable} loading={action === 'toppingUpCollateral'}>
+            Record collateral top-up
           </ActionButton>
           <ActionButton variant="secondary" onClick={onActivate} disabled={loan.status !== 'Approved' || fujiUnavailable} loading={action === 'activating'}>
             Activate loan and receipt

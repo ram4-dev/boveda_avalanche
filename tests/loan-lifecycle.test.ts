@@ -235,6 +235,82 @@ describe('loan creation and lifecycle through activation', () => {
     });
   });
 
+  it('tops up collateral for Active and MarginCall loans and records a distinct event', async () => {
+    const { app, riskAssessmentId } = await acceptedRiskAssessmentId();
+    const created = await app.inject({ method: 'POST', url: '/loans', payload: createLoanPayload(riskAssessmentId) });
+    const loanId = created.json().loanId;
+
+    await app.inject({
+      method: 'POST',
+      url: `/loans/${loanId}/approve`,
+      payload: { approvedBy: 'originator-ark-capital-demo', fiatDisbursementRef: 'wire-topup-001' }
+    });
+
+    await app.inject({
+      method: 'POST',
+      url: `/loans/${loanId}/collateral/deposit`,
+      payload: {
+        token: 'AVAX',
+        amount: '1000',
+        txHash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        vaultAddress: '0xB0VEDA0000000000000000000000000000000006'
+      }
+    });
+
+    await app.inject({ method: 'POST', url: `/loans/${loanId}/activate`, payload: { receiptTokenId: '9200' } });
+
+    const activeTopUp = await app.inject({
+      method: 'POST',
+      url: `/loans/${loanId}/collateral/top-up`,
+      payload: {
+        token: 'AVAX',
+        amount: '150',
+        txHash: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+      }
+    });
+    expect(activeTopUp.statusCode).toBe(200);
+    expect(activeTopUp.json()).toMatchObject({
+      status: 'Active',
+      collateral: { amount: '1150' }
+    });
+
+    await app.inject({
+      method: 'POST',
+      url: `/loans/${loanId}/margin-call`,
+      payload: { currentLtvBps: 7600, reason: 'COLLATERAL_PRICE_DROP', requiredTopUpAmount: '100', requiredTopUpCurrency: 'AVAX' }
+    });
+
+    const marginCallTopUp = await app.inject({
+      method: 'POST',
+      url: `/loans/${loanId}/collateral/top-up`,
+      payload: {
+        token: 'AVAX',
+        amount: '200',
+        txHash: '0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+        resultingLtvBps: 6400
+      }
+    });
+    expect(marginCallTopUp.statusCode).toBe(200);
+    expect(marginCallTopUp.json()).toMatchObject({
+      status: 'Active',
+      collateral: { amount: '1350', depositTxHash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' },
+      currentMetrics: { currentLtvBps: 6400 }
+    });
+
+    const events = await app.inject({ method: 'GET', url: `/events?loanId=${loanId}` });
+    expect(events.statusCode).toBe(200);
+    expect(events.json().events.map((event: { eventType: string }) => event.eventType)).toEqual([
+      'LoanCreated',
+      'LoanApproved',
+      'CollateralDeposited',
+      'LoanActivated',
+      'ReceiptIssued',
+      'CollateralToppedUp',
+      'MarginCall',
+      'CollateralToppedUp'
+    ]);
+  });
+
   it('rejects invalid loan creation and lifecycle transitions without mutating state or events', async () => {
     const { app, riskAssessmentId } = await acceptedRiskAssessmentId();
     const payload = createLoanPayload(riskAssessmentId);

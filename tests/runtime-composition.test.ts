@@ -129,6 +129,9 @@ describe('runtime composition and observability', () => {
           vaultAddress: input.loan.collateral.vaultAddress ?? ''
         };
       },
+      async topUpCollateral() {
+        throw new Web3UnavailableError('unused');
+      },
       async registerPaymentAttestation() {
         throw new Web3UnavailableError('unused');
       },

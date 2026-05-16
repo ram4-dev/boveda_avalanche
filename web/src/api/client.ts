@@ -1,5 +1,5 @@
 import { ApiClientError } from './errors.js';
-import type { ActivateLoanRequest, CollateralDepositRequest, DashboardSummary, EventsResponse, FujiReadOnlyStatus, LiquidationRequest, Loan, LoanScenario, LoansResponse, LoanStatus, MarginCallRequest, PaymentAttestationRequest, QuoteRequest, RiskAssessmentRequest, RuntimeMetadata, RuntimeMode } from './types.js';
+import type { ActivateLoanRequest, CollateralDepositRequest, CollateralTopUpRequest, DashboardSummary, EventsResponse, FujiReadOnlyStatus, LiquidationRequest, Loan, LoanScenario, LoansResponse, LoanStatus, MarginCallRequest, PaymentAttestationRequest, QuoteRequest, RiskAssessmentRequest, RuntimeMetadata, RuntimeMode } from './types.js';
 export { ApiClientError } from './errors.js';
 export type * from './types.js';
 
@@ -25,6 +25,7 @@ export function createBovedaApiClient(options: ClientOptions = {}) {
     createQuote: (input: QuoteRequest) => post(fetcher, url(baseUrl, '/quotes'), input),
     assessWalletRisk: (input: RiskAssessmentRequest) => post(fetcher, url(baseUrl, '/risk/wallet'), input),
     depositCollateral: (loanId: string, input: CollateralDepositRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/collateral/deposit`), input),
+    topUpCollateral: (loanId: string, input: CollateralTopUpRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/collateral/top-up`), input),
     activateLoan: (loanId: string, input: ActivateLoanRequest = {}) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/activate`), input),
     attestPayment: (loanId: string, input: PaymentAttestationRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/payments/attest`), input),
     createMarginCall: (loanId: string, input: MarginCallRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/margin-call`), input),

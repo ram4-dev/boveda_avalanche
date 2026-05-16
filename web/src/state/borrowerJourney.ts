@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { toBorrowerError, type BorrowerFacingError } from '../api/errors.js';
 import type { BovedaApiClient } from '../api/client.js';
 import type { Loan, OnChainEvent, PaymentAttestation, QuoteResponse, RiskAssessment, LiquidationResult } from '../api/types.js';
-import { buildDemoDepositPayload, buildDemoMarginCallPayload, buildDemoPaymentPayload } from './demoPayloads.js';
+import { buildDemoDepositPayload, buildDemoMarginCallPayload, buildDemoPaymentPayload, buildDemoTopUpPayload } from './demoPayloads.js';
 
-export type JourneyAction = null | 'loading' | 'quoting' | 'risking' | 'depositing' | 'activating' | 'attestingPayment' | 'triggeringMarginCall' | 'liquidating' | 'refreshing';
-export type ErrorKey = 'load' | 'quote' | 'risk' | 'deposit' | 'activate' | 'payment' | 'marginCall' | 'liquidation' | 'refresh';
+export type JourneyAction = null | 'loading' | 'quoting' | 'risking' | 'depositing' | 'toppingUpCollateral' | 'activating' | 'attestingPayment' | 'triggeringMarginCall' | 'liquidating' | 'refreshing';
+export type ErrorKey = 'load' | 'quote' | 'risk' | 'deposit' | 'topUp' | 'activate' | 'payment' | 'marginCall' | 'liquidation' | 'refresh';
 
 export type BorrowerJourneyState = {
   loadStatus: 'idle' | 'loading' | 'ready' | 'empty' | 'error';
@@ -126,6 +126,7 @@ export function useBorrowerJourney(client: BovedaApiClient) {
     createQuote: quote,
     assessRisk: risk,
     depositCollateral: () => withMutation('depositing', 'deposit', (loan) => client.depositCollateral(loan.loanId, buildDemoDepositPayload(loan))),
+    topUpCollateral: () => withMutation('toppingUpCollateral', 'topUp', (loan) => client.topUpCollateral(loan.loanId, buildDemoTopUpPayload(loan))),
     activateLoan: () => withMutation('activating', 'activate', (loan) => client.activateLoan(loan.loanId, { receiptTokenId: `receipt-${loan.loanId}` })),
     attestPayment: () => withMutation('attestingPayment', 'payment', (loan) => client.attestPayment(loan.loanId, buildDemoPaymentPayload(loan))),
     triggerMarginCall: () => withMutation('triggeringMarginCall', 'marginCall', (loan) => client.createMarginCall(loan.loanId, buildDemoMarginCallPayload(loan))),

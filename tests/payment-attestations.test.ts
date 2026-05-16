@@ -142,6 +142,9 @@ describe('payment attestation API', () => {
       async activateLoan() {
         throw new Error('not used in this test');
       },
+      async topUpCollateral() {
+        throw new Error('not used in this test');
+      },
       async registerPaymentAttestation(input) {
         return {
           ok: true,
