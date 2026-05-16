@@ -14,7 +14,17 @@ describe('InstitutionalDashboardScreen partial failures', () => {
       listEvents: async () => {
         throw new Error('events unavailable');
       },
-      getLoan: async () => loan
+      getLoan: async () => loan,
+      getDashboardDataSources: async () => ({ sources: [] }),
+      approveLoan: async () => ({} as any),
+      createQuote: async () => ({ quoteId: '', scenario: 'WEB3_BRIDGE', suggestedPrincipal: { amount: '0', currency: 'USD' }, requiredCollateralValueUsd: '0', terms: { initialLtvBps: 0, marginCallLtvBps: 0, liquidationLtvBps: 0, aprBps: 0, tenorDays: 0, repaymentFrequency: '', liquidationCurrency: 'USDC' } }),
+      assessWalletRisk: async () => ({ riskAssessmentId: 'risk-1', provider: 'WAVY_NODE_MOCK', riskScore: 0, amlStatus: 'PASS', maxLtvBps: 0, assessmentHash: '0x', expiresAt: '2026-01-01T00:00:00Z' }),
+      depositCollateral: async () => ({} as any),
+      topUpCollateral: async () => ({} as any),
+      activateLoan: async () => ({} as any),
+      attestPayment: async () => ({} as any),
+      createMarginCall: async () => ({} as any),
+      liquidateLoan: async () => ({} as any)
     };
 
     render(<InstitutionalDashboardScreen client={client} />);
@@ -32,7 +42,17 @@ describe('InstitutionalDashboardScreen partial failures', () => {
         throw new Error('loans unavailable');
       },
       listEvents: async () => ({ events: [] }),
-      getLoan: async () => sampleLoan()
+      getLoan: async () => sampleLoan(),
+      getDashboardDataSources: async () => ({ sources: [] }),
+      approveLoan: async () => ({} as any),
+      createQuote: async () => ({ quoteId: '', scenario: 'WEB3_BRIDGE', suggestedPrincipal: { amount: '0', currency: 'USD' }, requiredCollateralValueUsd: '0', terms: { initialLtvBps: 0, marginCallLtvBps: 0, liquidationLtvBps: 0, aprBps: 0, tenorDays: 0, repaymentFrequency: '', liquidationCurrency: 'USDC' } }),
+      assessWalletRisk: async () => ({ riskAssessmentId: 'risk-1', provider: 'WAVY_NODE_MOCK', riskScore: 0, amlStatus: 'PASS', maxLtvBps: 0, assessmentHash: '0x', expiresAt: '2026-01-01T00:00:00Z' }),
+      depositCollateral: async () => ({} as any),
+      topUpCollateral: async () => ({} as any),
+      activateLoan: async () => ({} as any),
+      attestPayment: async () => ({} as any),
+      createMarginCall: async () => ({} as any),
+      liquidateLoan: async () => ({} as any)
     };
 
     render(<InstitutionalDashboardScreen client={client} />);

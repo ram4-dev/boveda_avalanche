@@ -7,6 +7,7 @@ import { DemoControlsPanel } from './components/DemoControlsPanel.js';
 import { useBorrowerJourney } from './state/borrowerJourney.js';
 import { createInitialDemoControls, demoControlsReducer, deriveDemoView, getCurrentDemoPathStep } from './state/demoControls.js';
 import { useInjectedWallet } from './wallet/useInjectedWallet.js';
+import { shortenAddress } from './wallet/injectedWallet.js';
 import './styles/app.css';
 
 type AppView = 'borrower' | 'dashboard';
@@ -14,6 +15,7 @@ type AppView = 'borrower' | 'dashboard';
 export function App() {
   const client = useMemo(() => createBovedaApiClient(), []);
   const [view, setView] = useState<AppView>('borrower');
+  const wallet = useInjectedWallet();
 
   return <main className="app-shell">
     <header className="app-header">
@@ -29,6 +31,10 @@ export function App() {
           <span className="network-dot" aria-hidden="true"></span>
           Local backend API
         </span>
+        <span className="network-chip" aria-label="Wallet connection status">
+          <span className={`network-dot ${wallet.connection.status === 'connected' ? 'network-dot-success' : wallet.connection.status === 'connecting' ? 'network-dot-warning' : 'network-dot-muted'}`} aria-hidden="true"></span>
+          {wallet.connection.status === 'connected' ? shortenAddress(wallet.connection.address) : wallet.connection.status === 'connecting' ? 'Connecting wallet…' : wallet.connection.status === 'idle' ? 'Wallet ready' : wallet.connection.status === 'unavailable' ? 'Wallet unavailable' : wallet.connection.status === 'rejected' ? 'Wallet rejected' : 'Wallet status'}
+        </span>
         <nav className="view-switch" aria-label="Demo view switcher">
           <button className={`button ${view === 'borrower' ? 'button-primary' : 'button-secondary'}`} onClick={() => setView('borrower')} aria-pressed={view === 'borrower'}>
             Borrower widget
@@ -40,13 +46,12 @@ export function App() {
       </div>
     </header>
 
-    {view === 'borrower' ? <BorrowerWidgetView client={client} /> : <InstitutionalDashboardScreen client={client} />}
+    {view === 'borrower' ? <BorrowerWidgetView client={client} wallet={wallet} /> : <InstitutionalDashboardScreen client={client} />}
   </main>;
 }
 
-function BorrowerWidgetView({ client }: { client: ReturnType<typeof createBovedaApiClient> }) {
+function BorrowerWidgetView({ client, wallet }: { client: ReturnType<typeof createBovedaApiClient>; wallet: ReturnType<typeof useInjectedWallet> }) {
   const journey = useBorrowerJourney(client);
-  const wallet = useInjectedWallet();
   const [demoControls, dispatchDemoControls] = useReducer(demoControlsReducer, undefined, createInitialDemoControls);
   const loan = journey.state.selectedLoan;
   const demoView = loan ? deriveDemoView({

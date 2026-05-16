@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { BovedaApiClient } from '../api/client.js';
 import { AuditTrail } from '../components/AuditTrail.js';
+import { DashboardLoanActionsPanel } from '../components/DashboardLoanActionsPanel.js';
 import { DashboardSourcesPanel } from '../components/DashboardSourcesPanel.js';
 import { DashboardViewToggle } from '../components/DashboardViewToggle.js';
 import { LoanDetailPanel } from '../components/LoanDetailPanel.js';
@@ -17,7 +18,7 @@ import {
 } from '../state/institutionalDashboard.js';
 
 type Props = {
-  client: Pick<BovedaApiClient, 'getDashboardSummary' | 'listLoans' | 'listEvents' | 'getLoan'>;
+  client: BovedaApiClient;
 };
 
 export function InstitutionalDashboardScreen({ client }: Props) {
@@ -81,7 +82,10 @@ export function InstitutionalDashboardScreen({ client }: Props) {
           {state.errors.events ? <article className="dashboard-card"><p role="status">Events unavailable: {state.errors.events.message}. Audit trail reflects the latest successfully loaded evidence.</p></article> : null}
           <AuditTrail summary={state.summary} events={state.events} selectedLoanId={state.selectedLoanId} />
         </div>
-        <LoanDetailPanel loan={state.selectedLoan} events={state.events} errorMessage={state.errors.selectedLoan?.message} />
+        <div>
+          <LoanDetailPanel loan={state.selectedLoan} events={state.events} errorMessage={state.errors.selectedLoan?.message} />
+          {state.selectedLoan ? <DashboardLoanActionsPanel loan={state.selectedLoan} events={state.events} client={client} onActionComplete={onRefresh} /> : null}
+        </div>
       </div>
     </> : null}
   </section>;
