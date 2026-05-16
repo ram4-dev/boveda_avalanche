@@ -1,0 +1,14 @@
+[profile.default]
+src = "contracts"
+out = "out"
+libs = ["lib"]
+test = "test"
+script = "script"
+
+[rpc_endpoints]
+fuji = "https://api.avax-test.network/ext/bc/C/rpc"
+avalanche = "https://api.avax.network/ext/bc/C/rpc"
+
+[etherscan]
+avalanche_testnet = { key = "snowtrace", url = "https://testnet.snowtrace.io/" }
+avalanche = { key = "snowtrace", url = "https://snowtrace.io/" }

@@ -1,0 +1,117 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "../contracts/LoanRegistry.sol";
+import "../contracts/CollateralVault.sol";
+import "../contracts/mocks/MockERC20.sol";
+
+contract CollateralVaultTest {
+    LoanRegistry loanRegistry;
+    CollateralVault vault;
+    MockERC20 token;
+
+    address borrower = address(this);
+    address originator = address(this);
+
+    function setUp() public {
+        loanRegistry = new LoanRegistry();
+        vault = new CollateralVault(address(loanRegistry));
+        token = new MockERC20("Mock USDC", "mUSDC", 18, 1_000_000e18);
+        token.transfer(borrower, 1000e18);
+        token.transfer(originator, 1000e18);
+    }
+
+    function testDepositCollateral() public {
+        uint256 dueDate = block.timestamp + 365 days;
+        uint256 loanId = loanRegistry.createLoan(
+            borrower,
+            originator,
+            address(token),
+            0,
+            50e18,
+            5000,
+            dueDate
+        );
+
+        token.approve(address(vault), 100e18);
+        vault.depositCollateral(loanId, 100e18);
+
+        (uint256 storedLoanId, address collateralToken, uint256 amount, address storedBorrower, bool locked, bool liquidated) = vault.vaults(loanId);
+        assert(storedLoanId == loanId);
+        assert(collateralToken == address(token));
+        assert(amount == 100e18);
+        assert(storedBorrower == borrower);
+        assert(locked == true);
+        assert(liquidated == false);
+
+        uint8 status = loanRegistry.getLoanStatus(loanId);
+        assert(status == uint8(ILoanRegistry.LoanStatus.Active));
+    }
+
+    function testReleaseCollateralAfterRepaid() public {
+        uint256 dueDate = block.timestamp + 365 days;
+        uint256 loanId = loanRegistry.createLoan(
+            borrower,
+            originator,
+            address(token),
+            0,
+            50e18,
+            5000,
+            dueDate
+        );
+
+        token.approve(address(vault), 100e18);
+        vault.depositCollateral(loanId, 100e18);
+
+        loanRegistry.setLoanStatus(loanId, uint8(ILoanRegistry.LoanStatus.Repaid));
+
+        uint256 balanceBefore = token.balanceOf(borrower);
+        vault.releaseCollateral(loanId);
+        uint256 balanceAfter = token.balanceOf(borrower);
+
+        assert(balanceAfter == balanceBefore + 100e18);
+    }
+
+    function testLiquidateCollateral() public {
+        uint256 dueDate = block.timestamp + 365 days;
+        uint256 loanId = loanRegistry.createLoan(
+            borrower,
+            originator,
+            address(token),
+            0,
+            50e18,
+            5000,
+            dueDate
+        );
+
+        token.approve(address(vault), 100e18);
+        vault.depositCollateral(loanId, 100e18);
+
+        uint256 balanceBefore = token.balanceOf(originator);
+        vault.liquidateCollateral(loanId);
+        uint256 balanceAfter = token.balanceOf(originator);
+
+        assert(balanceAfter == balanceBefore + 100e18);
+        uint8 status = loanRegistry.getLoanStatus(loanId);
+        assert(status == uint8(ILoanRegistry.LoanStatus.Liquidated));
+    }
+
+    function testCalculateLtv() public {
+        uint256 dueDate = block.timestamp + 365 days;
+        uint256 loanId = loanRegistry.createLoan(
+            borrower,
+            originator,
+            address(token),
+            0,
+            50e18,
+            5000,
+            dueDate
+        );
+
+        token.approve(address(vault), 100e18);
+        vault.depositCollateral(loanId, 100e18);
+
+        uint256 ltv = vault.calculateLtv(loanId, 1e18, 18);
+        assert(ltv == 5000);
+    }
+}
