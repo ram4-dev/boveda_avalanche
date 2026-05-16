@@ -105,6 +105,19 @@ describe('keeper dry-run evaluator', () => {
     expect(result.computedLtvBps).toBeLessThan(8000);
   });
 
+  it('does not mark already escalated margin-call loans healthy before explicit recovery', () => {
+    const oracle = createControlledOracleAdapter({
+      now: () => now,
+      prices: {
+        AVAX: { priceUsd: '20', asOf: '2026-06-20T11:59:30.000Z' }
+      }
+    });
+
+    const [result] = evaluateKeeperDryRun([buildLoan({ status: 'MarginCall' })], oracle);
+    expect(result.decision).toBe('NOOP_ALREADY_ESCALATED');
+    expect(result.computedLtvBps).toBeLessThan(7000);
+  });
+
   it('does not re-emit margin calls for already escalated loans below liquidation threshold', () => {
     const oracle = createControlledOracleAdapter({
       now: () => now,
@@ -119,7 +132,7 @@ describe('keeper dry-run evaluator', () => {
     expect(result.computedLtvBps).toBeLessThan(8000);
   });
 
-  it('plans liquidation for margin-call/defaulted loans at or above liquidation threshold', () => {
+  it('keeps margin-call/defaulted loans out of liquidation while coverage is above the critical buffer', () => {
     const oracle = createControlledOracleAdapter({
       now: () => now,
       prices: {
@@ -131,8 +144,27 @@ describe('keeper dry-run evaluator', () => {
     const defaultedLoan = buildLoan({ loanId: 'loan-default-1', status: 'Defaulted' });
     const results = evaluateKeeperDryRun([marginCallLoan, defaultedLoan], oracle);
 
-    expect(results[0].decision).toBe('PLAN_LIQUIDATION');
-    expect(results[1].decision).toBe('PLAN_LIQUIDATION');
+    expect(results[0].decision).toBe('NOOP_ALREADY_ESCALATED');
+    expect(results[1].decision).toBe('PLAN_MARGIN_CALL');
+    expect(results[1].policy).toBe('MARGIN_CALL_FIRST');
+  });
+
+  it('plans liquidation for any keeper-scoped loan once collateral coverage is within the critical 10 percent buffer', () => {
+    const oracle = createControlledOracleAdapter({
+      now: () => now,
+      prices: {
+        AVAX: { priceUsd: '11', asOf: '2026-06-20T11:59:30.000Z' }
+      }
+    });
+
+    const activeLoan = buildLoan({ loanId: 'loan-active-1', status: 'Active' });
+    const marginCallLoan = buildLoan({ loanId: 'loan-margin-1', status: 'MarginCall' });
+    const defaultedLoan = buildLoan({ loanId: 'loan-default-1', status: 'Defaulted' });
+    const results = evaluateKeeperDryRun([activeLoan, marginCallLoan, defaultedLoan], oracle);
+
+    expect(results.map((result) => result.decision)).toEqual(['PLAN_LIQUIDATION', 'PLAN_LIQUIDATION', 'PLAN_LIQUIDATION']);
+    expect(results.every((result) => result.policy === 'CRITICAL_COLLATERAL_BUFFER')).toBe(true);
+    expect(results.every((result) => Number(result.coverageRatioBps) <= 11000)).toBe(true);
   });
 
   it('skips statuses outside keeper scope without requesting oracle prices', () => {
@@ -164,7 +196,7 @@ describe('keeper dry-run evaluator', () => {
     expect(originalLoan).toEqual(before);
   });
 
-  it('uses safe demo policy for active loans above liquidation threshold (margin call first)', () => {
+  it('uses margin-call-first policy for active loans above liquidation threshold while coverage is not critical', () => {
     const oracle = createControlledOracleAdapter({
       now: () => now,
       prices: {
@@ -174,6 +206,7 @@ describe('keeper dry-run evaluator', () => {
 
     const [result] = evaluateKeeperDryRun([buildLoan({ status: 'Active' })], oracle);
     expect(result.decision).toBe('PLAN_MARGIN_CALL');
-    expect(result.policy).toBe('ACTIVE_ABOVE_LIQUIDATION_CALL_MARGIN_FIRST');
+    expect(result.policy).toBe('MARGIN_CALL_FIRST');
+    expect(Number(result.coverageRatioBps)).toBeGreaterThan(11000);
   });
 });

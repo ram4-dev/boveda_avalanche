@@ -51,6 +51,7 @@ async function main(): Promise<void> {
     ltvBps: result.computedLtvBps,
     marginCallLtvBps: result.marginCallLtvBps,
     liquidationLtvBps: result.liquidationLtvBps,
+    coverageRatioBps: result.coverageRatioBps ?? null,
     decision: result.decision,
     policy: result.policy
   })));
