@@ -44,13 +44,17 @@ The keeper should still mirror the same rule off-chain to avoid sending failing 
 
 ## Proposed smart contract surface
 
-Add a view guard that keeper/backend/tests can call before liquidation:
+Add a view guard that keeper/backend/tests can call before liquidation. When a `priceOracle` is configured in `LiquidationEngine`, these guards use the oracle price and ignore caller-supplied price inputs:
 
 ```solidity
 function canLiquidate(
     uint256 loanId,
     uint256 collateralPrice,
     uint256 priceDecimals
+) external view returns (bool allowed, string memory reason);
+
+function canLiquidateFromOracle(
+    uint256 loanId
 ) external view returns (bool allowed, string memory reason);
 ```
 
@@ -93,8 +97,9 @@ Recommended first implementation: minimal demo guard using `loan.loanAmount` plu
 
 ## Implementation status (Batch 10 in this branch)
 
-- [x] Added contract-level liquidation guard API via `canLiquidate(...)`.
+- [x] Added contract-level liquidation guard API via `canLiquidate(...)` and oracle-backed inspection via `canLiquidateFromOracle(...)`.
 - [x] Enforced guard inside `LiquidationEngine.liquidateLoan(...)`.
+- [x] Added Chainlink-compatible `ChainlinkPriceOracle` and `LiquidationEngine.setPriceOracle(...)`; when configured, caller-supplied prices cannot spoof liquidation decisions.
 - [x] Kept proceeds distribution order: funding partner repayment first, originator fee from remainder, borrower surplus last.
 - [x] Restricted `CollateralVault.liquidateCollateral(...)` to the configured `LiquidationEngine`, so direct originator calls cannot bypass the guard.
 - [x] Aligned `CollateralVault` so `Active`, `MarginCall`, and `Defaulted` loans can be liquidated only through the guarded engine path.

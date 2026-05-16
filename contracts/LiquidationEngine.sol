@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "./LoanRegistry.sol";
 import "./CollateralVault.sol";
+import "./ChainlinkPriceOracle.sol";
 
 contract LiquidationEngine {
     LoanRegistry public loanRegistry;
@@ -11,7 +12,10 @@ contract LiquidationEngine {
     address public admin;
     uint16 public originatorFeeBps;
     uint16 public adminExpenseBps;
+    address public priceOracle;
     uint16 public constant CRITICAL_COVERAGE_BUFFER_BPS = 1000; // 10%
+
+    event PriceOracleSet(address indexed oldOracle, address indexed newOracle);
 
     event LoanLiquidated(
         uint256 indexed loanId,
@@ -57,6 +61,12 @@ contract LiquidationEngine {
         adminExpenseBps = feeBps;
     }
 
+    function setPriceOracle(address oracle) external onlyAdmin {
+        require(oracle == address(0) || oracle.code.length > 0, "LiquidationEngine: oracle must be contract");
+        emit PriceOracleSet(priceOracle, oracle);
+        priceOracle = oracle;
+    }
+
     function setProceedsToken(address token) external onlyAdmin {
         require(token != address(0), "Invalid token address");
         proceedsToken = IERC20(token);
@@ -67,16 +77,25 @@ contract LiquidationEngine {
         uint256 collateralPrice,
         uint256 priceDecimals
     ) public view returns (bool allowed, string memory reason) {
-        if (collateralPrice == 0) {
-            return (false, "LiquidationEngine: invalid collateral price");
-        }
-        if (priceDecimals > 36) {
-            return (false, "LiquidationEngine: invalid price decimals");
-        }
-
         ILoanRegistry.Loan memory loan = loanRegistry.getLoan(loanId);
         if (loan.loanId == 0) {
             return (false, "LiquidationEngine: loan not found");
+        }
+
+        (
+            bool priceResolved,
+            uint256 resolvedPrice,
+            uint256 resolvedDecimals,
+            string memory priceReason
+        ) = _tryResolvePrice(loan, collateralPrice, priceDecimals);
+        if (!priceResolved) {
+            return (false, priceReason);
+        }
+        if (resolvedPrice == 0) {
+            return (false, "LiquidationEngine: invalid collateral price");
+        }
+        if (resolvedDecimals > 36) {
+            return (false, "LiquidationEngine: invalid price decimals");
         }
 
         uint8 active = uint8(ILoanRegistry.LoanStatus.Active);
@@ -101,7 +120,7 @@ contract LiquidationEngine {
             return (false, "LiquidationEngine: collateral already liquidated");
         }
 
-        uint256 collateralValue = (vault.amount * collateralPrice) / (10 ** priceDecimals);
+        uint256 collateralValue = (vault.amount * resolvedPrice) / (10 ** resolvedDecimals);
         if (collateralValue == 0) {
             return (false, "LiquidationEngine: invalid proceeds amount");
         }
@@ -114,6 +133,14 @@ contract LiquidationEngine {
         }
 
         return (false, "LiquidationEngine: non-critical coverage, margin call first");
+    }
+
+    function canLiquidateFromOracle(uint256 loanId) external view returns (bool allowed, string memory reason) {
+        if (priceOracle == address(0)) {
+            return (false, "LiquidationEngine: price oracle not configured");
+        }
+
+        return canLiquidate(loanId, 0, 0);
     }
 
     function liquidateLoan(
@@ -134,15 +161,38 @@ contract LiquidationEngine {
         (bool allowed, string memory reason) = canLiquidate(loanId, collateralPrice, priceDecimals);
         require(allowed, reason);
 
+        (uint256 resolvedPrice, uint256 resolvedDecimals) = _resolvePrice(loan, collateralPrice, priceDecimals);
         CollateralVault.Vault memory vault = collateralVault.getVault(loanId);
-        uint256 proceedsAmount = (vault.amount * collateralPrice) / (10 ** priceDecimals);
+        uint256 proceedsAmount = (vault.amount * resolvedPrice) / (10 ** resolvedDecimals);
 
         collateralVault.liquidateCollateral(loanId);
 
-        uint256 fundingPartnerAmount = loan.loanAmount <= proceedsAmount ? loan.loanAmount : proceedsAmount;
+        (
+            uint256 fundingPartnerAmount,
+            uint256 originatorFeeAmount,
+            uint256 borrowerRemainderAmount
+        ) = _distributeProceeds(loan, proceedsAmount, fundingPartner);
+
+        emit LoanLiquidated(
+            loanId,
+            proceedsAmount,
+            address(proceedsToken),
+            fundingPartner,
+            fundingPartnerAmount,
+            originatorFeeAmount,
+            borrowerRemainderAmount
+        );
+    }
+
+    function _distributeProceeds(
+        ILoanRegistry.Loan memory loan,
+        uint256 proceedsAmount,
+        address fundingPartner
+    ) internal returns (uint256 fundingPartnerAmount, uint256 originatorFeeAmount, uint256 borrowerRemainderAmount) {
+        fundingPartnerAmount = loan.loanAmount <= proceedsAmount ? loan.loanAmount : proceedsAmount;
         uint256 remaining = proceedsAmount > fundingPartnerAmount ? proceedsAmount - fundingPartnerAmount : 0;
-        uint256 originatorFeeAmount = (remaining * originatorFeeBps) / 10000;
-        uint256 borrowerRemainderAmount = remaining > originatorFeeAmount ? remaining - originatorFeeAmount : 0;
+        originatorFeeAmount = (remaining * originatorFeeBps) / 10000;
+        borrowerRemainderAmount = remaining > originatorFeeAmount ? remaining - originatorFeeAmount : 0;
 
         if (fundingPartnerAmount > 0) {
             require(
@@ -164,16 +214,36 @@ contract LiquidationEngine {
                 "LiquidationEngine: borrower remainder transfer failed"
             );
         }
+    }
 
-        emit LoanLiquidated(
-            loanId,
-            proceedsAmount,
-            address(proceedsToken),
-            fundingPartner,
-            fundingPartnerAmount,
-            originatorFeeAmount,
-            borrowerRemainderAmount
-        );
+    function _tryResolvePrice(
+        ILoanRegistry.Loan memory loan,
+        uint256 suppliedPrice,
+        uint256 suppliedDecimals
+    ) internal view returns (bool ok, uint256 resolvedPrice, uint256 resolvedDecimals, string memory reason) {
+        if (priceOracle != address(0)) {
+            try IPriceOracle(priceOracle).getPrice(loan.collateralToken) returns (uint256 oraclePrice, uint256 oracleDecimals) {
+                return (true, oraclePrice, oracleDecimals, "");
+            } catch Error(string memory errorReason) {
+                return (false, 0, 0, errorReason);
+            } catch {
+                return (false, 0, 0, "LiquidationEngine: price oracle read failed");
+            }
+        }
+
+        return (true, suppliedPrice, suppliedDecimals, "");
+    }
+
+    function _resolvePrice(
+        ILoanRegistry.Loan memory loan,
+        uint256 suppliedPrice,
+        uint256 suppliedDecimals
+    ) internal view returns (uint256 resolvedPrice, uint256 resolvedDecimals) {
+        if (priceOracle != address(0)) {
+            return IPriceOracle(priceOracle).getPrice(loan.collateralToken);
+        }
+
+        return (suppliedPrice, suppliedDecimals);
     }
 
     function _repaymentObligation(uint256 loanAmount) internal view returns (uint256) {

@@ -4,11 +4,14 @@ pragma solidity ^0.8.20;
 import "../contracts/LoanRegistry.sol";
 import "../contracts/CollateralVault.sol";
 import "../contracts/LiquidationEngine.sol";
+import "../contracts/ChainlinkPriceOracle.sol";
 import "../contracts/mocks/MockERC20.sol";
+import "../contracts/mocks/MockV3Aggregator.sol";
 
 interface Vm {
     function prank(address actor) external;
     function expectRevert(bytes calldata reason) external;
+    function warp(uint256 newTimestamp) external;
 }
 
 contract LiquidationEngineTest {
@@ -19,6 +22,8 @@ contract LiquidationEngineTest {
     LiquidationEngine liquidationEngine;
     MockERC20 collateralToken;
     MockERC20 usdc;
+    ChainlinkPriceOracle priceOracle;
+    MockV3Aggregator collateralFeed;
 
     address borrower = address(0xBEEF);
     address originator = address(0xCAFE);
@@ -35,6 +40,9 @@ contract LiquidationEngineTest {
             address(usdc),
             1000
         );
+        priceOracle = new ChainlinkPriceOracle(1 hours);
+        collateralFeed = new MockV3Aggregator(18, 1e18);
+        priceOracle.setFeed(address(collateralToken), address(collateralFeed));
 
         collateralVault.setLiquidationEngine(address(liquidationEngine));
         usdc.mint(address(liquidationEngine), 200e18);
@@ -64,6 +72,51 @@ contract LiquidationEngineTest {
         (bool priceAllowed, string memory priceReason) = liquidationEngine.canLiquidate(loanId, 0, 18);
         assert(priceAllowed == false);
         assertEq(priceReason, "LiquidationEngine: invalid collateral price");
+    }
+
+    function testOracleBackedGuardIgnoresCallerSuppliedCriticalPrice() public {
+        uint256 loanId = _createActiveLoanWithCollateral(100e18, 50e18);
+        liquidationEngine.setPriceOracle(address(priceOracle));
+        collateralFeed.setRoundData(2, 1e18, block.timestamp, 2);
+
+        (bool allowed, string memory reason) = liquidationEngine.canLiquidateFromOracle(loanId);
+        assert(allowed == false);
+        assertEq(reason, "LiquidationEngine: non-critical coverage, margin call first");
+
+        vm.prank(originator);
+        vm.expectRevert(bytes("LiquidationEngine: non-critical coverage, margin call first"));
+        liquidationEngine.liquidateLoan(loanId, 0.5e18, 18, fundingPartner);
+    }
+
+    function testRejectsNonContractPriceOracle() public {
+        vm.expectRevert(bytes("LiquidationEngine: oracle must be contract"));
+        liquidationEngine.setPriceOracle(originator);
+    }
+
+    function testOracleBackedPreflightReturnsStalePriceReason() public {
+        uint256 loanId = _createActiveLoanWithCollateral(100e18, 50e18);
+        liquidationEngine.setPriceOracle(address(priceOracle));
+        vm.warp(block.timestamp + 10 hours);
+        collateralFeed.setRoundData(3, 1e18, block.timestamp - 2 hours, 3);
+
+        (bool allowed, string memory reason) = liquidationEngine.canLiquidateFromOracle(loanId);
+        assert(allowed == false);
+        assertEq(reason, "ChainlinkPriceOracle: stale price");
+    }
+
+    function testOracleBackedGuardAllowsCriticalFeedPrice() public {
+        uint256 loanId = _createActiveLoanWithCollateral(100e18, 50e18);
+        liquidationEngine.setPriceOracle(address(priceOracle));
+        collateralFeed.setRoundData(2, 0.5e18, block.timestamp, 2);
+
+        (bool allowed, string memory reason) = liquidationEngine.canLiquidateFromOracle(loanId);
+        assert(allowed == true);
+        assertEq(reason, "LiquidationEngine: critical coverage threshold reached");
+
+        vm.prank(originator);
+        liquidationEngine.liquidateLoan(loanId, 999e18, 18, fundingPartner);
+
+        assert(loanRegistry.getLoanStatus(loanId) == uint8(ILoanRegistry.LoanStatus.Liquidated));
     }
 
     function testLiquidatesDefaultedLoanWhenCriticalCoverage() public {
