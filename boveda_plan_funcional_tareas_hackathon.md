@@ -336,6 +336,26 @@ Los batches están pensados para correr en paralelo, pero con puntos de integrac
 
 **Recorte permitido:** si no hay tiempo para que el jurado dispare todas las acciones, dejar un modo presenter-driven: el jurado observa el dashboard y abre explorer links mientras el presentador confirma cada operación.
 
+## Batch 10 — Guardrail on-chain de liquidación
+
+**Objetivo:** mover la regla crítica de liquidación desde el keeper advisory hacia enforcement en smart contracts, para que ninguna liquidación real pueda ejecutarse fuera de la policy aceptada.
+
+**Duración sugerida:** 4-8 horas.
+
+**Dependencias:** Batch 7 OracleAdapter/keeper policy documentada, Batch 1 LiquidationEngine/CollateralVault, y decisión de fórmula de obligación total de repago.
+
+| Tarea                                      | Descripción                                                                                                                   | Entregable                                 | Dependencias |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ------------ |
+| B10.1 Documentar policy on-chain           | Definir margin-call-first, excepción de cobertura crítica 10%, fórmula de obligación total y roles keeper/contrato/backend.  | `docs/demo/on-chain-liquidation-guard.md`. | B7.2         |
+| B10.2 Definir fórmula de obligación total  | Elegir cómo representar principal pendiente, intereses y gastos administrativos en contrato para la primera versión demoable. | Decisión en doc + tests esperados.         | B10.1        |
+| B10.3 Agregar guard de liquidación         | Implementar `canLiquidate`/guard equivalente y hacer que `liquidateLoan` rechace liquidaciones fuera de policy.              | Solidity guard + integración en engine.    | B10.2        |
+| B10.4 Tests Foundry de policy              | Probar rechazo de liquidación no crítica, margin-call-first, liquidación por cobertura crítica y devolución de excedente.     | Tests Foundry pasando.                     | B10.3        |
+| B10.5 Sincronizar keeper/docs              | Alinear dry-run keeper con el guard on-chain y documentar que keeper replica policy pero contrato es autoridad.               | Runbook actualizado.                       | B10.3-B10.4  |
+
+**Criterio de aceptación:** una tx de liquidación no puede ejecutarse si el contrato no valida la condición crítica o un estado permitido; keeper y contrato explican la misma decisión para los escenarios documentados.
+
+**Recorte permitido:** si no hay tiempo para modelar todos los gastos, usar una fórmula demo explícita (`loanAmount` + fee/admin bps configurables) y dejar documentado el gap para producción.
+
 ## Orden recomendado por olas
 
 ### Ola 1 — Contrato de trabajo común
@@ -385,6 +405,7 @@ Los batches están pensados para correr en paralelo, pero con puntos de integrac
 - B7.1 OracleAdapter.
 - B7.2 Keeper de margin call/liquidación.
 - B7.3/B7.4/B7.5 Adición de colateral en web3, backend y UI.
+- B10.1-B10.5 Guardrail on-chain de liquidación antes de habilitar keeper real.
 - B8.1 Definir fuente de verdad por dato del dashboard.
 - B8.2-B8.4 Conectar dashboard institucional a fuentes reales.
 
@@ -486,6 +507,7 @@ Recorte obligatorio con 2 personas: dashboard con fixtures, liquidación simulad
 - [ ] Wavy Node aparece como input central, aunque sea mock/adaptador.
 - [ ] `OracleAdapter` definido e integrado o recortado explícitamente con adapter controlado.
 - [ ] Keeper de margin call/liquidación runnable o documentado como dry-run/manual.
+- [ ] Regla crítica de liquidación enforceada en smart contract antes de habilitar keeper real, o documentada como brecha bloqueante.
 - [ ] Adición de colateral para bajar LTV cubierta en web3, backend y UI, o brecha documentada.
 - [ ] Dashboard institucional consume fuentes reales definidas para loans, métricas y audit trail, o muestra fallback demo etiquetado.
 - [ ] Wallet demo fondeada/preautorizada documentada sin exponer private key, seed phrase ni credenciales.
@@ -528,6 +550,7 @@ No eliminar:
 | Borrower Widget         | Flujo de solicitud, wallet, depósito, top-up, estado, pago/liquidación.              |
 | Institutional Dashboard | Métricas institucionales, audit trail, cartera y exposición desde fuentes definidas. |
 | Oracle/Keeper           | Adapter de precio/LTV y keeper o dry-run de margin call/liquidación.                 |
+| Liquidation guard       | Regla crítica de liquidación enforceada on-chain antes de keeper real.               |
 | Live demo kit           | Wallet demo fondeada, panel de operaciones live, explorer links y runbook seguro.    |
 | Demo script             | Guion paso a paso con fallback.                                                      |
 | Deck                    | Slides de pitch.                                                                     |

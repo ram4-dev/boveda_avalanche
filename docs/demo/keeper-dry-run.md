@@ -47,6 +47,12 @@ If collateral value falls to within 10% of the total repayment obligation, the k
 
 This exception protects the protocol if collateral price collapses quickly and the margin-call window would leave the lender under-covered.
 
+## Contract enforcement dependency
+
+This keeper policy is advisory until Batch 10 implements the same liquidation guard in smart contracts. A real keeper must not be enabled until `LiquidationEngine`/contract-level enforcement rejects liquidations outside the documented policy.
+
+See `docs/demo/on-chain-liquidation-guard.md`.
+
 ## Notes
 - Dry-run never calls API routes and never mutates `DemoStore`.
 - Price source is controlled from seed data (`referencePriceUsd`, fallback to `valueUsd / amount`) and stamped with current time.
