@@ -50,6 +50,11 @@ export type FundingPartner = {
   displayName: string;
 };
 
+export type Money = {
+  amount: string;
+  currency: string;
+};
+
 export type Principal = {
   amount: string;
   currency: string;

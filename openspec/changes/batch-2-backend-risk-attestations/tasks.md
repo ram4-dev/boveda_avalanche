@@ -78,29 +78,29 @@ Use targeted Vitest file commands during RED/GREEN, for example `npm test -- --r
 
 ### PR 2 / Work Unit 3 — Deterministic quotes and Wavy Node risk mock
 
-- [ ] RED: add quote and wallet-risk tests.
+- [x] RED: add quote and wallet-risk tests.
   - Files: `tests/quotes-risk.test.ts`.
   - Target behavior: reproducible `POST /quotes`; scenario constants; `liquidationCurrency = USDC`; stable `assessmentHash`; changed input changes risk result.
   - Test command: `npm test -- --run tests/quotes-risk.test.ts`.
-- [ ] GREEN: implement deterministic money/hash utilities, quote engine, risk engine, Wavy adapter, and routes.
+- [x] GREEN: implement deterministic money/hash utilities, quote engine, risk engine, Wavy adapter, and routes.
   - Files: `src/config/demoConfig.ts`, `src/domain/money.ts`, `src/domain/canonicalJson.ts`, `src/domain/hashing.ts`, `src/domain/quoteEngine.ts`, `src/domain/riskEngine.ts`, `src/adapters/wavyNode.ts`, `src/modules/quotes/routes.ts`, `src/modules/risk/routes.ts`.
   - Finish: `POST /quotes` and `POST /risk/wallet` conform to OpenAPI success shapes and store accepted risk assessments.
-- [ ] TRIANGULATE: add SME scenario and AML non-PASS/review-list test case through injected config.
-- [ ] REFACTOR: keep route handlers thin; no external Wavy connectivity required.
+- [x] TRIANGULATE: add SME scenario and AML non-PASS/review-list test case through injected config.
+- [x] REFACTOR: keep route handlers thin; no external Wavy connectivity required.
   - Verification: targeted test, prior PR 1 tests, `npm run typecheck`.
   - Rollback boundary: remove quote/risk modules without affecting read APIs.
 
 ### PR 2 / Work Unit 4 — Loan creation and core lifecycle through activation
 
-- [ ] RED: add lifecycle integration tests for create → approve → deposit → activate and invalid transitions.
+- [x] RED: add lifecycle integration tests for create → approve → deposit → activate and invalid transitions.
   - Files: `tests/loan-lifecycle.test.ts`.
   - Target behavior: `POST /loans` creates `Requested` with `LoanCreated`; approve records `LoanApproved`; deposit records collateral tx and keeps `Approved`; activate requires deposit/vault and records `LoanActivated` plus receipt when applicable; invalid transition preserves loan/events.
   - Test command: `npm test -- --run tests/loan-lifecycle.test.ts`.
-- [ ] GREEN: implement state machine and lifecycle write routes.
+- [x] GREEN: implement state machine and lifecycle write routes.
   - Files: `src/domain/stateMachine.ts`, `src/modules/loans/routes.ts`, `src/store/demoStore.ts`, `src/adapters/web3.ts`.
   - Finish: core transitions follow `docs/demo/states-events.md`; receipt is `soulbound = true` in mock activation.
-- [ ] TRIANGULATE: add terminal state safety tests for `Repaid`, `Liquidated`, and `Cancelled` fixtures/states.
-- [ ] REFACTOR: make `DemoStore.mutateLoan` atomic: validate/prepare/call adapter/commit.
+- [x] TRIANGULATE: add terminal state safety tests for `Repaid`, `Liquidated`, and `Cancelled` fixtures/states.
+- [x] REFACTOR: make `DemoStore.mutateLoan` atomic: validate/prepare/call adapter/commit.
   - Verification: lifecycle test, seed/read tests, quote/risk tests, `npm run typecheck`.
   - Rollback boundary: revert lifecycle mutations while preserving PR 1 and quote/risk reads.
 

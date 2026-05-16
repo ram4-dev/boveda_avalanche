@@ -4,7 +4,9 @@
 
 PR 1 / Work Units 1-2 completed on branch `feature/batch-2-pr1-scaffold-read-api`.
 
-Resolved delivery path: `auto-chain / feature-branch-chain`. This slice intentionally stops before Work Units 3-8.
+PR 2 / Work Units 3-4 completed on branch `feature/batch-2-pr2-quotes-lifecycle`.
+
+Resolved delivery path: `auto-chain / feature-branch-chain`. PR 2 intentionally stops before Work Units 5-8.
 
 ## Completed Tasks
 
@@ -103,6 +105,165 @@ passed
 - PR 3 / Work Unit 6: margin call, liquidation, and web3 failure safety.
 - PR 4 / Work Unit 7: dashboard aggregation and event filtering refresh path.
 - PR 4 / Work Unit 8: OpenAPI contract smoke, docs, and final hardening.
+
+## PR 2 / Work Units 3-4 Update
+
+### Completed Tasks
+
+- [x] Work Unit 3 RED: wrote quote and Wavy wallet risk API tests before `/quotes`, `/risk/wallet`, Wavy adapter, quote engine, risk engine, and hashing utilities existed.
+- [x] Work Unit 3 GREEN: implemented deterministic scenario quote calculation, canonical JSON/SHA-256 hashing, Wavy Node mock adapter, risk storage, and quote/risk routes.
+- [x] Work Unit 3 TRIANGULATE: added SME cap-by-collateral quote coverage and injected Wavy review-list coverage.
+- [x] Work Unit 3 REFACTOR: kept route handlers thin and moved deterministic logic to pure domain utilities/adapters.
+- [x] Work Unit 4 RED: wrote loan creation and lifecycle integration tests before mutation routes existed.
+- [x] Work Unit 4 GREEN: implemented loan creation, accepted-risk validation, approve, collateral deposit, activation through mock web3, and event recording.
+- [x] Work Unit 4 TRIANGULATE: added invalid transition preservation and terminal-state safety tests for `Repaid`, `Liquidated`, and `Cancelled` loans.
+- [x] Work Unit 4 REFACTOR: centralized state-transition checks, deterministic IDs/hashes, mock adapter boundary, and store mutation helpers. Route-level validation still performs prepare/adapter/commit sequencing for this slice.
+
+### Files Changed In PR 2
+
+- `openspec/changes/batch-2-backend-risk-attestations/tasks.md`
+- `openspec/changes/batch-2-backend-risk-attestations/apply-progress.md`
+- `tests/quotes-risk.test.ts`
+- `tests/loan-lifecycle.test.ts`
+- `src/config/demoConfig.ts`
+- `src/domain/money.ts`
+- `src/domain/canonicalJson.ts`
+- `src/domain/hashing.ts`
+- `src/domain/quoteEngine.ts`
+- `src/domain/riskEngine.ts`
+- `src/domain/stateMachine.ts`
+- `src/adapters/wavyNode.ts`
+- `src/adapters/web3.ts`
+- `src/modules/quotes/routes.ts`
+- `src/modules/risk/routes.ts`
+- `src/modules/loans/routes.ts`
+- `src/store/demoStore.ts`
+- `src/app.ts`
+- `src/domain/types.ts`
+- `src/api/errors.ts`
+
+### TDD Cycle Evidence — PR 2
+
+| Work Unit | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|---|---|---|---|---|---|---|---|
+| WU3 Quotes + Wavy risk mock | `tests/quotes-risk.test.ts` | Integration (Fastify inject) | ✅ `npm test -- --run tests/health.test.ts tests/seed-read-api.test.ts` passed: 2 files / 5 tests | ✅ `npm test -- --run tests/quotes-risk.test.ts` failed: missing `../src/adapters/wavyNode.js` | ✅ `npm test -- --run tests/quotes-risk.test.ts` passed: 4 tests after quote/risk modules and routes | ✅ SME collateral cap and Wavy review-list scenarios passed in same focused test file | ✅ route handlers remained thin; pure utilities extracted; PR1 tests + WU3 tests and `npm run typecheck` passed |
+| WU4 Loan creation + activation lifecycle | `tests/loan-lifecycle.test.ts` | Integration (Fastify inject) | ✅ WU3 + PR1 tests passed before lifecycle production changes | ✅ `npm test -- --run tests/loan-lifecycle.test.ts` failed: lifecycle routes returned 404 | ✅ `npm test -- --run tests/loan-lifecycle.test.ts` passed: 4 tests after mutation routes/store/web3 adapter | ✅ invalid transition preservation plus terminal `Repaid`/`Liquidated`/`Cancelled` safety covered | ✅ state machine and mock web3 boundaries extracted; lifecycle + seed/read + quote/risk tests and `npm run typecheck` passed |
+
+### Test Commands Run For PR 2
+
+- `npm test -- --run tests/health.test.ts tests/seed-read-api.test.ts` → passed, 2 files / 5 tests (safety net).
+- `npm test -- --run tests/quotes-risk.test.ts` → RED failed with missing `../src/adapters/wavyNode.js`.
+- `npm test -- --run tests/quotes-risk.test.ts` → GREEN/TRIANGULATE passed, 4 tests.
+- `npm test -- --run tests/quotes-risk.test.ts tests/health.test.ts tests/seed-read-api.test.ts && npm run typecheck` → passed.
+- `npm test -- --run tests/loan-lifecycle.test.ts` → RED failed with lifecycle routes returning 404.
+- `npm test -- --run tests/loan-lifecycle.test.ts` → GREEN/TRIANGULATE passed, 4 tests.
+- `npm test -- --run tests/loan-lifecycle.test.ts tests/seed-read-api.test.ts tests/quotes-risk.test.ts && npm run typecheck` → passed.
+- `npm test -- --run` → passed, 4 files / 13 tests.
+- `npm run typecheck` → passed.
+- `npm run build` → passed.
+- `npm run lint` → passed (`tsc --noEmit --pretty false`).
+
+### Verification Evidence — PR 2
+
+```text
+npm test -- --run
+Test Files  4 passed (4)
+Tests       13 passed (13)
+
+npm run typecheck
+passed
+
+npm run build
+passed
+
+npm run lint
+passed
+```
+
+### Deviations From Design — PR 2
+
+- `DemoStore` exposes explicit `createLoan`, `replaceLoan`, and `appendEvent` helpers rather than a single named `mutateLoan` API. The route flow still follows the designed safety sequence: validate, prepare next state/events, call adapter where required, then commit only on success.
+- `POST /loans` derives liquidation preview from principal with zero fees for this slice; richer liquidation math remains in Work Unit 6.
+- `POST /loans/{loanId}/activate` always emits `ReceiptIssued` after successful mock activation because the mock adapter always returns receipt data.
+
+### Workload / PR Boundary — PR 2
+
+- PR boundary: `feature/batch-2-pr2-quotes-lifecycle` contains only PR 2 / Work Units 3-4 on top of committed PR 1 (`79afb76`).
+- Work Units 5-8 were not implemented.
+- Reviewable PR 2 source/test changes are roughly ~1,000 lines excluding this progress update; this exceeds the original 700-line preference, but remains within the user-approved chained PR delivery path for the assigned PR 2 scope.
+
+### Remaining Tasks After PR 2
+
+- PR 3 / Work Unit 5: payment attestation hashing and idempotency.
+- PR 3 / Work Unit 6: margin call, liquidation, and web3 failure safety.
+- PR 4 / Work Unit 7: dashboard aggregation and event filtering refresh path.
+- PR 4 / Work Unit 8: OpenAPI contract smoke, docs, and final hardening.
+
+## Fresh Review Blocker Fix — PR 2 Missing POST Bodies
+
+### Completed Tasks
+
+- [x] RED: added focused Fastify inject coverage for missing request bodies on PR2 POST endpoints that were returning runtime 500s.
+- [x] GREEN: guarded unknown/undefined request bodies before property access and returned canonical `INVALID_REQUEST` validation errors.
+- [x] TRIANGULATE: added empty JSON body coverage, including `POST /loans/{loanId}/approve` requiring canonical `approvedBy` instead of silently approving.
+- [x] REFACTOR: centralized reusable request-body validation helpers in `src/api/errors.ts` and kept scope limited to PR2 endpoints; Work Units 5-8 were not implemented.
+
+### Files Changed For Blocker Fix
+
+- `tests/quotes-risk.test.ts`
+- `tests/loan-lifecycle.test.ts`
+- `src/api/errors.ts`
+- `src/modules/quotes/routes.ts`
+- `src/modules/risk/routes.ts`
+- `src/modules/loans/routes.ts`
+- `openspec/changes/batch-2-backend-risk-attestations/apply-progress.md`
+
+### TDD Cycle Evidence — Fresh Review Blocker
+
+| Task | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|---|---|---|---|---|---|---|---|
+| PR2 missing POST body validation blocker | `tests/quotes-risk.test.ts`, `tests/loan-lifecycle.test.ts` | Integration (Fastify inject) | ✅ `npm test -- --run tests/quotes-risk.test.ts tests/loan-lifecycle.test.ts` passed before blocker changes: 2 files / 8 tests | ✅ Focused tests failed with 500 for missing bodies on `/quotes` and `/loans`; triangulation later failed with 200 for empty approve body | ✅ Missing-body cases returned 400 canonical `INVALID_REQUEST` after body guards | ✅ Empty-body cases covered `/quotes`, `/risk/wallet`, `/loans/{loanId}/approve`, and `/loans/{loanId}/collateral/deposit`; approve now requires canonical `approvedBy` | ✅ Reusable helpers `hasJsonObjectBody` and `sendInvalidRequestBody` extracted; focused and full verification stayed green |
+
+### Test Commands Run For Blocker Fix
+
+- `npm test -- --run tests/quotes-risk.test.ts tests/loan-lifecycle.test.ts` → safety net passed, 2 files / 8 tests.
+- `npm test -- --run tests/quotes-risk.test.ts tests/loan-lifecycle.test.ts` → RED failed: missing body assertions received `500` instead of `400`.
+- `npm test -- --run tests/quotes-risk.test.ts tests/loan-lifecycle.test.ts` → TRIANGULATE RED failed: empty approve body returned `200` instead of `400`.
+- `npm test -- --run tests/quotes-risk.test.ts tests/loan-lifecycle.test.ts` → GREEN passed, 2 files / 10 tests.
+- `npm test -- --run` → passed, 4 files / 15 tests.
+- `npm run typecheck` → passed.
+- `npm run build` → passed.
+- `npm run lint` → passed (`tsc --noEmit --pretty false`).
+
+### Verification Evidence — Blocker Fix
+
+```text
+npm test -- --run
+Test Files  4 passed (4)
+Tests       15 passed (15)
+
+npm run typecheck
+passed
+
+npm run build
+passed
+
+npm run lint
+passed
+```
+
+### Deviations / Scope Control — Blocker Fix
+
+- No Work Units 5-8 endpoints or behavior were implemented.
+- The fix only changes PR2 endpoint validation behavior for request-body safety.
+- `POST /loans/{loanId}/approve` now rejects an empty JSON body because `approvedBy` is required by the canonical OpenAPI `ApproveLoanRequest` schema.
+- Missing-body validation consistently returns `400` with `{ error: { code: 'INVALID_REQUEST', message: 'Request body must be a JSON object' } }`.
+
+### Workload / PR Boundary — Blocker Fix
+
+- PR boundary remains `feature/batch-2-pr2-quotes-lifecycle`.
+- This is a blocker-only patch on top of PR2 / Work Units 3-4.
+- Remaining tasks are unchanged: PR3 Work Units 5-6 and PR4 Work Units 7-8.
 
 ## Memory
 

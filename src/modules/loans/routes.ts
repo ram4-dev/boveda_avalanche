@@ -1,8 +1,12 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { Web3Adapter } from '../../adapters/web3.js';
 import { loanScenarioValues, loanStatusValues } from '../../api/schemas.js';
-import { sendApiError } from '../../api/errors.js';
-import type { DemoStore } from '../../store/demoStore.js';
+import { hasJsonObjectBody, sendApiError, sendInvalidRequestBody } from '../../api/errors.js';
+import { shortHash } from '../../domain/hashing.js';
+import { canTransition } from '../../domain/stateMachine.js';
+import type { Collateral, CollateralTerms, FundingPartner, Loan, OnChainEvent, Originator, Principal, Borrower } from '../../domain/types.js';
 import { isLoanScenario, isLoanStatus, type LoanScenario, type LoanStatus } from '../../domain/types.js';
+import type { DemoStore } from '../../store/demoStore.js';
 
 type ListLoansQuery = {
   scenario?: string;
@@ -13,7 +17,35 @@ type LoanParams = {
   loanId: string;
 };
 
-export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore): Promise<void> {
+type CreateLoanBody = {
+  scenario?: unknown;
+  borrower?: Borrower;
+  originator?: Originator;
+  fundingPartner?: FundingPartner;
+  principal?: Principal;
+  collateral?: Collateral;
+  terms?: CollateralTerms;
+  riskAssessmentId?: string;
+};
+
+type ApproveBody = {
+  approvedBy?: string;
+  fiatDisbursementRef?: string;
+};
+
+type DepositBody = {
+  token?: string;
+  amount?: string;
+  txHash?: string;
+  vaultAddress?: string;
+};
+
+type ActivateBody = {
+  receiptTokenId?: string;
+  activationTxHash?: string;
+};
+
+export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore, web3: Web3Adapter): Promise<void> {
   app.get('/loans', async (request: FastifyRequest<{ Querystring: ListLoansQuery }>, reply) => {
     const filter = parseLoanFilter(request.query, reply);
     if (!filter) {
@@ -23,6 +55,55 @@ export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore)
     return { loans: store.listLoans(filter) };
   });
 
+  app.post('/loans', async (request: FastifyRequest<{ Body: CreateLoanBody }>, reply) => {
+    const body = request.body;
+    if (!hasJsonObjectBody(body)) {
+      return sendInvalidRequestBody(reply);
+    }
+
+    if (!isLoanScenario(body.scenario) || !body.borrower || !body.originator || !body.fundingPartner || !body.principal || !body.collateral || !body.terms || !body.riskAssessmentId) {
+      return sendApiError(reply, 400, 'INVALID_REQUEST', 'Create loan request is missing required canonical fields');
+    }
+
+    const riskAssessment = store.getRiskAssessment(body.riskAssessmentId);
+    if (!riskAssessment) {
+      return sendApiError(reply, 422, 'RISK_ASSESSMENT_NOT_FOUND', `Risk assessment ${body.riskAssessmentId} was not found`);
+    }
+
+    if (riskAssessment.amlStatus !== 'PASS') {
+      return sendApiError(reply, 422, 'INVALID_REQUEST', `Risk assessment ${body.riskAssessmentId} is not approved`);
+    }
+
+    if (body.terms.initialLtvBps > riskAssessment.maxLtvBps) {
+      return sendApiError(reply, 422, 'INVALID_REQUEST', 'Loan terms exceed risk assessment maxLtvBps');
+    }
+
+    const loan: Loan = {
+      loanId: `loan-${body.scenario.toLowerCase().replaceAll('_', '-')}-${shortHash({ borrower: body.borrower, principal: body.principal, riskAssessmentId: body.riskAssessmentId })}`,
+      scenario: body.scenario,
+      status: 'Requested',
+      borrower: body.borrower,
+      originator: body.originator,
+      fundingPartner: body.fundingPartner,
+      principal: body.principal,
+      collateral: body.collateral,
+      terms: body.terms,
+      riskAssessment,
+      receipt: null,
+      currentMetrics: {
+        currentLtvBps: body.terms.initialLtvBps,
+        outstandingPrincipal: body.principal.amount,
+        outstandingCurrency: body.principal.currency,
+        nextPaymentDueAt: null
+      },
+      liquidationPreview: buildLiquidationPreview(body.principal.amount)
+    };
+
+    store.createLoan(loan);
+    appendLoanCreated(store, loan);
+    return reply.status(201).send(loan);
+  });
+
   app.get('/loans/:loanId', async (request: FastifyRequest<{ Params: LoanParams }>, reply) => {
     const loan = store.getLoan(request.params.loanId);
     if (!loan) {
@@ -30,6 +111,112 @@ export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore)
     }
 
     return loan;
+  });
+
+  app.post('/loans/:loanId/approve', async (request: FastifyRequest<{ Params: LoanParams; Body: ApproveBody }>, reply) => {
+    const loan = findLoan(store, request.params.loanId, reply);
+    if (!loan) return reply;
+    if (!hasJsonObjectBody(request.body)) {
+      return sendInvalidRequestBody(reply);
+    }
+    if (!request.body.approvedBy) {
+      return sendApiError(reply, 400, 'INVALID_REQUEST', 'Approve loan request is missing required fields');
+    }
+    if (!canTransition(loan.status, 'Approved')) {
+      return invalidTransition(reply, loan.status, 'Approved');
+    }
+
+    const nextLoan: Loan = {
+      ...loan,
+      status: 'Approved',
+      principal: {
+        ...loan.principal,
+        disbursementRef: request.body.fiatDisbursementRef ?? loan.principal.disbursementRef ?? null
+      }
+    };
+    store.replaceLoan(nextLoan);
+    store.appendEvent(baseEvent('LoanApproved', nextLoan.loanId, null, {
+      eventType: 'LoanApproved',
+      loanId: nextLoan.loanId,
+      approvedBy: request.body.approvedBy ?? nextLoan.originator.originatorId,
+      fiatDisbursementRef: nextLoan.principal.disbursementRef ?? null,
+      status: 'Approved'
+    }));
+    return nextLoan;
+  });
+
+  app.post('/loans/:loanId/collateral/deposit', async (request: FastifyRequest<{ Params: LoanParams; Body: DepositBody }>, reply) => {
+    const loan = findLoan(store, request.params.loanId, reply);
+    if (!loan) return reply;
+    if (loan.status !== 'Approved') {
+      return invalidTransition(reply, loan.status, 'CollateralDeposited');
+    }
+    if (!hasJsonObjectBody(request.body)) {
+      return sendInvalidRequestBody(reply);
+    }
+    if (!request.body.token || !request.body.amount || !request.body.txHash || !request.body.vaultAddress) {
+      return sendApiError(reply, 400, 'INVALID_REQUEST', 'Collateral deposit request is missing required fields');
+    }
+
+    const nextLoan: Loan = {
+      ...loan,
+      collateral: {
+        ...loan.collateral,
+        token: request.body.token,
+        amount: request.body.amount,
+        depositTxHash: request.body.txHash,
+        vaultAddress: request.body.vaultAddress
+      }
+    };
+    store.replaceLoan(nextLoan);
+    store.appendEvent(baseEvent('CollateralDeposited', nextLoan.loanId, request.body.txHash, {
+      eventType: 'CollateralDeposited',
+      loanId: nextLoan.loanId,
+      vaultAddress: request.body.vaultAddress,
+      token: request.body.token,
+      amount: request.body.amount,
+      txHash: request.body.txHash,
+      status: 'Approved'
+    }));
+    return nextLoan;
+  });
+
+  app.post('/loans/:loanId/activate', async (request: FastifyRequest<{ Params: LoanParams; Body: ActivateBody }>, reply) => {
+    const loan = findLoan(store, request.params.loanId, reply);
+    if (!loan) return reply;
+    if (!canTransition(loan.status, 'Active')) {
+      return invalidTransition(reply, loan.status, 'Active');
+    }
+    if (!loan.collateral.depositTxHash || !loan.collateral.vaultAddress) {
+      return sendApiError(reply, 409, 'INVALID_TRANSITION', 'Loan activation requires recorded collateral depositTxHash and vaultAddress');
+    }
+
+    const activation = await web3.activateLoan({ loan, receiptTokenId: request.body?.receiptTokenId });
+    const nextLoan: Loan = {
+      ...loan,
+      status: 'Active',
+      receipt: {
+        receiptTokenId: activation.receiptTokenId,
+        soulbound: true,
+        ownerWallet: activation.ownerWallet
+      }
+    };
+    store.replaceLoan(nextLoan);
+    store.appendEvent(baseEvent('LoanActivated', nextLoan.loanId, request.body?.activationTxHash ?? activation.txHash, {
+      eventType: 'LoanActivated',
+      loanId: nextLoan.loanId,
+      vaultAddress: activation.vaultAddress,
+      receiptTokenId: activation.receiptTokenId,
+      status: 'Active'
+    }));
+    store.appendEvent(baseEvent('ReceiptIssued', nextLoan.loanId, null, {
+      eventType: 'ReceiptIssued',
+      loanId: nextLoan.loanId,
+      receiptTokenId: activation.receiptTokenId,
+      owner: activation.ownerWallet,
+      soulbound: true
+    }));
+    return nextLoan;
   });
 }
 
@@ -56,4 +243,53 @@ function invalidFilter(reply: FastifyReply, name: string, value: string, allowed
     `Invalid ${name} filter '${value}'. Allowed values: ${allowed.join(', ')}`
   );
   return null;
+}
+
+function findLoan(store: DemoStore, loanId: string, reply: FastifyReply): Loan | null {
+  const loan = store.getLoan(loanId);
+  if (!loan) {
+    sendApiError(reply, 404, 'LOAN_NOT_FOUND', `Loan ${loanId} was not found`);
+    return null;
+  }
+  return loan;
+}
+
+function invalidTransition(reply: FastifyReply, from: LoanStatus, to: string): FastifyReply {
+  return sendApiError(reply, 409, 'INVALID_TRANSITION', `Cannot transition loan from ${from} to ${to}`);
+}
+
+function baseEvent(
+  eventType: OnChainEvent['eventType'],
+  loanId: string,
+  txHash: string | null,
+  payload: Record<string, unknown>
+): Omit<OnChainEvent, 'eventId' | 'occurredAt'> {
+  return { eventType, loanId, txHash, blockNumber: null, payload };
+}
+
+function appendLoanCreated(store: DemoStore, loan: Loan): void {
+  store.appendEvent(baseEvent('LoanCreated', loan.loanId, null, {
+    eventType: 'LoanCreated',
+    loanId: loan.loanId,
+    borrowerWallet: loan.borrower.walletAddress,
+    originatorId: loan.originator.originatorId,
+    scenario: loan.scenario,
+    principalAmount: loan.principal.amount,
+    principalCurrency: loan.principal.currency,
+    collateralToken: loan.collateral.token,
+    initialLtvBps: loan.terms.initialLtvBps,
+    status: 'Requested'
+  }));
+}
+
+function buildLiquidationPreview(principalAmount: string): Loan['liquidationPreview'] {
+  return {
+    proceedsAmount: principalAmount,
+    proceedsCurrency: 'USDC',
+    distribution: {
+      fundingPartnerAmount: principalAmount,
+      originatorFeeAmount: '0',
+      borrowerRemainderAmount: '0'
+    }
+  };
 }
