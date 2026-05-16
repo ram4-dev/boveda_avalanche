@@ -140,19 +140,38 @@ forge test --match "testSetLoanStatus" -v
 forge test --match "testInvalidBorrower" -vvv
 ```
 
-## Deployment (después)
+## Deployment
 
-Una vez que B1.1-B1.5 estén listos, crearemos un script de deployment:
+El script `script/Deploy.s.sol` deploya contratos base y, si recibe variables de oracle, deja `ChainlinkPriceOracle` conectado al `LiquidationEngine`.
 
 ```bash
 forge script script/Deploy.s.sol --rpc-url fuji --broadcast --verify
 ```
 
+Variables relevantes:
+
+```bash
+USDC_ADDRESS=0x...                       # opcional; si no se setea, deploya mock USDC
+CHAINLINK_MAX_STALENESS_SECONDS=86400    # opcional; default 1 día
+COLLATERAL_TOKEN_ADDRESS=0x...           # token usado como loan.collateralToken
+COLLATERAL_USD_FEED_ADDRESS=0x...        # Chainlink AggregatorV3 token/USD en Fuji
+```
+
+Si `COLLATERAL_TOKEN_ADDRESS` y `COLLATERAL_USD_FEED_ADDRESS` están seteadas, el script ejecuta:
+
+```solidity
+priceOracle.setFeed(COLLATERAL_TOKEN_ADDRESS, COLLATERAL_USD_FEED_ADDRESS);
+liquidationEngine.setPriceOracle(address(priceOracle));
+```
+
+Esto hace que `LiquidationEngine` ignore precios manuales y use el feed configurado al evaluar liquidaciones.
+
 Esto:
-1. Deployar todos los contratos a Fuji
-2. Guardar addresses
-3. Verificar en Snowtrace
-4. Guardar ABIs para el backend
+1. Deploya todos los contratos a Fuji
+2. Configura oracle si hay token/feed
+3. Guarda/loguea addresses
+4. Verifica en Snowtrace
+5. Guarda ABIs para el backend
 
 ---
 

@@ -124,6 +124,25 @@ contract CollateralVaultTest {
         assert(balanceAfter == balanceBefore + 100e18);
     }
 
+    function testRejectsDirectLiquidationWhenCallerIsNotEngine() public {
+        uint256 dueDate = block.timestamp + 365 days;
+        uint256 loanId = loanRegistry.createLoan(
+            borrower,
+            originator,
+            address(token),
+            0,
+            50e18,
+            5000,
+            dueDate
+        );
+
+        token.approve(address(vault), 100e18);
+        vault.depositCollateral(loanId, 100e18);
+
+        (bool ok,) = address(vault).call(abi.encodeWithSelector(vault.liquidateCollateral.selector, loanId));
+        assert(ok == false);
+    }
+
     function testLiquidateCollateral() public {
         uint256 dueDate = block.timestamp + 365 days;
         uint256 loanId = loanRegistry.createLoan(
@@ -138,6 +157,7 @@ contract CollateralVaultTest {
 
         token.approve(address(vault), 100e18);
         vault.depositCollateral(loanId, 100e18);
+        vault.setLiquidationEngine(address(this));
 
         uint256 balanceBefore = token.balanceOf(originator);
         vault.liquidateCollateral(loanId);

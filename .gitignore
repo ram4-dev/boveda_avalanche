@@ -13,6 +13,7 @@ coverage/
 # Secrets and local credentials
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 *.p12
