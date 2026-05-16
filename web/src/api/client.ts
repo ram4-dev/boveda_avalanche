@@ -1,5 +1,5 @@
 import { ApiClientError } from './errors.js';
-import type { ActivateLoanRequest, CollateralDepositRequest, LiquidationRequest, MarginCallRequest, PaymentAttestationRequest, QuoteRequest, RiskAssessmentRequest } from './types.js';
+import type { ActivateLoanRequest, CollateralDepositRequest, DashboardSummary, EventsResponse, LiquidationRequest, Loan, LoanScenario, LoansResponse, LoanStatus, MarginCallRequest, PaymentAttestationRequest, QuoteRequest, RiskAssessmentRequest } from './types.js';
 export { ApiClientError } from './errors.js';
 export type * from './types.js';
 
@@ -16,8 +16,9 @@ export function createBovedaApiClient(options: ClientOptions = {}) {
   const fetcher = options.fetch ?? fetch.bind(globalThis);
 
   return {
-    listLoans: (filter?: { scenario?: string; status?: string }) => request(fetcher, url(baseUrl, '/loans', filter), { method: 'GET' }),
-    getLoan: (loanId: string) => request(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}`), { method: 'GET' }),
+    getDashboardSummary: (): Promise<DashboardSummary> => request(fetcher, url(baseUrl, '/dashboard/summary'), { method: 'GET' }) as Promise<DashboardSummary>,
+    listLoans: (filter?: { scenario?: LoanScenario; status?: LoanStatus }): Promise<LoansResponse> => request(fetcher, url(baseUrl, '/loans', filter), { method: 'GET' }) as Promise<LoansResponse>,
+    getLoan: (loanId: string): Promise<Loan> => request(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}`), { method: 'GET' }) as Promise<Loan>,
     createQuote: (input: QuoteRequest) => post(fetcher, url(baseUrl, '/quotes'), input),
     assessWalletRisk: (input: RiskAssessmentRequest) => post(fetcher, url(baseUrl, '/risk/wallet'), input),
     depositCollateral: (loanId: string, input: CollateralDepositRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/collateral/deposit`), input),
@@ -25,7 +26,7 @@ export function createBovedaApiClient(options: ClientOptions = {}) {
     attestPayment: (loanId: string, input: PaymentAttestationRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/payments/attest`), input),
     createMarginCall: (loanId: string, input: MarginCallRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/margin-call`), input),
     liquidateLoan: (loanId: string, input: LiquidationRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/liquidate`), input),
-    listEvents: (filter?: { loanId?: string }) => request(fetcher, url(baseUrl, '/events', filter), { method: 'GET' })
+    listEvents: (filter?: { loanId?: string }): Promise<EventsResponse> => request(fetcher, url(baseUrl, '/events', filter), { method: 'GET' }) as Promise<EventsResponse>
   };
 }
 

@@ -16,6 +16,10 @@ export type ProceedsDistribution = { fundingPartnerAmount: string; originatorFee
 export type LiquidationPreview = { proceedsAmount: string; proceedsCurrency: 'USDC'; distribution: ProceedsDistribution };
 export type Loan = { loanId: string; scenario: LoanScenario; status: LoanStatus; borrower: Borrower; originator: Originator; fundingPartner: FundingPartner; principal: Principal; collateral: Collateral; terms: Terms; riskAssessment: RiskAssessment; receipt: LoanReceipt | null; currentMetrics: LoanMetrics; liquidationPreview: LiquidationPreview };
 export type OnChainEvent = { eventId: string; eventType: string; loanId: string; txHash: string | null; blockNumber: number | null; occurredAt: string; payload: Record<string, unknown> };
+export type DashboardExposure = { asset: string; valueUsd: string };
+export type DashboardSummary = { activePrincipalUsd: string; activeVaults: number; averageLtvBps: number; loansInMarginCall: number; paymentsAttested: number; liquidationsExecuted: number; exposureByAsset: DashboardExposure[]; recentEvents: OnChainEvent[] };
+export type LoansResponse = { loans: Loan[] };
+export type EventsResponse = { events: OnChainEvent[] };
 
 export type QuoteRequest = { scenario: LoanScenario; borrowerWallet: string; requestedPrincipal: { amount: string; currency: string }; collateralToken: string; collateralValueUsd?: string };
 export type QuoteResponse = { quoteId?: string; scenario: LoanScenario; suggestedPrincipal: { amount: string; currency: string }; requiredCollateralValueUsd: string; terms: Terms };

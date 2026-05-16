@@ -13,6 +13,7 @@ describe('createBovedaApiClient', () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const method = init?.method ?? 'GET';
+      if (url.endsWith('/dashboard/summary') && method === 'GET') return jsonResponse({ activePrincipalUsd: '150000', activeVaults: 1, averageLtvBps: 5000, loansInMarginCall: 0, paymentsAttested: 1, liquidationsExecuted: 0, exposureByAsset: [], recentEvents: [] });
       if (url.endsWith('/loans?scenario=WEB3_BRIDGE') && method === 'GET') return jsonResponse({ loans: [] });
       if (url.endsWith('/loans/loan-web3-001') && method === 'GET') return jsonResponse({ loanId: 'loan-web3-001' });
       if (url.endsWith('/quotes') && method === 'POST') return jsonResponse({ quoteId: 'quote-1' });
@@ -27,6 +28,7 @@ describe('createBovedaApiClient', () => {
     });
     const client = createBovedaApiClient({ baseUrl: 'http://api.local', fetch: fetchMock });
 
+    await client.getDashboardSummary();
     await client.listLoans({ scenario: 'WEB3_BRIDGE' });
     await client.getLoan('loan-web3-001');
     await client.createQuote({ scenario: 'WEB3_BRIDGE', borrowerWallet: '0xabc', requestedPrincipal: { amount: '150000', currency: 'USD' }, collateralToken: 'AVAX', collateralValueUsd: '300000' });
@@ -39,6 +41,7 @@ describe('createBovedaApiClient', () => {
     await client.listEvents({ loanId: 'loan-web3-001' });
 
     expect(fetchMock.mock.calls.map(([input, init]) => `${init?.method ?? 'GET'} ${String(input).replace('http://api.local', '')}`)).toEqual([
+      'GET /dashboard/summary',
       'GET /loans?scenario=WEB3_BRIDGE',
       'GET /loans/loan-web3-001',
       'POST /quotes',
@@ -52,7 +55,7 @@ describe('createBovedaApiClient', () => {
     ]);
   });
 
-  it('encodes path and query params and parses canonical API errors', async () => {
+  it('encodes path params, query params, and parses canonical API errors', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith('/events?loanId=loan+with%2Fslash')) {
@@ -62,8 +65,13 @@ describe('createBovedaApiClient', () => {
     });
     const client = createBovedaApiClient({ baseUrl: '/api/', fetch: fetchMock });
 
+    await client.getLoan('loan with/slash');
+    await client.listLoans({ scenario: 'WEB3_BRIDGE', status: 'MarginCall' });
     await expect(client.listEvents({ loanId: 'loan with/slash' })).rejects.toMatchObject({ code: 'NOT_FOUND', message: 'Loan missing', status: 404 });
-    expect(fetchMock).toHaveBeenCalledWith('/api/events?loanId=loan+with%2Fslash', expect.objectContaining({ method: 'GET' }));
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/loans/loan%20with%2Fslash', expect.objectContaining({ method: 'GET' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/loans?scenario=WEB3_BRIDGE&status=MarginCall', expect.objectContaining({ method: 'GET' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/events?loanId=loan+with%2Fslash', expect.objectContaining({ method: 'GET' }));
   });
 
   it('surfaces safe non-JSON HTTP failures and resolves optional Vite base URL', async () => {
