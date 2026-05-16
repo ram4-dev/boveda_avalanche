@@ -113,9 +113,11 @@ describe('quotes and Wavy Node wallet risk API', () => {
     expect(first.json()).toEqual(second.json());
     expect(first.json()).toMatchObject({
       provider: 'WAVY_NODE_MOCK',
+      riskStatus: 'COMPLETED',
       riskScore: 82,
       amlStatus: 'PASS',
       maxLtvBps: 5500,
+      riskReason: 'Mock risk profile cleared for WEB3_BRIDGE',
       expiresAt: '2026-05-16T00:00:00.000Z'
     });
     expect(first.json().riskAssessmentId).toMatch(/^risk-web3-bridge-[a-f0-9]{12}$/);
@@ -142,8 +144,10 @@ describe('quotes and Wavy Node wallet risk API', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
       provider: 'WAVY_NODE_MOCK',
+      riskStatus: 'COMPLETED',
       amlStatus: 'REVIEW',
-      maxLtvBps: 4500
+      maxLtvBps: 4500,
+      riskReason: 'Mock risk profile requires manual review for WEB3_BRIDGE'
     });
   });
 });

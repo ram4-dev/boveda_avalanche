@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from 'fastify';
-import { createMockWavyNodeAdapter, type WavyNodeAdapter } from './adapters/wavyNode.js';
+import { createWavyNodeAdapterFromEnv, type WavyNodeAdapter } from './adapters/wavyNode.js';
 import { createMockWeb3Adapter, type Web3Adapter } from './adapters/web3.js';
 import { registerDashboardRoutes } from './modules/dashboard/routes.js';
 import { registerEventRoutes } from './modules/events/routes.js';
@@ -20,7 +20,7 @@ export type AppDeps = {
 export function buildFastifyApp(deps: Partial<AppDeps> = {}): FastifyInstance {
   const app = Fastify({ logger: false });
   const store = deps.store ?? DemoStore.fromSeed(loadSeedFileSync());
-  const wavyNode = deps.wavyNode ?? createMockWavyNodeAdapter();
+  const wavyNode = deps.wavyNode ?? createWavyNodeAdapterFromEnv();
   const web3 = deps.web3 ?? createMockWeb3Adapter();
 
   void app.register(registerHealthRoutes);

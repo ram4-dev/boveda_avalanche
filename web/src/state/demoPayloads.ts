@@ -40,7 +40,7 @@ export function sampleQuote(overrides: Partial<QuoteResponse> = {}): QuoteRespon
 }
 
 export function sampleRiskAssessment(overrides: Partial<RiskAssessment> = {}): RiskAssessment {
-  return { riskAssessmentId: 'risk-web3-001', provider: 'WAVY_NODE_MOCK', riskScore: 82, amlStatus: 'PASS', maxLtvBps: 5500, assessmentHash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', expiresAt: '2026-05-16T00:00:00Z', ...overrides };
+  return { riskAssessmentId: 'risk-web3-001', provider: 'WAVY_NODE_MOCK', riskStatus: 'COMPLETED', riskScore: 82, amlStatus: 'PASS', maxLtvBps: 5500, riskReason: 'Mock risk profile cleared for WEB3_BRIDGE', providerReference: { walletAddress: '0xA11CE00000000000000000000000000000000001', scenario: 'WEB3_BRIDGE', collateralToken: 'AVAX' }, assessmentHash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', expiresAt: '2026-05-16T00:00:00Z', ...overrides };
 }
 
 export function buildDemoDepositPayload(loan: Loan): CollateralDepositRequest {

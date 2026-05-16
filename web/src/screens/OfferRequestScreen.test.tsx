@@ -49,7 +49,7 @@ describe('OfferRequestScreen', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('User rejected request');
   });
 
-  it('displays quote fields and REVIEW/BLOCK risk copy from API responses', () => {
+  it('displays quote fields and REVIEW/BLOCK risk copy from completed API responses', () => {
     const { rerender } = render(<OfferRequestScreen {...baseProps} quote={sampleQuote()} risk={sampleRiskAssessment({ amlStatus: 'REVIEW', riskScore: 62 })} />);
     expect(screen.getByText('Required collateral')).toBeInTheDocument();
     expect(screen.getByText('300000 USD')).toBeInTheDocument();
@@ -57,6 +57,7 @@ describe('OfferRequestScreen', () => {
     expect(screen.getByText('14.50% APR, 90 days')).toBeInTheDocument();
     expect(screen.getAllByText('USDC').length).toBeGreaterThan(1);
     expect(screen.getByText(/Requires review/i)).toBeInTheDocument();
+    expect(screen.getByText(/reason:/i)).toBeInTheDocument();
 
     rerender(<OfferRequestScreen {...baseProps} quote={sampleQuote()} risk={sampleRiskAssessment({ amlStatus: 'BLOCK', riskScore: 12 })} />);
     expect(screen.getByText(/Blocked/i)).toBeInTheDocument();
@@ -86,6 +87,21 @@ describe('OfferRequestScreen', () => {
     expect(screen.getByText('14.50% APR, 90 days')).toBeInTheDocument();
     expect(screen.getAllByText('USDC').length).toBeGreaterThan(1);
     expect(screen.queryByText(/undefined|NaN/i)).not.toBeInTheDocument();
+  });
+
+  it('shows pending risk copy without score or max ltv', () => {
+    render(<OfferRequestScreen {...baseProps} risk={sampleRiskAssessment({
+      provider: 'WAVY_NODE_ADAPTER',
+      riskStatus: 'INVESTIGATION_REQUESTED',
+      amlStatus: 'PENDING',
+      riskScore: null,
+      maxLtvBps: null,
+      riskReason: 'Wavy investigation pending.'
+    })} />);
+
+    expect(screen.getByText(/Risk investigation pending/i)).toBeInTheDocument();
+    expect(screen.queryByText(/max LTV/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/score 82/i)).not.toBeInTheDocument();
   });
 
   it('shows approved deposit guidance and disables collateral action for non-eligible statuses', () => {

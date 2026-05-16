@@ -122,8 +122,10 @@ export function OfferRequestScreen({ loan, wallet, quote, risk, action, errors, 
           </>
         ) : null}
         {risk ? (
-          <Alert tone={risk.amlStatus === 'PASS' ? 'success' : risk.amlStatus === 'REVIEW' ? 'warning' : 'danger'}>
-            {risk.amlStatus === 'PASS' ? 'Risk passed' : risk.amlStatus === 'REVIEW' ? 'Requires review' : 'Blocked'} — score {risk.riskScore}, max LTV {formatBps(risk.maxLtvBps)}, hash {risk.assessmentHash}
+          <Alert tone={risk.riskStatus === 'COMPLETED' ? (risk.amlStatus === 'PASS' ? 'success' : risk.amlStatus === 'REVIEW' ? 'warning' : 'danger') : risk.riskStatus === 'FAILED' ? 'danger' : 'warning'}>
+            {risk.riskStatus === 'COMPLETED'
+              ? `${risk.amlStatus === 'PASS' ? 'Risk passed' : risk.amlStatus === 'REVIEW' ? 'Requires review' : 'Blocked'} — score ${risk.riskScore}, max LTV ${formatBps(risk.maxLtvBps ?? 0)}, reason: ${risk.riskReason}, hash ${risk.assessmentHash}`
+              : `${risk.riskStatus === 'FAILED' ? 'Risk assessment failed' : 'Risk investigation pending'} — reason: ${risk.riskReason}, status: ${risk.riskStatus}, hash ${risk.assessmentHash}`}
           </Alert>
         ) : null}
       </article>
@@ -174,8 +176,10 @@ function RiskStage({ loan, wallet, risk, action, errors, onConnectWallet, onAsse
         {wallet.status === 'connected' ? <p title={wallet.address}><strong>{shortenAddress(wallet.address)}</strong> connected for risk scoring.</p> : null}
         {errors.risk ? <Alert tone="danger">{errors.risk.code}: {errors.risk.message}</Alert> : null}
         {risk ? (
-          <Alert tone={risk.amlStatus === 'PASS' ? 'success' : risk.amlStatus === 'REVIEW' ? 'warning' : 'danger'}>
-            {risk.amlStatus === 'PASS' ? 'Risk passed' : risk.amlStatus === 'REVIEW' ? 'Requires review' : 'Blocked'} — score {risk.riskScore}, max LTV {formatBps(risk.maxLtvBps)}, hash {risk.assessmentHash}
+          <Alert tone={risk.riskStatus === 'COMPLETED' ? (risk.amlStatus === 'PASS' ? 'success' : risk.amlStatus === 'REVIEW' ? 'warning' : 'danger') : risk.riskStatus === 'FAILED' ? 'danger' : 'warning'}>
+            {risk.riskStatus === 'COMPLETED'
+              ? `${risk.amlStatus === 'PASS' ? 'Risk passed' : risk.amlStatus === 'REVIEW' ? 'Requires review' : 'Blocked'} — score ${risk.riskScore}, max LTV ${formatBps(risk.maxLtvBps ?? 0)}, reason: ${risk.riskReason}, hash ${risk.assessmentHash}`
+              : `${risk.riskStatus === 'FAILED' ? 'Risk assessment failed' : 'Risk investigation pending'} — reason: ${risk.riskReason}, status: ${risk.riskStatus}, hash ${risk.assessmentHash}`}
           </Alert>
         ) : null}
         <div className="button-row">

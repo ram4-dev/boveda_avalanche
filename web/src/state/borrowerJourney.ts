@@ -57,11 +57,17 @@ export async function refreshQuote(client: Pick<BovedaApiClient, 'createQuote'>,
   }
 }
 
-export async function refreshRisk(client: Pick<BovedaApiClient, 'assessWalletRisk'>, current: BorrowerJourneyState, walletAddress?: string): Promise<BorrowerJourneyState> {
+export async function refreshRisk(client: Pick<BovedaApiClient, 'assessWalletRisk' | 'getRiskAssessment'>, current: BorrowerJourneyState, walletAddress?: string): Promise<BorrowerJourneyState> {
   if (!current.selectedLoan) return current;
   try {
     const loan = current.selectedLoan;
-    const risk = await client.assessWalletRisk({ walletAddress: walletAddress || loan.borrower.walletAddress, scenario: loan.scenario, collateralToken: loan.collateral.token }) as RiskAssessment;
+    let risk = await client.assessWalletRisk({ walletAddress: walletAddress || loan.borrower.walletAddress, scenario: loan.scenario, collateralToken: loan.collateral.token }) as RiskAssessment;
+
+    for (let attempt = 0; attempt < 4 && (risk.riskStatus === 'INVESTIGATION_REQUESTED' || risk.riskStatus === 'PENDING'); attempt += 1) {
+      await sleep(1000);
+      risk = await client.getRiskAssessment(risk.riskAssessmentId) as RiskAssessment;
+    }
+
     return { ...current, risk, errors: { ...current.errors, risk: undefined } };
   } catch (error) {
     return { ...current, errors: { ...current.errors, risk: toBorrowerError(error) } };
@@ -131,4 +137,8 @@ export function useBorrowerJourney(client: BovedaApiClient) {
     triggerMarginCall: () => withMutation('triggeringMarginCall', 'marginCall', (loan) => client.createMarginCall(loan.loanId, buildDemoMarginCallPayload(loan))),
     liquidateLoan: () => withMutation('liquidating', 'liquidation', (loan) => client.liquidateLoan(loan.loanId, { proceedsAmount: loan.liquidationPreview.proceedsAmount, proceedsCurrency: 'USDC' }))
   };
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
 }

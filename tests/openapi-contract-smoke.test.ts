@@ -75,7 +75,7 @@ describe('OpenAPI canonical public path smoke coverage', () => {
       payload: { walletAddress: web3QuoteRequest.borrowerWallet, scenario: 'WEB3_BRIDGE', collateralToken: 'AVAX' }
     });
     expect(risk.statusCode).toBe(200);
-    expect(risk.json()).toMatchObject({ provider: 'WAVY_NODE_MOCK', amlStatus: 'PASS' });
+    expect(risk.json()).toMatchObject({ provider: 'WAVY_NODE_MOCK', riskStatus: 'COMPLETED', amlStatus: 'PASS' });
 
     const loans = await app.inject({ method: 'GET', url: '/loans' });
     expect(loans.statusCode).toBe(200);

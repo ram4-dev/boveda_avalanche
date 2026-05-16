@@ -6,6 +6,7 @@ import type { RiskAssessmentRequest } from '../../domain/riskEngine.js';
 import type { DemoStore } from '../../store/demoStore.js';
 
 type RiskBody = Partial<RiskAssessmentRequest>;
+type RiskAssessmentParams = { riskAssessmentId: string };
 
 export async function registerRiskRoutes(
   app: FastifyInstance,
@@ -21,6 +22,17 @@ export async function registerRiskRoutes(
     const assessment = await wavyNode.assessWallet(riskRequest);
     store.saveRiskAssessment(assessment);
     return assessment;
+  });
+
+  app.get('/risk/assessments/:riskAssessmentId', async (request: FastifyRequest<{ Params: RiskAssessmentParams }>, reply) => {
+    const existing = store.getRiskAssessment(request.params.riskAssessmentId);
+    if (!existing) {
+      return sendApiError(reply, 404, 'RISK_ASSESSMENT_NOT_FOUND', `Risk assessment ${request.params.riskAssessmentId} was not found`);
+    }
+
+    const refreshed = await wavyNode.refreshAssessment(existing);
+    store.saveRiskAssessment(refreshed);
+    return refreshed;
   });
 }
 

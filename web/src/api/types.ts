@@ -1,7 +1,7 @@
 export type LoanScenario = 'WEB3_BRIDGE' | 'SME_FIAT_WORKING_CAPITAL';
 export type LoanStatus = 'Requested' | 'Approved' | 'Active' | 'MarginCall' | 'Repaid' | 'Defaulted' | 'Liquidated' | 'Cancelled';
 export type PaymentRail = 'WIRE_SIMULATED' | 'SPEI_SIMULATED' | 'ACH_SIMULATED' | 'MANUAL_SIMULATED';
-export type AmlStatus = 'PASS' | 'REVIEW' | 'BLOCK';
+export type AmlStatus = 'PASS' | 'REVIEW' | 'BLOCK' | 'PENDING';
 
 export type Borrower = { borrowerId: string; displayName: string; borrowerType: string; walletAddress: string };
 export type Originator = { originatorId: string; displayName: string; originatorType: string };
@@ -9,7 +9,9 @@ export type FundingPartner = { fundingPartnerId: string; displayName: string };
 export type Principal = { amount: string; currency: string; fiatRail: PaymentRail; disbursementRef?: string | null };
 export type Collateral = { token: string; tokenAddress?: string | null; chainId: number; amount: string; referencePriceUsd?: string; valueUsd: string; vaultAddress?: string | null; depositTxHash?: string | null };
 export type Terms = { initialLtvBps: number; marginCallLtvBps: number; liquidationLtvBps: number; aprBps: number; tenorDays: number; repaymentFrequency: string; liquidationCurrency: 'USDC' };
-export type RiskAssessment = { riskAssessmentId: string; provider: 'WAVY_NODE_MOCK' | 'WAVY_NODE_ADAPTER'; riskScore: number; amlStatus: AmlStatus; maxLtvBps: number; assessmentHash: string; expiresAt: string };
+export type RiskStatus = 'COMPLETED' | 'INVESTIGATION_REQUESTED' | 'PENDING' | 'FAILED';
+export type RiskProviderReference = { chainId?: string; walletAddress?: string; investigationId?: string | null; analysisId?: string | null; analysisStatus?: 'pending' | 'running' | 'completed' | 'failed'; completedLayers?: number; maxDepth?: number; provisionalRiskScore?: number; patternsDetected?: number; scenario?: LoanScenario; collateralToken?: string };
+export type RiskAssessment = { riskAssessmentId: string; provider: 'WAVY_NODE_MOCK' | 'WAVY_NODE_ADAPTER'; riskStatus: RiskStatus; riskScore: number | null; amlStatus: AmlStatus; maxLtvBps: number | null; riskReason: string; providerReference?: RiskProviderReference; assessmentHash: string; expiresAt: string };
 export type LoanReceipt = { receiptTokenId: string; soulbound: true; ownerWallet: string };
 export type LoanMetrics = { currentLtvBps: number; outstandingPrincipal: string; outstandingCurrency: string; nextPaymentDueAt?: string | null };
 export type ProceedsDistribution = { fundingPartnerAmount: string; originatorFeeAmount: string; borrowerRemainderAmount: string };

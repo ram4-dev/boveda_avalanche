@@ -49,9 +49,16 @@
       "riskAssessment": {
         "riskAssessmentId": "risk-web3-001",
         "provider": "WAVY_NODE_MOCK",
+        "riskStatus": "COMPLETED",
         "riskScore": 82,
         "amlStatus": "PASS",
         "maxLtvBps": 5500,
+        "riskReason": "Mock risk profile cleared for WEB3_BRIDGE",
+        "providerReference": {
+          "walletAddress": "0xa11ce00000000000000000000000000000000001",
+          "scenario": "WEB3_BRIDGE",
+          "collateralToken": "AVAX"
+        },
         "assessmentHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "expiresAt": "2026-05-16T00:00:00Z"
       },
@@ -123,9 +130,16 @@
       "riskAssessment": {
         "riskAssessmentId": "risk-sme-001",
         "provider": "WAVY_NODE_MOCK",
+        "riskStatus": "COMPLETED",
         "riskScore": 76,
         "amlStatus": "PASS",
         "maxLtvBps": 6500,
+        "riskReason": "Mock risk profile cleared for SME_FIAT_WORKING_CAPITAL",
+        "providerReference": {
+          "walletAddress": "0xb0b0000000000000000000000000000000000002",
+          "scenario": "SME_FIAT_WORKING_CAPITAL",
+          "collateralToken": "USDC"
+        },
         "assessmentHash": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "expiresAt": "2026-05-16T00:00:00Z"
       },

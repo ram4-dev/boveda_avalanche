@@ -21,6 +21,7 @@ export function createBovedaApiClient(options: ClientOptions = {}) {
     getLoan: (loanId: string): Promise<Loan> => request(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}`), { method: 'GET' }) as Promise<Loan>,
     createQuote: (input: QuoteRequest) => post(fetcher, url(baseUrl, '/quotes'), input),
     assessWalletRisk: (input: RiskAssessmentRequest) => post(fetcher, url(baseUrl, '/risk/wallet'), input),
+    getRiskAssessment: (riskAssessmentId: string) => request(fetcher, url(baseUrl, `/risk/assessments/${encodePath(riskAssessmentId)}`), { method: 'GET' }),
     depositCollateral: (loanId: string, input: CollateralDepositRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/collateral/deposit`), input),
     activateLoan: (loanId: string, input: ActivateLoanRequest = {}) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/activate`), input),
     attestPayment: (loanId: string, input: PaymentAttestationRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/payments/attest`), input),

@@ -31,7 +31,10 @@ Este documento fija el flujo canónico de la demo para que frontend, backend y c
 
 2. **Wallet risk check**
    - Frontend/backend llama `POST /risk/wallet`.
-   - Wavy Node mock devuelve `riskScore`, `amlStatus`, `maxLtvBps`, `expiresAt` y un `assessmentHash`.
+   - En modo real, backend consulta `scan-risk`; si no hay resultado completado, solicita investigación y hace polling de investigación/progreso antes de usar fallback seguro.
+   - Wavy soporta Avalanche mainnet (`43114`) pero no Fuji (`43113`) según la documentación de chains soportadas, así que una demo live en Fuji no obtiene score real de Wavy para actividad Fuji.
+   - Para demo controlada, `WAVYNODE_NO_HISTORY_POLICY=pass` permite continuar con `riskScore: 0` cuando Wavy falla una investigación sin historial útil; no es comportamiento de compliance productivo.
+   - Wavy Node mock devuelve `riskScore`, `amlStatus`, `maxLtvBps`, `riskReason`, `expiresAt` y un `assessmentHash`.
 
 3. **Loan request**
    - Backend llama `POST /loans` con borrower, originator, terms, collateral y `riskAssessmentId`.

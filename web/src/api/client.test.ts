@@ -18,6 +18,7 @@ describe('createBovedaApiClient', () => {
       if (url.endsWith('/loans/loan-web3-001') && method === 'GET') return jsonResponse({ loanId: 'loan-web3-001' });
       if (url.endsWith('/quotes') && method === 'POST') return jsonResponse({ quoteId: 'quote-1' });
       if (url.endsWith('/risk/wallet') && method === 'POST') return jsonResponse({ riskAssessmentId: 'risk-1' });
+      if (url.endsWith('/risk/assessments/risk-1') && method === 'GET') return jsonResponse({ riskAssessmentId: 'risk-1' });
       if (url.endsWith('/loans/loan-web3-001/collateral/deposit') && method === 'POST') return jsonResponse({ loanId: 'loan-web3-001', status: 'Approved' });
       if (url.endsWith('/loans/loan-web3-001/activate') && method === 'POST') return jsonResponse({ loanId: 'loan-web3-001', status: 'Active' });
       if (url.endsWith('/loans/loan-web3-001/payments/attest') && method === 'POST') return jsonResponse({ attestationHash: '0xabc' });
@@ -33,6 +34,7 @@ describe('createBovedaApiClient', () => {
     await client.getLoan('loan-web3-001');
     await client.createQuote({ scenario: 'WEB3_BRIDGE', borrowerWallet: '0xabc', requestedPrincipal: { amount: '150000', currency: 'USD' }, collateralToken: 'AVAX', collateralValueUsd: '300000' });
     await client.assessWalletRisk({ walletAddress: '0xabc', scenario: 'WEB3_BRIDGE', collateralToken: 'AVAX' });
+    await client.getRiskAssessment('risk-1');
     await client.depositCollateral('loan-web3-001', { token: 'AVAX', amount: '2750', txHash: '0x1', vaultAddress: '0xvault' });
     await client.activateLoan('loan-web3-001', { receiptTokenId: 'demo-receipt-1' });
     await client.attestPayment('loan-web3-001', { installmentId: 'inst-001', amount: '12500', currency: 'USD', paymentRail: 'WIRE_SIMULATED', paidAt: '2026-06-15T00:00:00Z' });
@@ -46,6 +48,7 @@ describe('createBovedaApiClient', () => {
       'GET /loans/loan-web3-001',
       'POST /quotes',
       'POST /risk/wallet',
+      'GET /risk/assessments/risk-1',
       'POST /loans/loan-web3-001/collateral/deposit',
       'POST /loans/loan-web3-001/activate',
       'POST /loans/loan-web3-001/payments/attest',

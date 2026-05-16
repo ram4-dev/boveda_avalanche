@@ -85,7 +85,11 @@ export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore,
       return sendApiError(reply, 422, 'RISK_ASSESSMENT_NOT_FOUND', `Risk assessment ${body.riskAssessmentId} was not found`);
     }
 
-    if (riskAssessment.amlStatus !== 'PASS') {
+    if (riskAssessment.riskStatus !== 'COMPLETED') {
+      return sendApiError(reply, 422, 'INVALID_REQUEST', `Risk assessment ${body.riskAssessmentId} is not completed`);
+    }
+
+    if (riskAssessment.amlStatus !== 'PASS' || typeof riskAssessment.maxLtvBps !== 'number') {
       return sendApiError(reply, 422, 'INVALID_REQUEST', `Risk assessment ${body.riskAssessmentId} is not approved`);
     }
 

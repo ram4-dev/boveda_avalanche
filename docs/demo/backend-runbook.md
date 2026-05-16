@@ -63,6 +63,21 @@ Batch 2 is mock-first by design:
 
 When Batch 1 smart contract ABI/addresses are available, add a real web3 adapter behind the same `Web3Adapter` interface instead of changing public HTTP paths.
 
+### Wavy real-chain limitation
+
+Wavy Node real scoring depends on supported chains. Current docs list Avalanche mainnet (`43114`) but not Avalanche Fuji (`43113`).
+
+- If the live loan demo runs on Fuji, Wavy real scoring cannot rely on Fuji transaction history.
+- For real Wavy risk data, use a wallet on a Wavy-supported chain (for example Ethereum mainnet or Avalanche mainnet) and query with that chain ID.
+
+### Wavy investigation polling caveat
+
+`scan-risk` only returns completed/cached results. The real adapter therefore creates an investigation and, while pending, polls Wavy for investigation/progress before checking `scan-risk` again.
+
+The `GET /analysis/{analysisId}/progress` path is documented by Wavy. The investigation detail path is inferred from the API shape as `GET /projects/{projectId}/investigations/{investigationId}` because the current docs page names "Get investigation" but does not expose an OpenAPI block. If Wavy uses a different path, only the adapter helper for investigation fetch should need adjustment.
+
+`WAVYNODE_NO_HISTORY_POLICY=pass` is a demo-only escape hatch for Wavy investigations that fail with no usable transaction graph/history. It converts that specific no-history failure into `COMPLETED`/`PASS` with `riskScore: 0` and the scenario max LTV so the hackathon flow can continue. Keep the default `fail` for production/compliance because this fallback is not a final Wavy risk result.
+
 ## State and dashboard traceability
 
 Runtime state is deterministic and in-memory:

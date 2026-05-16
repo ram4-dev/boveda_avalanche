@@ -30,7 +30,7 @@ export type EventType = (typeof EVENT_TYPES)[number];
 
 export type PaymentRail = 'WIRE_SIMULATED' | 'SPEI_SIMULATED' | 'ACH_SIMULATED' | 'MANUAL_SIMULATED';
 export type RepaymentFrequency = 'WEEKLY' | 'MONTHLY' | 'BULLET';
-export type AmlStatus = 'PASS' | 'REVIEW' | 'BLOCK';
+export type AmlStatus = 'PASS' | 'REVIEW' | 'BLOCK' | 'PENDING';
 
 export type Borrower = {
   borrowerId: string;
@@ -83,12 +83,31 @@ export type CollateralTerms = {
   liquidationCurrency: 'USDC';
 };
 
+export type RiskStatus = 'COMPLETED' | 'INVESTIGATION_REQUESTED' | 'PENDING' | 'FAILED';
+
+export type RiskProviderReference = {
+  chainId?: string;
+  walletAddress?: string;
+  investigationId?: string | null;
+  analysisId?: string | null;
+  analysisStatus?: 'pending' | 'running' | 'completed' | 'failed';
+  completedLayers?: number;
+  maxDepth?: number;
+  provisionalRiskScore?: number;
+  patternsDetected?: number;
+  scenario?: LoanScenario;
+  collateralToken?: string;
+};
+
 export type RiskAssessment = {
   riskAssessmentId: string;
   provider: 'WAVY_NODE_MOCK' | 'WAVY_NODE_ADAPTER';
-  riskScore: number;
+  riskStatus: RiskStatus;
+  riskScore: number | null;
   amlStatus: AmlStatus;
-  maxLtvBps: number;
+  maxLtvBps: number | null;
+  riskReason: string;
+  providerReference?: RiskProviderReference;
   assessmentHash: string;
   expiresAt: string;
 };

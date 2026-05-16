@@ -59,7 +59,7 @@ describe('borrower journey state', () => {
     expect(quotePayload).not.toHaveProperty('requestedAmount');
     expect(quotePayload).not.toHaveProperty('requestedCurrency');
 
-    const riskClient = { assessWalletRisk: vi.fn(async () => { throw new Error('risk unavailable'); }) };
+    const riskClient = { assessWalletRisk: vi.fn(async () => { throw new Error('risk unavailable'); }), getRiskAssessment: vi.fn(async () => { throw new Error('risk unavailable'); }) };
     const withRiskError = await refreshRisk(riskClient, withQuote, '0xA11CE00000000000000000000000000000000001');
     expect(withRiskError.selectedLoan?.loanId).toBe('loan-web3-001');
     expect(withRiskError.errors.risk?.message).toBe('risk unavailable');
