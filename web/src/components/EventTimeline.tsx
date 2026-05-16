@@ -30,7 +30,7 @@ export function EventTimeline({ events }: { events: OnChainEvent[] }) {
         <li key={event.eventId}>
           <span className="event-type">{event.eventType}</span>
           <span className="event-meta">
-            {formatOccurredAt(event.occurredAt)} · tx {shortHash(event.txHash)}
+            {formatOccurredAt(event.occurredAt)} · {event.txHash ? event.explorerUrl ? <a href={event.explorerUrl} target="_blank" rel="noreferrer">tx {shortHash(event.txHash)}</a> : `tx ${shortHash(event.txHash)}` : 'No tx recorded'}
           </span>
           {event.payload.attestationHash ? (
             <div className="event-payload">Attestation {String(event.payload.attestationHash)}</div>

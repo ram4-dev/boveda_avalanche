@@ -1,5 +1,6 @@
 import type { Loan, OnChainEvent } from '../api/types.js';
 import { formatBps, formatMoney } from './format.js';
+import { buildExplorerAddressLink, buildExplorerTxLink } from './explorer.js';
 import { StatusPill } from './StatusPill.js';
 import { selectLoanDetailViewModel } from '../state/dashboardSelectors.js';
 
@@ -30,7 +31,7 @@ export function LoanDetailPanel({ loan, events, errorMessage }: LoanDetailPanelP
     <div className="loan-detail-grid">
       <p><strong>Loan ID:</strong> <span className="mono-cell">{detail.loanId}</span></p>
       <p><strong>Scenario:</strong> {detail.scenario.replaceAll('_', ' ')}</p>
-      <p><strong>Borrower:</strong> {detail.borrower.displayName} <span className="mono-cell">{detail.borrower.walletAddress}</span></p>
+      <p><strong>Borrower:</strong> {detail.borrower.displayName} <a href={buildExplorerAddressLink(detail.collateral.chainId, detail.borrower.walletAddress)} target="_blank" rel="noreferrer" className="mono-cell">{detail.borrower.walletAddress}</a></p>
       <p><strong>Originator:</strong> {detail.originator.displayName}</p>
       <p><strong>Funding partner:</strong> {detail.fundingPartner.displayName}</p>
       <p><strong>Principal:</strong> {formatMoney(detail.principal.amount, detail.principal.currency)}</p>
@@ -41,10 +42,10 @@ export function LoanDetailPanel({ loan, events, errorMessage }: LoanDetailPanelP
       <p><strong>APR:</strong> {formatBps(detail.terms.aprBps)}</p>
       <p><strong>Tenor:</strong> {detail.terms.tenorDays} days</p>
       <p><strong>Repayment frequency:</strong> {detail.terms.repaymentFrequency}</p>
-      <p><strong>Vault address:</strong> {detail.collateral.vaultAddress ? <span className="mono-cell">{detail.collateral.vaultAddress}</span> : 'Unavailable — no vault address recorded'}</p>
-      <p><strong>Deposit tx hash:</strong> {detail.collateral.depositTxHash ? <span className="mono-cell">{detail.collateral.depositTxHash}</span> : 'Unavailable — no deposit tx hash recorded'}</p>
+      <p><strong>Vault address:</strong> {detail.collateral.vaultAddress ? <a href={buildExplorerAddressLink(detail.collateral.chainId, detail.collateral.vaultAddress)} target="_blank" rel="noreferrer" className="mono-cell">{detail.collateral.vaultAddress}</a> : 'Unavailable — no vault address recorded'}</p>
+      <p><strong>Deposit tx hash:</strong> {detail.collateral.depositTxHash ? <a href={buildExplorerTxLink(detail.collateral.chainId, detail.collateral.depositTxHash)} target="_blank" rel="noreferrer" className="mono-cell">{detail.collateral.depositTxHash}</a> : 'Unavailable — no deposit tx hash recorded'}</p>
       <p><strong>Receipt:</strong> {detail.receipt.receiptTokenId ?? detail.receipt.emptyLabel}</p>
-      <p><strong>Receipt owner wallet:</strong> {detail.receipt.ownerWallet ? <span className="mono-cell">{detail.receipt.ownerWallet}</span> : 'Unavailable — no receipt owner wallet'}</p>
+      <p><strong>Receipt owner wallet:</strong> {detail.receipt.ownerWallet ? <a href={buildExplorerAddressLink(detail.collateral.chainId, detail.receipt.ownerWallet)} target="_blank" rel="noreferrer" className="mono-cell">{detail.receipt.ownerWallet}</a> : 'Unavailable — no receipt owner wallet'}</p>
       <p><strong>Soulbound status:</strong> {detail.receipt.soulbound === null ? 'Unavailable — receipt not minted yet' : detail.receipt.soulbound ? 'Soulbound (non-transferable)' : 'Transferable'}</p>
       <p><strong>Liquidation proceeds:</strong> {formatMoney(detail.liquidation.proceedsAmount, detail.liquidation.proceedsCurrency)}</p>
       <p><strong>Liquidation currency:</strong> {detail.liquidation.proceedsCurrency}</p>

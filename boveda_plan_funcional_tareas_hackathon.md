@@ -332,6 +332,8 @@ Los batches están pensados para correr en paralelo, pero con puntos de integrac
 
 **Duda explícita:** el explorer canónico queda por definir al hacer este batch (`Snowtrace`, `Avascan`, `Routescan` u otro según soporte Fuji/mainnet y UX). El plan solo exige que todos los links salgan de una configuración centralizada.
 
+**Decisión tomada:** para Fuji/testnet usamos `Snowtrace` como explorer canónico. Los links de tx y address deben generarse desde una configuración común, y el backend extiende esa ruta a los eventos on-chain.
+
 **Regla de seguridad:** la wallet puede estar preconectada o preautorizada para la live demo, pero la private key, seed phrase o credencial de firma no debe vivir en el frontend ni quedar documentada en texto plano. Usar secret manager, signer backend controlado, wallet session o mecanismo equivalente.
 
 **Recorte permitido:** si no hay tiempo para que el jurado dispare todas las acciones, dejar un modo presenter-driven: el jurado observa el dashboard y abre explorer links mientras el presentador confirma cada operación.

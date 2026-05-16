@@ -30,6 +30,7 @@ export function DashboardSourcesPanel({ client }: DashboardSourcesPanelProps) {
         <h2>Data sources</h2>
         <small className="mono-cell">Real backend source matrix</small>
       </header>
+      <p className="table-subtle">Canonical explorer for Fuji/testnet links is Snowtrace. Explorer links are surfaced for chain addresses and transaction hashes where available.</p>
       {error ? (
         <p role="alert">Could not load data-source metadata: {error}</p>
       ) : sources === null ? (

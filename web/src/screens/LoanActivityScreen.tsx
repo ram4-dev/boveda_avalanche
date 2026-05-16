@@ -4,6 +4,7 @@ import { ActionButton } from '../components/ActionButton.js';
 import { Alert } from '../components/Alert.js';
 import { EventTimeline } from '../components/EventTimeline.js';
 import { KeyValueList } from '../components/KeyValueList.js';
+import { buildExplorerAddressLink, buildExplorerTxLink } from '../components/explorer.js';
 import { MetricTile } from '../components/MetricTile.js';
 import { StatusPill } from '../components/StatusPill.js';
 import { formatBps, formatDate, formatMoney, isUsdcCurrency, shortHash, unsupportedLiquidationCurrencyMessage } from '../components/format.js';
@@ -73,9 +74,18 @@ export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation,
         </div>
         <hr className="card-divider" />
         <KeyValueList items={[
-          { label: 'Vault', value: loan.collateral.vaultAddress ?? 'Not recorded' },
-          { label: 'Deposit tx', value: shortHash(loan.collateral.depositTxHash) },
-          { label: 'Borrower', value: loan.borrower.displayName }
+          {
+            label: 'Vault',
+            value: loan.collateral.vaultAddress ? <a href={buildExplorerAddressLink(loan.collateral.chainId, loan.collateral.vaultAddress)} target="_blank" rel="noreferrer" className="mono-cell">{shortHash(loan.collateral.vaultAddress)}</a> : 'Not recorded'
+          },
+          {
+            label: 'Deposit tx',
+            value: loan.collateral.depositTxHash ? <a href={buildExplorerTxLink(loan.collateral.chainId, loan.collateral.depositTxHash)} target="_blank" rel="noreferrer" className="mono-cell">{shortHash(loan.collateral.depositTxHash)}</a> : 'Not recorded'
+          },
+          {
+            label: 'Borrower',
+            value: <a href={buildExplorerAddressLink(loan.collateral.chainId, loan.borrower.walletAddress)} target="_blank" rel="noreferrer">{loan.borrower.displayName}</a>
+          }
         ]} />
       </article>
 
@@ -130,6 +140,9 @@ export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation,
       <article className="card">
         <span className="card-kicker">Risk</span>
         <h2>Risk and liquidation</h2>
+        <Alert tone="warning">
+          Demo mode only: this is a Fuji testnet/local backend simulation. Only simulated borrower and liquidation actions are available here.
+        </Alert>
         {showMarginAlert ? (
           <Alert tone="warning">
             Margin call: current LTV {formatBps(loan.currentMetrics.currentLtvBps)} vs threshold {formatBps(loan.terms.marginCallLtvBps)}.
@@ -144,7 +157,11 @@ export function LoanActivityScreen({ loan, events, lastPayment, lastLiquidation,
           <ActionButton variant="secondary" onClick={onTriggerMarginCall} disabled={!canMarginCall} loading={action === 'triggeringMarginCall'}>
             Trigger margin-call simulation
           </ActionButton>
-          <ActionButton variant="danger" onClick={onLiquidate} disabled={!canLiquidate} loading={action === 'liquidating'}>
+          <ActionButton variant="danger" onClick={() => {
+            if (window.confirm('Confirm simulated liquidation on demo Fuji network? This action is irreversible in this demo view.')) {
+              onLiquidate();
+            }
+          }} disabled={!canLiquidate} loading={action === 'liquidating'}>
             Simulate liquidation
           </ActionButton>
         </div>

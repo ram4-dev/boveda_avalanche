@@ -31,6 +31,10 @@ export function App() {
           <span className="network-dot" aria-hidden="true"></span>
           Local backend API
         </span>
+        <span className="network-chip" aria-label="Demo mode status">
+          <span className="network-dot network-dot-warning" aria-hidden="true"></span>
+          Demo mode: Fuji testnet
+        </span>
         <span className="network-chip" aria-label="Wallet connection status">
           <span className={`network-dot ${wallet.connection.status === 'connected' ? 'network-dot-success' : wallet.connection.status === 'connecting' ? 'network-dot-warning' : 'network-dot-muted'}`} aria-hidden="true"></span>
           {wallet.connection.status === 'connected' ? shortenAddress(wallet.connection.address) : wallet.connection.status === 'connecting' ? 'Connecting wallet…' : wallet.connection.status === 'idle' ? 'Wallet ready' : wallet.connection.status === 'unavailable' ? 'Wallet unavailable' : wallet.connection.status === 'rejected' ? 'Wallet rejected' : 'Wallet status'}
@@ -77,6 +81,15 @@ function BorrowerWidgetView({ client, wallet }: { client: ReturnType<typeof crea
       >
         Refresh
       </button>
+      <div className="borrower-status" aria-live="polite">
+        {journey.state.action ? (
+          <p className="muted">Live update: {journey.state.action.replace(/([A-Z])/g, ' $1').toLowerCase()} in progress.</p>
+        ) : Object.values(journey.state.errors).some(Boolean) ? (
+          <p className="muted">Last operation completed with an error. Check the alerts for details.</p>
+        ) : (
+          <p className="muted">Borrower state is live and refreshed after each action, including events, tx hashes, and proceeds.</p>
+        )}
+      </div>
     </div>
 
     {journey.state.loadStatus === 'ready' ? (

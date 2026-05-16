@@ -1,4 +1,5 @@
 import { sha256Canonical } from '../domain/hashing.js';
+import { buildExplorerTxLink } from '../domain/explorer.js';
 import type { PaymentAttestation } from '../domain/paymentAttestations.js';
 import type { DemoStore } from '../store/demoStore.js';
 import type { Loan, OnChainEvent, ProceedsDistribution } from '../domain/types.js';
@@ -175,7 +176,7 @@ function createSnowtraceWeb3Adapter(store: DemoStore, apiKey: string, baseUrl: s
   }
 
   function buildExplorerUrl(txHash: string): string {
-    return `https://testnet.snowtrace.io/tx/${txHash}`;
+    return buildExplorerTxLink(43113, txHash);
   }
 
   return {

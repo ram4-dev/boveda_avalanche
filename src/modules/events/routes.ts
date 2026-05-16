@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { OnChainEvent } from '../../domain/types.js';
+import { buildExplorerTxLink } from '../../domain/explorer.js';
 import type { Web3Adapter, Web3RefreshOutcome } from '../../adapters/web3.js';
 import type { DemoStore } from '../../store/demoStore.js';
 
@@ -30,7 +31,7 @@ type AuditTrailResponse = {
 function attachAuditFields(event: OnChainEvent): OnChainEvent {
   return {
     ...event,
-    explorerUrl: event.explorerUrl ?? (event.txHash ? `https://testnet.snowtrace.io/tx/${event.txHash}` : undefined),
+    explorerUrl: event.explorerUrl ?? (event.txHash ? buildExplorerTxLink(43113, event.txHash) : undefined),
     source: event.source ?? (event.txHash ? 'chain' : 'fallback')
   };
 }

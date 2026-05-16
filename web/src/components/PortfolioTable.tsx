@@ -1,5 +1,6 @@
 import type { Loan } from '../api/types.js';
 import { formatBps, formatMoney, shortHash } from './format.js';
+import { buildExplorerAddressLink } from './explorer.js';
 import { StatusPill } from './StatusPill.js';
 
 type Props = {
@@ -36,12 +37,12 @@ export function PortfolioTable({ loans, onInspectLoan }: Props) {
           {loans.map((loan) => <tr key={loan.loanId}>
             <td className="mono-cell" title={loan.loanId}>{loan.loanId}</td>
             <td>{loan.scenario.replaceAll('_', ' ')}</td>
-            <td title={loan.borrower.walletAddress}>{loan.borrower.displayName}<div className="table-subtle mono-cell">{shortHash(loan.borrower.walletAddress)}</div></td>
+            <td title={loan.borrower.walletAddress}><a href={buildExplorerAddressLink(loan.collateral.chainId, loan.borrower.walletAddress)} target="_blank" rel="noreferrer">{loan.borrower.displayName}</a><div className="table-subtle mono-cell">{shortHash(loan.borrower.walletAddress)}</div></td>
             <td><StatusPill status={loan.status} /></td>
             <td>{formatMoney(loan.principal.amount, loan.principal.currency)}</td>
             <td>{formatMoney(loan.collateral.valueUsd, 'USD')}<div className="table-subtle">{loan.collateral.token}</div></td>
             <td>{formatBps(loan.currentMetrics.currentLtvBps)}</td>
-            <td>{loan.collateral.vaultAddress ? <span className="mono-cell" title={loan.collateral.vaultAddress}>{shortHash(loan.collateral.vaultAddress)}</span> : 'No vault'}<div className="table-subtle">{loan.receipt?.receiptTokenId ?? 'No receipt'}</div></td>
+            <td>{loan.collateral.vaultAddress ? <a href={buildExplorerAddressLink(loan.collateral.chainId, loan.collateral.vaultAddress)} target="_blank" rel="noreferrer" className="mono-cell" title={loan.collateral.vaultAddress}>{shortHash(loan.collateral.vaultAddress)}</a> : 'No vault'}<div className="table-subtle">{loan.receipt?.receiptTokenId ?? 'No receipt'}</div></td>
             <td><button className="button button-secondary" onClick={() => onInspectLoan(loan.loanId)} aria-label={`Inspect ${loan.loanId}`}>Inspect</button></td>
           </tr>)}
         </tbody>
