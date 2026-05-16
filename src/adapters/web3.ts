@@ -62,6 +62,9 @@ export type LiquidationOutcome = {
 
 export type Web3RefreshOutcome = {
   refreshedEvents: number;
+  pendingEvents: number;
+  sourceAvailable: boolean;
+  sourceError?: string;
 };
 
 export interface Web3Adapter {
@@ -110,7 +113,7 @@ export function createMockWeb3Adapter(): Web3Adapter {
       };
     },
     async refreshPendingEvents() {
-      return { refreshedEvents: 0 };
+      return { refreshedEvents: 0, pendingEvents: 0, sourceAvailable: true };
     }
   };
 }
@@ -142,7 +145,7 @@ function createSnowtraceWeb3Adapter(store: DemoStore, apiKey: string, baseUrl: s
 
     const response = await fetch(url.toString());
     if (!response.ok) {
-      return null;
+      throw new Error(`Snowtrace HTTP ${response.status}`);
     }
 
     const body = await response.json();
@@ -180,29 +183,39 @@ function createSnowtraceWeb3Adapter(store: DemoStore, apiKey: string, baseUrl: s
     async refreshPendingEvents() {
       const events = store.listEvents().filter((event) => event.txHash && event.blockNumber === null);
       let refreshedEvents = 0;
+      let sourceAvailable = true;
+      let sourceError: string | undefined;
+
       for (const event of events) {
-        const receipt = await fetchTxReceipt(event.txHash as string);
-        const update: Record<string, unknown> = {
-          explorerUrl: buildExplorerUrl(event.txHash as string)
-        };
-
-        if (receipt) {
-          update.blockNumber = receipt.blockNumber;
-          update.txReceipt = {
-            txHash: event.txHash as string,
-            blockNumber: receipt.blockNumber,
-            status: receipt.status,
-            gasUsed: receipt.gasUsed ?? null
+        try {
+          const receipt = await fetchTxReceipt(event.txHash as string);
+          const update: Record<string, unknown> = {
+            explorerUrl: buildExplorerUrl(event.txHash as string)
           };
-          update.source = 'chain';
-        }
 
-        store.updateEvent(event.eventId, update as Partial<OnChainEvent>);
-        if (receipt?.blockNumber != null) {
-          refreshedEvents += 1;
+          if (receipt) {
+            update.blockNumber = receipt.blockNumber;
+            update.txReceipt = {
+              txHash: event.txHash as string,
+              blockNumber: receipt.blockNumber,
+              status: receipt.status,
+              gasUsed: receipt.gasUsed ?? null
+            };
+            update.source = 'chain';
+          }
+
+          store.updateEvent(event.eventId, update as Partial<OnChainEvent>);
+          if (receipt?.blockNumber != null) {
+            refreshedEvents += 1;
+          }
+        } catch (error) {
+          sourceAvailable = false;
+          sourceError = error instanceof Error ? error.message : String(error);
         }
       }
-      return { refreshedEvents };
+
+      const pendingEvents = store.listEvents().filter((event) => event.txHash && event.blockNumber === null).length;
+      return { refreshedEvents, pendingEvents, sourceAvailable, sourceError };
     }
   };
 }

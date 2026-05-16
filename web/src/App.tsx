@@ -21,13 +21,13 @@ export function App() {
         <div className="brand-mark" aria-hidden="true">B</div>
         <div>
           <h1>Bóveda demo workspace</h1>
-          <p className="brand-subtitle">Borrower journey + institutional dashboard over local Batch 2 API</p>
+          <p className="brand-subtitle">Borrower journey + institutional dashboard over the local backend API</p>
         </div>
       </div>
       <div className="header-meta">
         <span className="network-chip" aria-label="Demo network status">
           <span className="network-dot" aria-hidden="true"></span>
-          Local Batch 2 API
+          Local backend API
         </span>
         <nav className="view-switch" aria-label="Demo view switcher">
           <button className={`button ${view === 'borrower' ? 'button-primary' : 'button-secondary'}`} onClick={() => setView('borrower')} aria-pressed={view === 'borrower'}>
@@ -76,7 +76,7 @@ function BorrowerWidgetView({ client }: { client: ReturnType<typeof createBoveda
 
     {journey.state.loadStatus === 'ready' ? (
       <div className="sr-status" role="status" aria-label="Borrower data status">
-        Borrower data loaded from local Batch 2 API. Collateral, payment, and liquidation controls remain API-simulated until contracts are wired.
+        Borrower data loaded from the local backend API. Collateral, payment, and liquidation controls remain API-simulated until contracts are wired.
       </div>
     ) : null}
 

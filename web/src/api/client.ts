@@ -1,5 +1,5 @@
 import { ApiClientError } from './errors.js';
-import type { ActivateLoanRequest, CollateralDepositRequest, CollateralTopUpRequest, DashboardSummary, EventsResponse, LiquidationRequest, Loan, LoanScenario, LoansResponse, LoanStatus, MarginCallRequest, PaymentAttestationRequest, QuoteRequest, RiskAssessmentRequest } from './types.js';
+import type { ActivateLoanRequest, CollateralDepositRequest, CollateralTopUpRequest, DashboardSummary, DataSourcesResponse, EventsResponse, LiquidationRequest, Loan, LoanScenario, LoansResponse, LoanStatus, MarginCallRequest, PaymentAttestationRequest, QuoteRequest, RiskAssessmentRequest } from './types.js';
 export { ApiClientError } from './errors.js';
 export type * from './types.js';
 
@@ -27,7 +27,8 @@ export function createBovedaApiClient(options: ClientOptions = {}) {
     attestPayment: (loanId: string, input: PaymentAttestationRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/payments/attest`), input),
     createMarginCall: (loanId: string, input: MarginCallRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/margin-call`), input),
     liquidateLoan: (loanId: string, input: LiquidationRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/liquidate`), input),
-    listEvents: (filter?: { loanId?: string }): Promise<EventsResponse> => request(fetcher, url(baseUrl, '/events', filter), { method: 'GET' }) as Promise<EventsResponse>
+    listEvents: (filter?: { loanId?: string }): Promise<EventsResponse> => request(fetcher, url(baseUrl, '/events', filter), { method: 'GET' }) as Promise<EventsResponse>,
+    getDashboardDataSources: (): Promise<DataSourcesResponse> => request(fetcher, url(baseUrl, '/dashboard/data-sources'), { method: 'GET' }) as Promise<DataSourcesResponse>
   };
 }
 

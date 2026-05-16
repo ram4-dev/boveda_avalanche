@@ -15,11 +15,53 @@ export type LoanMetrics = { currentLtvBps: number; outstandingPrincipal: string;
 export type ProceedsDistribution = { fundingPartnerAmount: string; originatorFeeAmount: string; borrowerRemainderAmount: string };
 export type LiquidationPreview = { proceedsAmount: string; proceedsCurrency: 'USDC'; distribution: ProceedsDistribution };
 export type Loan = { loanId: string; scenario: LoanScenario; status: LoanStatus; borrower: Borrower; originator: Originator; fundingPartner: FundingPartner; principal: Principal; collateral: Collateral; terms: Terms; riskAssessment: RiskAssessment; receipt: LoanReceipt | null; currentMetrics: LoanMetrics; liquidationPreview: LiquidationPreview };
-export type OnChainEvent = { eventId: string; eventType: string; loanId: string; txHash: string | null; blockNumber: number | null; occurredAt: string; payload: Record<string, unknown> };
+export type OnChainReceipt = {
+  txHash: string;
+  blockNumber: number | null;
+  status: 'success' | 'failed' | 'unknown';
+  gasUsed?: string | null;
+};
+export type OnChainEvent = {
+  eventId: string;
+  eventType: string;
+  loanId: string;
+  txHash: string | null;
+  blockNumber: number | null;
+  occurredAt: string;
+  payload: Record<string, unknown>;
+  txReceipt?: OnChainReceipt;
+  explorerUrl?: string;
+  source?: 'chain' | 'fallback';
+};
 export type DashboardExposure = { asset: string; valueUsd: string };
-export type DashboardSummary = { activePrincipalUsd: string; activeVaults: number; averageLtvBps: number; loansInMarginCall: number; paymentsAttested: number; liquidationsExecuted: number; exposureByAsset: DashboardExposure[]; recentEvents: OnChainEvent[] };
+export type DashboardSourceDefinition = {
+  field: string;
+  source: 'api' | 'chain' | 'derived' | 'fallback';
+  dataPath: string;
+  backend: string;
+  explorer?: string;
+  note: string;
+};
+export type DataSourcesResponse = { sources: DashboardSourceDefinition[] };
+export type SourceStatus = 'available' | 'pending' | 'stale' | 'unavailable';
+export type SourceStatusPayload = {
+  summary?: SourceStatus;
+  events: SourceStatus;
+  details?: string;
+};
+export type DashboardSummary = {
+  activePrincipalUsd: string;
+  activeVaults: number;
+  averageLtvBps: number;
+  loansInMarginCall: number;
+  paymentsAttested: number;
+  liquidationsExecuted: number;
+  exposureByAsset: DashboardExposure[];
+  recentEvents: OnChainEvent[];
+  sourceStatus?: SourceStatusPayload;
+};
 export type LoansResponse = { loans: Loan[] };
-export type EventsResponse = { events: OnChainEvent[] };
+export type EventsResponse = { events: OnChainEvent[]; sourceStatus?: SourceStatusPayload };
 
 export type QuoteRequest = { scenario: LoanScenario; borrowerWallet: string; requestedPrincipal: { amount: string; currency: string }; collateralToken: string; collateralValueUsd?: string };
 export type QuoteResponse = { quoteId?: string; scenario: LoanScenario; suggestedPrincipal: { amount: string; currency: string }; requiredCollateralValueUsd: string; terms: Terms };
