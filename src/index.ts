@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { buildFastifyApp } from './app.js';
 
 const app = buildFastifyApp();
@@ -6,6 +7,7 @@ const host = process.env.HOST ?? '0.0.0.0';
 
 try {
   await app.listen({ port, host });
+  console.log(`🚀 Backend listening at http://${host}:${port}`);
 } catch (error) {
   app.log.error(error);
   process.exit(1);

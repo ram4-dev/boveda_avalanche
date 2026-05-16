@@ -1,6 +1,6 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { createMockWavyNodeAdapter, type WavyNodeAdapter } from './adapters/wavyNode.js';
-import { createMockWeb3Adapter, type Web3Adapter } from './adapters/web3.js';
+import { createWeb3Adapter, type Web3Adapter } from './adapters/web3.js';
 import { registerDashboardRoutes } from './modules/dashboard/routes.js';
 import { registerEventRoutes } from './modules/events/routes.js';
 import { registerHealthRoutes } from './modules/health/routes.js';
@@ -21,7 +21,7 @@ export function buildFastifyApp(deps: Partial<AppDeps> = {}): FastifyInstance {
   const app = Fastify({ logger: false });
   const store = deps.store ?? DemoStore.fromSeed(loadSeedFileSync());
   const wavyNode = deps.wavyNode ?? createMockWavyNodeAdapter();
-  const web3 = deps.web3 ?? createMockWeb3Adapter();
+  const web3 = deps.web3 ?? createWeb3Adapter(store, process.env.SNOWTRACE_API_KEY, process.env.SNOWTRACE_BASE_URL);
 
   void app.register(registerHealthRoutes);
   void app.register(async (scopedApp) => {

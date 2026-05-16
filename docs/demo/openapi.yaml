@@ -296,6 +296,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/DashboardSummary"
 
+  /dashboard/data-sources:
+    get:
+      tags: [Dashboard]
+      summary: Get dashboard data source matrix
+      operationId: getDashboardDataSources
+      responses:
+        "200":
+          description: Dashboard field source matrix
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardDataSourcesResponse"
+
   /events:
     get:
       tags: [Events]
@@ -897,6 +910,40 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OnChainEvent"
+
+    DashboardSourceDefinition:
+      type: object
+      required:
+        - field
+        - source
+        - dataPath
+        - backend
+        - note
+      properties:
+        field:
+          type: string
+        source:
+          type: string
+          enum: [api, chain, derived, fallback]
+        dataPath:
+          type: string
+        backend:
+          type: string
+        explorer:
+          type: string
+          nullable: true
+        note:
+          type: string
+
+    DashboardDataSourcesResponse:
+      type: object
+      required:
+        - sources
+      properties:
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardSourceDefinition"
 
     OnChainEvent:
       type: object

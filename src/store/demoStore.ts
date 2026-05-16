@@ -73,6 +73,21 @@ export class DemoStore {
     return clone(stored);
   }
 
+  updateEvent(eventId: string, updates: Partial<OnChainEvent>): OnChainEvent | undefined {
+    const index = this.events.findIndex((event) => event.eventId === eventId);
+    if (index === -1) {
+      return undefined;
+    }
+
+    const updated: OnChainEvent = {
+      ...this.events[index],
+      ...clone(updates)
+    };
+
+    this.events[index] = updated;
+    return clone(updated);
+  }
+
   saveRiskAssessment(assessment: RiskAssessment): void {
     this.riskAssessments.set(assessment.riskAssessmentId, clone(assessment));
   }
