@@ -1,0 +1,885 @@
+openapi: 3.1.0
+info:
+  title: Bóveda Demo Integration API
+  version: 0.1.0-batch0
+  description: |
+    OpenAPI-first contract for Batch 0. Human-facing docs live in Spanish,
+    but API identifiers, enum values and event names are English.
+
+    Canonical demo path is WEB3_BRIDGE: a web3 startup receives a fiat loan
+    while crypto collateral is locked on Avalanche. If liquidation happens,
+    proceeds are reported and distributed in USDC.
+servers:
+  - url: http://localhost:3000
+    description: Local demo backend
+  - url: https://api.demo.boveda.local
+    description: Placeholder demo URL
+tags:
+  - name: System
+  - name: Quotes
+  - name: Risk
+  - name: Loans
+  - name: Payments
+  - name: Dashboard
+  - name: Events
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /quotes:
+    post:
+      tags: [Quotes]
+      summary: Calculate suggested terms for a loan request
+      operationId: createQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteRequest"
+      responses:
+        "200":
+          description: Suggested terms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteResponse"
+
+  /risk/wallet:
+    post:
+      tags: [Risk]
+      summary: Mock or adapt Wavy Node wallet risk assessment
+      operationId: assessWalletRisk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RiskAssessmentRequest"
+      responses:
+        "200":
+          description: Wallet risk assessment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskAssessment"
+
+  /loans:
+    get:
+      tags: [Loans]
+      summary: List demo loans
+      operationId: listLoans
+      parameters:
+        - name: scenario
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/LoanScenario"
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/LoanStatus"
+      responses:
+        "200":
+          description: Loans list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [loans]
+                properties:
+                  loans:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Loan"
+    post:
+      tags: [Loans]
+      summary: Create a loan request
+      operationId: createLoan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLoanRequest"
+      responses:
+        "201":
+          description: Loan created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+
+  /loans/{loanId}:
+    get:
+      tags: [Loans]
+      summary: Get one loan
+      operationId: getLoan
+      parameters:
+        - $ref: "#/components/parameters/LoanId"
+      responses:
+        "200":
+          description: Loan detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+
+  /loans/{loanId}/approve:
+    post:
+      tags: [Loans]
+      summary: Mark a loan as approved by the originator
+      operationId: approveLoan
+      parameters:
+        - $ref: "#/components/parameters/LoanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveLoanRequest"
+      responses:
+        "200":
+          description: Approved loan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+
+  /loans/{loanId}/collateral/deposit:
+    post:
+      tags: [Loans]
+      summary: Register a collateral deposit transaction
+      operationId: depositCollateral
+      parameters:
+        - $ref: "#/components/parameters/LoanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollateralDepositRequest"
+      responses:
+        "200":
+          description: Loan with collateral deposit recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+
+  /loans/{loanId}/activate:
+    post:
+      tags: [Loans]
+      summary: Activate a loan and issue or register the receipt NFT
+      operationId: activateLoan
+      parameters:
+        - $ref: "#/components/parameters/LoanId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivateLoanRequest"
+      responses:
+        "200":
+          description: Activated loan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+
+  /loans/{loanId}/payments/attest:
+    post:
+      tags: [Payments]
+      summary: Create and register a payment attestation
+      operationId: attestPayment
+      parameters:
+        - $ref: "#/components/parameters/LoanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentAttestationRequest"
+      responses:
+        "200":
+          description: Payment attestation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentAttestation"
+
+  /loans/{loanId}/margin-call:
+    post:
+      tags: [Loans]
+      summary: Simulate or register a margin call
+      operationId: createMarginCall
+      parameters:
+        - $ref: "#/components/parameters/LoanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarginCallRequest"
+      responses:
+        "200":
+          description: Loan in margin call
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+
+  /loans/{loanId}/liquidate:
+    post:
+      tags: [Loans]
+      summary: Simulate or execute liquidation with proceeds in USDC
+      operationId: liquidateLoan
+      parameters:
+        - $ref: "#/components/parameters/LoanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LiquidationRequest"
+      responses:
+        "200":
+          description: Liquidation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiquidationResult"
+
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: Get institutional dashboard summary
+      operationId: getDashboardSummary
+      responses:
+        "200":
+          description: Portfolio summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /events:
+    get:
+      tags: [Events]
+      summary: List application and on-chain demo events
+      operationId: listEvents
+      parameters:
+        - name: loanId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Events list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [events]
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OnChainEvent"
+
+components:
+  parameters:
+    LoanId:
+      name: loanId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: loan-web3-001
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [ok, service, version]
+      properties:
+        ok:
+          type: boolean
+        service:
+          type: string
+          example: boveda-demo-api
+        version:
+          type: string
+          example: 0.1.0-batch0
+
+    LoanScenario:
+      type: string
+      enum:
+        - WEB3_BRIDGE
+        - SME_FIAT_WORKING_CAPITAL
+
+    LoanStatus:
+      type: string
+      enum:
+        - Requested
+        - Approved
+        - Active
+        - MarginCall
+        - Repaid
+        - Defaulted
+        - Liquidated
+        - Cancelled
+
+    BorrowerType:
+      type: string
+      enum:
+        - WEB3_STARTUP
+        - SME_EXPORTER
+        - INDIVIDUAL
+
+    OriginatorType:
+      type: string
+      enum:
+        - VC_FUND
+        - SOFOM
+        - BANK_PARTNER
+        - FINTECH_LENDER
+
+    AmlStatus:
+      type: string
+      enum: [PASS, REVIEW, BLOCK]
+
+    RepaymentFrequency:
+      type: string
+      enum: [WEEKLY, MONTHLY, BULLET]
+
+    PaymentRail:
+      type: string
+      enum: [WIRE_SIMULATED, SPEI_SIMULATED, ACH_SIMULATED, MANUAL_SIMULATED]
+
+    EventType:
+      type: string
+      enum:
+        - LoanCreated
+        - LoanApproved
+        - CollateralDeposited
+        - LoanActivated
+        - ReceiptIssued
+        - InstallmentPaid
+        - MarginCall
+        - Defaulted
+        - Liquidated
+        - CollateralReleased
+        - LoanCancelled
+
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount:
+          type: string
+          description: Decimal amount encoded as a string to avoid float loss.
+          example: "150000"
+        currency:
+          type: string
+          example: USD
+
+    Borrower:
+      type: object
+      required: [borrowerId, displayName, borrowerType, walletAddress]
+      properties:
+        borrowerId:
+          type: string
+        displayName:
+          type: string
+        borrowerType:
+          $ref: "#/components/schemas/BorrowerType"
+        walletAddress:
+          type: string
+          pattern: "^0x[a-fA-F0-9]{40}$"
+
+    Originator:
+      type: object
+      required: [originatorId, displayName, originatorType]
+      properties:
+        originatorId:
+          type: string
+        displayName:
+          type: string
+        originatorType:
+          $ref: "#/components/schemas/OriginatorType"
+
+    FundingPartner:
+      type: object
+      required: [fundingPartnerId, displayName]
+      properties:
+        fundingPartnerId:
+          type: string
+        displayName:
+          type: string
+
+    Principal:
+      type: object
+      required: [amount, currency, fiatRail]
+      properties:
+        amount:
+          type: string
+        currency:
+          type: string
+          description: Fiat principal currency for the loan.
+          examples: [USD, MXN]
+        fiatRail:
+          $ref: "#/components/schemas/PaymentRail"
+        disbursementRef:
+          type: [string, "null"]
+
+    Collateral:
+      type: object
+      required: [token, chainId, amount, valueUsd]
+      properties:
+        token:
+          type: string
+          examples: [AVAX, USDC, WBTC]
+        tokenAddress:
+          type: [string, "null"]
+        chainId:
+          type: integer
+          example: 43113
+        amount:
+          type: string
+        referencePriceUsd:
+          type: string
+        valueUsd:
+          type: string
+        vaultAddress:
+          type: [string, "null"]
+        depositTxHash:
+          type: [string, "null"]
+
+    CollateralTerms:
+      type: object
+      required:
+        - initialLtvBps
+        - marginCallLtvBps
+        - liquidationLtvBps
+        - aprBps
+        - tenorDays
+        - repaymentFrequency
+        - liquidationCurrency
+      properties:
+        initialLtvBps:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          example: 5000
+        marginCallLtvBps:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          example: 7000
+        liquidationLtvBps:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          example: 8000
+        aprBps:
+          type: integer
+          example: 1450
+        tenorDays:
+          type: integer
+          example: 90
+        repaymentFrequency:
+          $ref: "#/components/schemas/RepaymentFrequency"
+        liquidationCurrency:
+          type: string
+          const: USDC
+          description: Liquidation proceeds currency is always USDC for the demo.
+
+    RiskAssessment:
+      type: object
+      required:
+        - riskAssessmentId
+        - provider
+        - riskScore
+        - amlStatus
+        - maxLtvBps
+        - assessmentHash
+        - expiresAt
+      properties:
+        riskAssessmentId:
+          type: string
+        provider:
+          type: string
+          enum: [WAVY_NODE_MOCK, WAVY_NODE_ADAPTER]
+        riskScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        amlStatus:
+          $ref: "#/components/schemas/AmlStatus"
+        maxLtvBps:
+          type: integer
+          minimum: 1
+          maximum: 10000
+        assessmentHash:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    LoanReceipt:
+      type: object
+      required: [receiptTokenId, soulbound, ownerWallet]
+      properties:
+        receiptTokenId:
+          type: string
+        soulbound:
+          type: boolean
+          const: true
+        ownerWallet:
+          type: string
+
+    LoanMetrics:
+      type: object
+      required: [currentLtvBps, outstandingPrincipal, outstandingCurrency]
+      properties:
+        currentLtvBps:
+          type: integer
+        outstandingPrincipal:
+          type: string
+        outstandingCurrency:
+          type: string
+        nextPaymentDueAt:
+          type: [string, "null"]
+          format: date-time
+
+    ProceedsDistribution:
+      type: object
+      required:
+        [fundingPartnerAmount, originatorFeeAmount, borrowerRemainderAmount]
+      properties:
+        fundingPartnerAmount:
+          type: string
+        originatorFeeAmount:
+          type: string
+        borrowerRemainderAmount:
+          type: string
+
+    LiquidationPreview:
+      type: object
+      required: [proceedsAmount, proceedsCurrency, distribution]
+      properties:
+        proceedsAmount:
+          type: string
+        proceedsCurrency:
+          type: string
+          const: USDC
+        distribution:
+          $ref: "#/components/schemas/ProceedsDistribution"
+
+    Loan:
+      type: object
+      required:
+        - loanId
+        - scenario
+        - status
+        - borrower
+        - originator
+        - fundingPartner
+        - principal
+        - collateral
+        - terms
+        - riskAssessment
+        - currentMetrics
+        - liquidationPreview
+      properties:
+        loanId:
+          type: string
+        scenario:
+          $ref: "#/components/schemas/LoanScenario"
+        status:
+          $ref: "#/components/schemas/LoanStatus"
+        borrower:
+          $ref: "#/components/schemas/Borrower"
+        originator:
+          $ref: "#/components/schemas/Originator"
+        fundingPartner:
+          $ref: "#/components/schemas/FundingPartner"
+        principal:
+          $ref: "#/components/schemas/Principal"
+        collateral:
+          $ref: "#/components/schemas/Collateral"
+        terms:
+          $ref: "#/components/schemas/CollateralTerms"
+        riskAssessment:
+          $ref: "#/components/schemas/RiskAssessment"
+        receipt:
+          anyOf:
+            - $ref: "#/components/schemas/LoanReceipt"
+            - type: "null"
+        currentMetrics:
+          $ref: "#/components/schemas/LoanMetrics"
+        liquidationPreview:
+          $ref: "#/components/schemas/LiquidationPreview"
+
+    QuoteRequest:
+      type: object
+      required: [scenario, borrowerWallet, requestedPrincipal, collateralToken]
+      properties:
+        scenario:
+          $ref: "#/components/schemas/LoanScenario"
+        borrowerWallet:
+          type: string
+        requestedPrincipal:
+          $ref: "#/components/schemas/Money"
+        collateralToken:
+          type: string
+        collateralValueUsd:
+          type: string
+
+    QuoteResponse:
+      type: object
+      required:
+        [scenario, suggestedPrincipal, requiredCollateralValueUsd, terms]
+      properties:
+        scenario:
+          $ref: "#/components/schemas/LoanScenario"
+        suggestedPrincipal:
+          $ref: "#/components/schemas/Money"
+        requiredCollateralValueUsd:
+          type: string
+        terms:
+          $ref: "#/components/schemas/CollateralTerms"
+
+    RiskAssessmentRequest:
+      type: object
+      required: [walletAddress, scenario, collateralToken]
+      properties:
+        walletAddress:
+          type: string
+        scenario:
+          $ref: "#/components/schemas/LoanScenario"
+        collateralToken:
+          type: string
+
+    CreateLoanRequest:
+      type: object
+      required:
+        [
+          scenario,
+          borrower,
+          originator,
+          fundingPartner,
+          principal,
+          collateral,
+          terms,
+          riskAssessmentId,
+        ]
+      properties:
+        scenario:
+          $ref: "#/components/schemas/LoanScenario"
+        borrower:
+          $ref: "#/components/schemas/Borrower"
+        originator:
+          $ref: "#/components/schemas/Originator"
+        fundingPartner:
+          $ref: "#/components/schemas/FundingPartner"
+        principal:
+          $ref: "#/components/schemas/Principal"
+        collateral:
+          $ref: "#/components/schemas/Collateral"
+        terms:
+          $ref: "#/components/schemas/CollateralTerms"
+        riskAssessmentId:
+          type: string
+
+    ApproveLoanRequest:
+      type: object
+      required: [approvedBy]
+      properties:
+        approvedBy:
+          type: string
+        fiatDisbursementRef:
+          type: string
+
+    CollateralDepositRequest:
+      type: object
+      required: [token, amount, txHash, vaultAddress]
+      properties:
+        token:
+          type: string
+        amount:
+          type: string
+        txHash:
+          type: string
+        vaultAddress:
+          type: string
+
+    ActivateLoanRequest:
+      type: object
+      properties:
+        receiptTokenId:
+          type: string
+        activationTxHash:
+          type: string
+
+    PaymentAttestationRequest:
+      type: object
+      required: [installmentId, amount, currency, paymentRail, paidAt]
+      properties:
+        installmentId:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+        paymentRail:
+          $ref: "#/components/schemas/PaymentRail"
+        paidAt:
+          type: string
+          format: date-time
+        externalPaymentRef:
+          type: string
+
+    PaymentAttestation:
+      type: object
+      required:
+        [loanId, installmentId, amount, currency, attestationHash, status]
+      properties:
+        loanId:
+          type: string
+        installmentId:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+        attestationHash:
+          type: string
+        remainingPrincipal:
+          type: string
+        status:
+          $ref: "#/components/schemas/LoanStatus"
+
+    MarginCallRequest:
+      type: object
+      required: [currentLtvBps, reason]
+      properties:
+        currentLtvBps:
+          type: integer
+        reason:
+          type: string
+          example: COLLATERAL_PRICE_DROP
+        requiredTopUpAmount:
+          type: string
+        requiredTopUpCurrency:
+          type: string
+          default: USDC
+
+    LiquidationRequest:
+      type: object
+      required: [reason, proceedsAmount, proceedsCurrency]
+      properties:
+        reason:
+          type: string
+          example: LTV_BREACH
+        liquidationTxHash:
+          type: string
+        proceedsAmount:
+          type: string
+        proceedsCurrency:
+          type: string
+          const: USDC
+        distribution:
+          $ref: "#/components/schemas/ProceedsDistribution"
+
+    LiquidationResult:
+      type: object
+      required: [loanId, status, proceedsAmount, proceedsCurrency, distribution]
+      properties:
+        loanId:
+          type: string
+        status:
+          type: string
+          const: Liquidated
+        liquidationTxHash:
+          type: string
+        proceedsAmount:
+          type: string
+        proceedsCurrency:
+          type: string
+          const: USDC
+        distribution:
+          $ref: "#/components/schemas/ProceedsDistribution"
+
+    DashboardSummary:
+      type: object
+      required:
+        - activePrincipalUsd
+        - activeVaults
+        - averageLtvBps
+        - loansInMarginCall
+        - paymentsAttested
+        - liquidationsExecuted
+        - exposureByAsset
+        - recentEvents
+      properties:
+        activePrincipalUsd:
+          type: string
+        activeVaults:
+          type: integer
+        averageLtvBps:
+          type: integer
+        loansInMarginCall:
+          type: integer
+        paymentsAttested:
+          type: integer
+        liquidationsExecuted:
+          type: integer
+        exposureByAsset:
+          type: array
+          items:
+            type: object
+            required: [asset, valueUsd]
+            properties:
+              asset:
+                type: string
+              valueUsd:
+                type: string
+        recentEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/OnChainEvent"
+
+    OnChainEvent:
+      type: object
+      required: [eventId, eventType, loanId, occurredAt, payload]
+      properties:
+        eventId:
+          type: string
+        eventType:
+          $ref: "#/components/schemas/EventType"
+        loanId:
+          type: string
+        txHash:
+          type: [string, "null"]
+        blockNumber:
+          type: [integer, "null"]
+        occurredAt:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: true
