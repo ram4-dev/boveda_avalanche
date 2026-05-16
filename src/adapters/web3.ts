@@ -46,10 +46,15 @@ export type LiquidationOutcome = {
   distribution: ProceedsDistribution;
 };
 
+export type Web3RefreshOutcome = {
+  refreshedEvents: number;
+};
+
 export interface Web3Adapter {
   activateLoan(input: ActivationInput): Promise<ActivationOutcome>;
   registerPaymentAttestation(input: PaymentRegistrationInput): Promise<PaymentRegistrationOutcome>;
   liquidateLoan(input: LiquidationInput): Promise<LiquidationOutcome>;
+  refreshPendingEvents?(): Promise<Web3RefreshOutcome>;
 }
 
 export function createMockWeb3Adapter(): Web3Adapter {
@@ -81,6 +86,9 @@ export function createMockWeb3Adapter(): Web3Adapter {
         proceedsCurrency: 'USDC',
         distribution: input.distribution
       };
+    },
+    async refreshPendingEvents() {
+      return { refreshedEvents: 0 };
     }
   };
 }

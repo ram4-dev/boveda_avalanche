@@ -8,7 +8,9 @@ PR 2 / Work Units 3-4 completed on branch `feature/batch-2-pr2-quotes-lifecycle`
 
 PR 3 / Work Units 5-6 completed on branch `feature/batch-2-pr3-payments-liquidation`.
 
-Resolved delivery path: `auto-chain / feature-branch-chain`. PR 3 intentionally stops before Work Units 7-8.
+PR 4 / Work Units 7-8 completed on branch `feature/batch-2-pr4-dashboard-smoke`.
+
+Resolved delivery path: `auto-chain / feature-branch-chain`. PR 4 completes the final assigned Batch 2 apply slice.
 
 ## Completed Tasks
 
@@ -358,3 +360,99 @@ passed
 
 - PR 4 / Work Unit 7: dashboard aggregation and event filtering refresh path.
 - PR 4 / Work Unit 8: OpenAPI contract smoke, docs, and final hardening.
+
+## PR 4 / Work Units 7-8 Update
+
+### Completed Tasks
+
+- [x] Work Unit 7 RED: wrote dashboard/event integration tests for `GET /events?loanId=...` and `GET /dashboard/summary` before the dashboard route/domain existed.
+- [x] Work Unit 7 GREEN: implemented pure dashboard aggregation, `GET /dashboard/summary`, route registration, and an internal request-driven `refreshPendingEvents` hook through the web3 adapter boundary.
+- [x] Work Unit 7 TRIANGULATE: covered payment and liquidation mutations updating dashboard counters and latest events.
+- [x] Work Unit 7 REFACTOR: kept aggregation in `src/domain/dashboard.ts`, left event listing route thin, and preserved existing event filtering behavior.
+- [x] Work Unit 8 RED: wrote OpenAPI smoke/docs tests for all canonical public paths, negative enum/path cases, and local runbook expectations; the runbook assertion failed before docs existed.
+- [x] Work Unit 8 GREEN: added `docs/demo/backend-runbook.md` with local commands and mock integration boundaries; existing route registrations satisfied canonical path smoke tests.
+- [x] Work Unit 8 TRIANGULATE: covered unknown loan scenario/status filters, unknown quote/risk scenarios, and not-found loan responses.
+- [x] Work Unit 8 REFACTOR: verified docs and final route/domain boundaries with focused tests, full suite, typecheck, build, and lint.
+
+### Files Changed In PR 4
+
+- `openspec/changes/batch-2-backend-risk-attestations/tasks.md`
+- `openspec/changes/batch-2-backend-risk-attestations/apply-progress.md`
+- `tests/dashboard-events.test.ts`
+- `tests/openapi-contract-smoke.test.ts`
+- `src/domain/dashboard.ts`
+- `src/modules/dashboard/routes.ts`
+- `src/modules/events/routes.ts`
+- `src/adapters/web3.ts`
+- `src/app.ts`
+- `docs/demo/backend-runbook.md`
+
+### TDD Cycle Evidence — PR 4
+
+| Work Unit | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|---|---|---|---|---|---|---|---|
+| WU7 Dashboard aggregation and event filtering refresh path | `tests/dashboard-events.test.ts` | Integration (Fastify inject) | ✅ `npm test -- --run tests/seed-read-api.test.ts tests/payment-attestations.test.ts tests/liquidation-web3-failure.test.ts && npm run typecheck` passed: 3 files / 9 tests plus typecheck | ✅ `npm test -- --run tests/dashboard-events.test.ts` failed: `GET /dashboard/summary` returned 404 | ✅ `npm test -- --run tests/dashboard-events.test.ts` passed: seeded dashboard metrics and event filtering worked after dashboard route/domain implementation | ✅ payment and liquidation mutations update `paymentsAttested`, `liquidationsExecuted`, active metrics, exposure, and newest events | ✅ dashboard aggregation is a pure function in `src/domain/dashboard.ts`; focused WU7/WU8 tests plus typecheck passed |
+| WU8 OpenAPI contract smoke, docs, and final hardening | `tests/openapi-contract-smoke.test.ts` | Integration (Fastify inject) + docs check | ✅ `npm test -- --run tests/dashboard-events.test.ts tests/health.test.ts tests/seed-read-api.test.ts tests/quotes-risk.test.ts tests/loan-lifecycle.test.ts tests/payment-attestations.test.ts tests/liquidation-web3-failure.test.ts && npm run typecheck` passed: 7 files / 23 tests plus typecheck | ✅ `npm test -- --run tests/openapi-contract-smoke.test.ts` failed because `docs/demo/backend-runbook.md` was missing; route smoke and negative tests already passed | ✅ `npm test -- --run tests/openapi-contract-smoke.test.ts` passed after adding backend runbook | ✅ smoke test covers every canonical public path plus unknown status/scenario and not-found loan negative cases | ✅ final full verification passed with tests, typecheck, build, and lint |
+
+### Test Commands Run For PR 4
+
+- `npm test -- --run tests/seed-read-api.test.ts tests/payment-attestations.test.ts tests/liquidation-web3-failure.test.ts && npm run typecheck` → safety net passed, 3 files / 9 tests plus typecheck.
+- `npm test -- --run tests/dashboard-events.test.ts` → RED failed: `GET /dashboard/summary` returned `404`.
+- `npm test -- --run tests/dashboard-events.test.ts` → GREEN/TRIANGULATE passed, 2 tests.
+- `npm test -- --run tests/dashboard-events.test.ts tests/health.test.ts tests/seed-read-api.test.ts tests/quotes-risk.test.ts tests/loan-lifecycle.test.ts tests/payment-attestations.test.ts tests/liquidation-web3-failure.test.ts && npm run typecheck` → WU8 safety net passed, 7 files / 23 tests plus typecheck.
+- `npm test -- --run tests/openapi-contract-smoke.test.ts` → RED failed: missing `docs/demo/backend-runbook.md`.
+- `npm test -- --run tests/openapi-contract-smoke.test.ts` → GREEN/TRIANGULATE passed, 3 tests.
+- `npm test -- --run tests/dashboard-events.test.ts tests/openapi-contract-smoke.test.ts && npm run typecheck` → passed, 2 files / 5 tests plus typecheck.
+- `npm test -- --run tests/dashboard-events.test.ts` → passed, 1 file / 2 tests.
+- `npm test -- --run tests/openapi-contract-smoke.test.ts` → passed, 1 file / 3 tests.
+- `npm test -- --run` → passed, 8 files / 26 tests.
+- `npm run typecheck` → passed.
+- `npm run build` → passed.
+- `npm run lint` → passed (`tsc --noEmit --pretty false`).
+
+### Verification Evidence — PR 4
+
+```text
+npm test -- --run tests/dashboard-events.test.ts
+Test Files  1 passed (1)
+Tests       2 passed (2)
+
+npm test -- --run tests/openapi-contract-smoke.test.ts
+Test Files  1 passed (1)
+Tests       3 passed (3)
+
+npm test -- --run
+Test Files  8 passed (8)
+Tests       26 passed (26)
+
+npm run typecheck
+passed
+
+npm run build
+passed
+
+npm run lint
+passed
+```
+
+### Deviations From Design — PR 4
+
+- The request-driven refresh hook is represented by optional `Web3Adapter.refreshPendingEvents()` and called from read routes. The mock implementation returns `{ refreshedEvents: 0 }` because Batch 2 mock mutations commit synchronously.
+- `src/api/schemas.ts` did not need additional schema logic for this slice; route smoke tests validated representative canonical responses and existing validation errors.
+- `verify-report.md` was not created during apply; the task checklist leaves it for the dedicated SDD verify phase.
+
+### Workload / PR Boundary — PR 4
+
+- PR boundary: `feature/batch-2-pr4-dashboard-smoke` contains only PR 4 / Work Units 7-8 on top of committed PR 3 (`9da2b8a`).
+- This final apply slice completes Batch 2 implementation scope. No frontend, real Wavy, real RPC, ABI/address, private key, or secret dependency was introduced.
+- Reviewable PR4 changes are focused on dashboard aggregation, event/dashboard read refresh hook, canonical route smoke coverage, runbook docs, and OpenSpec progress/tasks.
+
+### Remaining Tasks After PR 4
+
+- Run the dedicated SDD verify phase and prepare `openspec/changes/batch-2-backend-risk-attestations/verify-report.md`.
+- Commit PR4 only if explicitly requested by the user/parent orchestrator.
+- Future integration: replace or complement `MockWeb3Adapter` with a real Avalanche Fuji adapter when Batch 1 ABI/addresses are available.
+
+### Memory
+
+Callable Engram memory tools were not exposed to this delegated executor, so PR4 apply progress was persisted to OpenSpec only.

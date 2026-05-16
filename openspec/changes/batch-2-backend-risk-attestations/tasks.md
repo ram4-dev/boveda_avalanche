@@ -134,39 +134,39 @@ Use targeted Vitest file commands during RED/GREEN, for example `npm test -- --r
 
 ### PR 4 / Work Unit 7 — Dashboard aggregation and event filtering refresh path
 
-- [ ] RED: add dashboard/events tests.
+- [x] RED: add dashboard/events tests.
   - Files: `tests/dashboard-events.test.ts`.
   - Target behavior: `GET /events?loanId=...` filters; `GET /dashboard/summary` derives active principal, vault count, weighted LTV, margin-call count, payment/liquidation counters, exposure by asset, and latest 10 events from current loans/events.
   - Test command: `npm test -- --run tests/dashboard-events.test.ts`.
-- [ ] GREEN: implement dashboard aggregation and request-driven/manual refresh hook without adding public non-OpenAPI endpoints.
+- [x] GREEN: implement dashboard aggregation and request-driven/manual refresh hook without adding public non-OpenAPI endpoints.
   - Files: `src/domain/dashboard.ts`, `src/modules/dashboard/routes.ts`, `src/modules/events/routes.ts`, `src/app.ts`, `src/adapters/web3.ts`.
   - Finish: dashboard metrics are explainable from seeded/current state and recorded events.
-- [ ] TRIANGULATE: add tests showing payment and liquidation update counters/recent events.
-- [ ] REFACTOR: keep aggregation pure and deterministic for unit testing.
+- [x] TRIANGULATE: add tests showing payment and liquidation update counters/recent events.
+- [x] REFACTOR: keep aggregation pure and deterministic for unit testing.
   - Verification: dashboard tests, full `npm test -- --run`, `npm run typecheck`.
   - Rollback boundary: remove dashboard route/domain; event list route remains from PR 1.
 
 ### PR 4 / Work Unit 8 — OpenAPI contract smoke, docs, and final hardening
 
-- [ ] RED: add contract smoke tests for every canonical public path.
+- [x] RED: add contract smoke tests for every canonical public path.
   - Files: `tests/openapi-contract-smoke.test.ts`.
   - Target paths: `GET /health`, `POST /quotes`, `POST /risk/wallet`, `GET /loans`, `POST /loans`, `GET /loans/{loanId}`, `POST /loans/{loanId}/approve`, `POST /loans/{loanId}/collateral/deposit`, `POST /loans/{loanId}/activate`, `POST /loans/{loanId}/payments/attest`, `POST /loans/{loanId}/margin-call`, `POST /loans/{loanId}/liquidate`, `GET /dashboard/summary`, `GET /events`.
   - Test command: `npm test -- --run tests/openapi-contract-smoke.test.ts`.
-- [ ] GREEN: tighten schemas/errors and route registration gaps.
+- [x] GREEN: tighten schemas/errors and route registration gaps.
   - Files: `src/api/schemas.ts`, `src/api/errors.ts`, route modules under `src/modules/**/routes.ts`, `src/app.ts`.
   - Finish: representative success payloads align with `docs/demo/openapi.yaml`; singular/unnested alternatives are not required for the canonical flow.
-- [ ] TRIANGULATE: add enum/path negative tests for unknown statuses/scenarios and not-found loans.
-- [ ] REFACTOR: update local run instructions and final code cleanup.
+- [x] TRIANGULATE: add enum/path negative tests for unknown statuses/scenarios and not-found loans.
+- [x] REFACTOR: update local run instructions and final code cleanup.
   - Files: `README.md` or `docs/demo/backend-runbook.md`.
   - Verification: `npm test -- --run`, `npm run typecheck`, `npm run build`, `npm run lint`.
   - Rollback boundary: revert docs/schema smoke hardening only; functional PRs remain intact.
 
 ## Final Verification Checklist
 
-- [ ] All accepted specs under `openspec/changes/batch-2-backend-risk-attestations/specs/**/spec.md` have passing test evidence.
-- [ ] `openspec/changes/batch-2-backend-risk-attestations/apply-progress.md` contains RED/GREEN/TRIANGULATE/REFACTOR evidence for every work unit.
-- [ ] Full commands pass: `npm test -- --run`, `npm run typecheck`, `npm run build`, `npm run lint`.
-- [ ] No real Wavy, RPC, ABI, contract address, private key, or secret dependency is required for local demo success.
-- [ ] Liquidation previews/results/events report proceeds in `USDC`.
-- [ ] Dashboard values are derived from loans/events, not unrelated hard-coded summaries.
+- [x] All accepted specs under `openspec/changes/batch-2-backend-risk-attestations/specs/**/spec.md` have passing test evidence.
+- [x] `openspec/changes/batch-2-backend-risk-attestations/apply-progress.md` contains RED/GREEN/TRIANGULATE/REFACTOR evidence for every work unit.
+- [x] Full commands pass: `npm test -- --run`, `npm run typecheck`, `npm run build`, `npm run lint`.
+- [x] No real Wavy, RPC, ABI, contract address, private key, or secret dependency is required for local demo success.
+- [x] Liquidation previews/results/events report proceeds in `USDC`.
+- [x] Dashboard values are derived from loans/events, not unrelated hard-coded summaries.
 - [ ] `openspec/changes/batch-2-backend-risk-attestations/verify-report.md` is prepared during verify with command outputs and spec coverage notes.

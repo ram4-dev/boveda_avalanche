@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { createMockWavyNodeAdapter, type WavyNodeAdapter } from './adapters/wavyNode.js';
 import { createMockWeb3Adapter, type Web3Adapter } from './adapters/web3.js';
+import { registerDashboardRoutes } from './modules/dashboard/routes.js';
 import { registerEventRoutes } from './modules/events/routes.js';
 import { registerHealthRoutes } from './modules/health/routes.js';
 import { registerLoanRoutes } from './modules/loans/routes.js';
@@ -28,7 +29,8 @@ export function buildFastifyApp(deps: Partial<AppDeps> = {}): FastifyInstance {
     await registerRiskRoutes(scopedApp, store, wavyNode);
     await registerLoanRoutes(scopedApp, store, web3);
     await registerPaymentRoutes(scopedApp, store, web3);
-    await registerEventRoutes(scopedApp, store);
+    await registerDashboardRoutes(scopedApp, store, web3);
+    await registerEventRoutes(scopedApp, store, web3);
   });
 
   return app;
