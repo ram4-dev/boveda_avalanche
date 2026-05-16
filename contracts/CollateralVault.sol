@@ -10,6 +10,8 @@ interface IERC20 {
 
 contract CollateralVault {
     LoanRegistry public loanRegistry;
+    address public admin;
+    address public liquidationEngine;
 
     struct Vault {
         uint256 loanId;
@@ -25,10 +27,23 @@ contract CollateralVault {
     event CollateralDeposited(uint256 indexed loanId, address indexed borrower, uint256 amount);
     event CollateralReleased(uint256 indexed loanId, uint256 amount);
     event CollateralLiquidated(uint256 indexed loanId, uint256 amount);
+    event LiquidationEngineSet(address indexed oldEngine, address indexed newEngine);
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "CollateralVault: caller is not admin");
+        _;
+    }
 
     constructor(address loanRegistryAddress) {
         require(loanRegistryAddress != address(0), "Invalid registry address");
         loanRegistry = LoanRegistry(loanRegistryAddress);
+        admin = msg.sender;
+    }
+
+    function setLiquidationEngine(address engine) external onlyAdmin {
+        require(engine != address(0), "Invalid liquidation engine");
+        emit LiquidationEngineSet(liquidationEngine, engine);
+        liquidationEngine = engine;
     }
 
     function depositCollateral(uint256 loanId, uint256 amount) external {
@@ -76,6 +91,10 @@ contract CollateralVault {
         emit CollateralReleased(loanId, amount);
     }
 
+    function getVault(uint256 loanId) external view returns (Vault memory) {
+        return vaults[loanId];
+    }
+
     function liquidateCollateral(uint256 loanId) external {
         Vault storage vault = vaults[loanId];
         require(vault.loanId != 0, "Vault not found");
@@ -84,8 +103,15 @@ contract CollateralVault {
 
         ILoanRegistry.Loan memory loan = loanRegistry.getLoan(loanId);
         require(loan.loanId != 0, "Loan not found");
-        require(msg.sender == loan.originator, "Only originator can liquidate");
-        require(loan.status == uint8(ILoanRegistry.LoanStatus.Active) || loan.status == uint8(ILoanRegistry.LoanStatus.MarginCall), "Loan not liquidatable");
+        require(
+            msg.sender == loan.originator || msg.sender == liquidationEngine,
+            "Only originator or liquidation engine can liquidate"
+        );
+        require(
+            loan.status == uint8(ILoanRegistry.LoanStatus.Active) ||
+            loan.status == uint8(ILoanRegistry.LoanStatus.MarginCall),
+            "Loan not liquidatable"
+        );
 
         uint256 amount = vault.amount;
         vault.amount = 0;

@@ -7,9 +7,9 @@ boveda_avalanche/
 ├── contracts/
 │   ├── LoanRegistry.sol       ✅ B1.1 (creado)
 │   ├── CollateralVault.sol    ✅ B1.2 (implementado)
-│   ├── LoanReceiptNFT.sol     ⏳ B1.3
-│   ├── PaymentAttestation.sol ⏳ B1.4
-│   ├── LiquidationEngine.sol  ⏳ B1.5
+│   ├── LoanReceiptNFT.sol     ✅ B1.3 (implementado)
+│   ├── PaymentAttestation.sol ✅ B1.4
+│   ├── LiquidationEngine.sol  ✅ B1.5
 │   ├── interfaces/
 │   ├── mocks/
 │   │   └── MockERC20.sol      ✅ (test helper)
@@ -17,6 +17,8 @@ boveda_avalanche/
 │   └── Deploy.s.sol           ⏳ (script de deployment)
 ├── test/
 │   ├── LoanRegistry.t.sol     ✅ (tests para B1.1)
+│   ├── CollateralVault.t.sol   ✅ (tests para B1.2)
+│   ├── LoanReceiptNFT.t.sol    ✅ (tests para B1.3)
 │   └── ...
 ├── foundry.toml               ✅ (configurado para Fuji)
 ├── .env.example               ✅
@@ -96,17 +98,17 @@ uint256 loanId = registry.createLoan(
 - Cálculo de LTV (con precios simulados)
 - Liberación después de repago
 
-### B1.3 ⏳ LoanReceiptNFT
+### B1.3 ✅ LoanReceiptNFT
 - NFT soulbound (no transferible)
 - Mint al activar préstamo
 - Metadata con loanId y hash de términos
 
-### B1.4 ⏳ PaymentAttestation
+### B1.4 ✅ PaymentAttestation
 - Registrar pagos con hash
 - Validar firma del attestor
 - Emitir evento de pago
 
-### B1.5 ⏳ LiquidationEngine
+### B1.5 ✅ LiquidationEngine
 - Liquidación simulada
 - Transferencia de colateral a originador
 - Devolver excedente a borrower
@@ -120,9 +122,9 @@ uint256 loanId = registry.createLoan(
 1. ✅ Confirmar que Foundry compila (`forge build`)
 2. ✅ Confirmar que tests pasan (`forge test`)
 3. ✅ Implementar B1.2 (CollateralVault)
-4. ⏳ Implementar B1.3 (LoanReceiptNFT)
-5. ⏳ Implementar B1.4 (PaymentAttestation)
-6. ⏳ Implementar B1.5 (LiquidationEngine)
+4. ✅ Implementar B1.3 (LoanReceiptNFT)
+5. ✅ Implementar B1.4 (PaymentAttestation)
+6. ✅ Implementar B1.5 (LiquidationEngine)
 7. ⏳ Deploy y verificación en Fuji
 
 ## Testing tipología

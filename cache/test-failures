@@ -1,1 +1,1 @@
-testCalculateLtv|testDepositCollateral|testLiquidateCollateral|testReleaseCollateralAfterRepaid
+testRegisterPayment|testRejectDuplicatePayment|testRejectInvalidSignature
