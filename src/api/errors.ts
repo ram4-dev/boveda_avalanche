@@ -5,7 +5,8 @@ export type ApiErrorCode =
   | 'INVALID_REQUEST'
   | 'INVALID_TRANSITION'
   | 'RISK_ASSESSMENT_NOT_FOUND'
-  | 'LOAN_NOT_FOUND';
+  | 'LOAN_NOT_FOUND'
+  | 'WEB3_ACTION_FAILED';
 
 export function sendApiError(
   reply: FastifyReply,

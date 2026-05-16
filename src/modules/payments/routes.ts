@@ -1,0 +1,123 @@
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { Web3Adapter } from '../../adapters/web3.js';
+import { hasJsonObjectBody, sendApiError, sendInvalidRequestBody } from '../../api/errors.js';
+import { buildCanonicalPaymentPayload, hashPaymentPayload, type PaymentAttestation, type PaymentAttestationRequest } from '../../domain/paymentAttestations.js';
+import { compareDecimalStrings, subtractDecimalStrings } from '../../domain/money.js';
+import type { Loan, PaymentRail } from '../../domain/types.js';
+import type { DemoStore } from '../../store/demoStore.js';
+
+type PaymentParams = {
+  loanId: string;
+};
+
+type PaymentBody = Partial<PaymentAttestationRequest>;
+
+const paymentRails = ['WIRE_SIMULATED', 'SPEI_SIMULATED', 'ACH_SIMULATED', 'MANUAL_SIMULATED'] as const satisfies readonly PaymentRail[];
+
+export async function registerPaymentRoutes(app: FastifyInstance, store: DemoStore, web3: Web3Adapter): Promise<void> {
+  app.post('/loans/:loanId/payments/attest', async (request: FastifyRequest<{ Params: PaymentParams; Body: PaymentBody }>, reply) => {
+    const loan = store.getLoan(request.params.loanId);
+    if (!loan) {
+      return sendApiError(reply, 404, 'LOAN_NOT_FOUND', `Loan ${request.params.loanId} was not found`);
+    }
+
+    const paymentRequest = parsePaymentRequest(request.body, reply);
+    if (!paymentRequest) {
+      return reply;
+    }
+
+    if (loan.status !== 'Active' && loan.status !== 'MarginCall') {
+      return sendApiError(reply, 409, 'INVALID_TRANSITION', `Cannot attest payment for loan in ${loan.status} status`);
+    }
+
+    if (paymentRequest.currency.toUpperCase() !== loan.currentMetrics.outstandingCurrency.toUpperCase()) {
+      return sendApiError(reply, 400, 'INVALID_REQUEST', `Payment currency must match outstanding currency ${loan.currentMetrics.outstandingCurrency}`);
+    }
+
+    const canonicalPayload = buildCanonicalPaymentPayload(loan.loanId, paymentRequest);
+    const attestationHash = hashPaymentPayload(canonicalPayload);
+    const existing = store.findPaymentAttestation(loan.loanId, canonicalPayload.installmentId, attestationHash);
+    if (existing) {
+      return existing;
+    }
+
+    const remainingPrincipal = subtractDecimalStrings(loan.currentMetrics.outstandingPrincipal, canonicalPayload.amount);
+    const status: PaymentAttestation['status'] = compareDecimalStrings(remainingPrincipal, '0') === 0 ? 'Repaid' : loan.status;
+    const attestation: PaymentAttestation = {
+      loanId: loan.loanId,
+      installmentId: canonicalPayload.installmentId,
+      amount: canonicalPayload.amount,
+      currency: canonicalPayload.currency,
+      attestationHash,
+      remainingPrincipal,
+      status
+    };
+
+    const registration = await web3.registerPaymentAttestation({ loan, attestation });
+    const nextLoan: Loan = {
+      ...loan,
+      status,
+      currentMetrics: {
+        ...loan.currentMetrics,
+        outstandingPrincipal: remainingPrincipal
+      }
+    };
+
+    store.replaceLoan(nextLoan);
+    store.savePaymentAttestation(attestation);
+    store.appendEvent({
+      eventType: 'InstallmentPaid',
+      loanId: nextLoan.loanId,
+      txHash: registration.txHash,
+      blockNumber: registration.blockNumber,
+      payload: {
+        eventType: 'InstallmentPaid',
+        loanId: nextLoan.loanId,
+        installmentId: canonicalPayload.installmentId,
+        amount: canonicalPayload.amount,
+        currency: canonicalPayload.currency,
+        paymentRail: canonicalPayload.paymentRail,
+        attestationHash,
+        remainingPrincipal,
+        status
+      }
+    });
+
+    return attestation;
+  });
+}
+
+function parsePaymentRequest(body: PaymentBody | undefined, reply: FastifyReply): PaymentAttestationRequest | null {
+  if (!hasJsonObjectBody(body)) {
+    sendInvalidRequestBody(reply);
+    return null;
+  }
+
+  if (!body.installmentId || !body.amount || !body.currency || !body.paidAt || !isPaymentRail(body.paymentRail)) {
+    sendApiError(reply, 400, 'INVALID_REQUEST', 'Payment attestation request is missing required canonical fields');
+    return null;
+  }
+
+  if (!Number.isFinite(Number(body.amount)) || Number(body.amount) <= 0) {
+    sendApiError(reply, 400, 'INVALID_REQUEST', 'Payment amount must be a positive decimal string');
+    return null;
+  }
+
+  if (Number.isNaN(Date.parse(body.paidAt))) {
+    sendApiError(reply, 400, 'INVALID_REQUEST', 'paidAt must be a valid ISO date-time');
+    return null;
+  }
+
+  return {
+    installmentId: body.installmentId,
+    amount: body.amount,
+    currency: body.currency,
+    paymentRail: body.paymentRail,
+    paidAt: body.paidAt,
+    externalPaymentRef: body.externalPaymentRef ?? null
+  };
+}
+
+function isPaymentRail(value: unknown): value is PaymentRail {
+  return typeof value === 'string' && paymentRails.includes(value as PaymentRail);
+}

@@ -4,7 +4,7 @@ import { loanScenarioValues, loanStatusValues } from '../../api/schemas.js';
 import { hasJsonObjectBody, sendApiError, sendInvalidRequestBody } from '../../api/errors.js';
 import { shortHash } from '../../domain/hashing.js';
 import { canTransition } from '../../domain/stateMachine.js';
-import type { Collateral, CollateralTerms, FundingPartner, Loan, OnChainEvent, Originator, Principal, Borrower } from '../../domain/types.js';
+import type { Borrower, Collateral, CollateralTerms, FundingPartner, Loan, OnChainEvent, Originator, Principal, ProceedsDistribution } from '../../domain/types.js';
 import { isLoanScenario, isLoanStatus, type LoanScenario, type LoanStatus } from '../../domain/types.js';
 import type { DemoStore } from '../../store/demoStore.js';
 
@@ -43,6 +43,21 @@ type DepositBody = {
 type ActivateBody = {
   receiptTokenId?: string;
   activationTxHash?: string;
+};
+
+type MarginCallBody = {
+  currentLtvBps?: number;
+  reason?: string;
+  requiredTopUpAmount?: string;
+  requiredTopUpCurrency?: string;
+};
+
+type LiquidationBody = {
+  reason?: string;
+  liquidationTxHash?: `0x${string}`;
+  proceedsAmount?: string;
+  proceedsCurrency?: string;
+  distribution?: ProceedsDistribution;
 };
 
 export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore, web3: Web3Adapter): Promise<void> {
@@ -217,6 +232,95 @@ export async function registerLoanRoutes(app: FastifyInstance, store: DemoStore,
       soulbound: true
     }));
     return nextLoan;
+  });
+
+  app.post('/loans/:loanId/margin-call', async (request: FastifyRequest<{ Params: LoanParams; Body: MarginCallBody }>, reply) => {
+    const loan = findLoan(store, request.params.loanId, reply);
+    if (!loan) return reply;
+    if (!hasJsonObjectBody(request.body)) {
+      return sendInvalidRequestBody(reply);
+    }
+    if (typeof request.body.currentLtvBps !== 'number' || !request.body.reason) {
+      return sendApiError(reply, 400, 'INVALID_REQUEST', 'Margin call request is missing required canonical fields');
+    }
+    if (!canTransition(loan.status, 'MarginCall')) {
+      return invalidTransition(reply, loan.status, 'MarginCall');
+    }
+    if (request.body.currentLtvBps < loan.terms.marginCallLtvBps) {
+      return sendApiError(reply, 409, 'INVALID_TRANSITION', 'Current LTV is below the margin-call threshold');
+    }
+
+    const nextLoan: Loan = {
+      ...loan,
+      status: 'MarginCall',
+      currentMetrics: {
+        ...loan.currentMetrics,
+        currentLtvBps: request.body.currentLtvBps
+      }
+    };
+    store.replaceLoan(nextLoan);
+    store.appendEvent(baseEvent('MarginCall', nextLoan.loanId, null, {
+      eventType: 'MarginCall',
+      loanId: nextLoan.loanId,
+      currentLtvBps: request.body.currentLtvBps,
+      marginCallLtvBps: nextLoan.terms.marginCallLtvBps,
+      liquidationLtvBps: nextLoan.terms.liquidationLtvBps,
+      requiredTopUpAmount: request.body.requiredTopUpAmount ?? '0',
+      requiredTopUpCurrency: request.body.requiredTopUpCurrency ?? 'USDC',
+      reason: request.body.reason,
+      status: 'MarginCall'
+    }));
+    return nextLoan;
+  });
+
+  app.post('/loans/:loanId/liquidate', async (request: FastifyRequest<{ Params: LoanParams; Body: LiquidationBody }>, reply) => {
+    const loan = findLoan(store, request.params.loanId, reply);
+    if (!loan) return reply;
+    if (!hasJsonObjectBody(request.body)) {
+      return sendInvalidRequestBody(reply);
+    }
+    if (!request.body.reason || !request.body.proceedsAmount || !request.body.proceedsCurrency) {
+      return sendApiError(reply, 400, 'INVALID_REQUEST', 'Liquidation request is missing required canonical fields');
+    }
+    if (request.body.proceedsCurrency !== 'USDC') {
+      return sendApiError(reply, 400, 'INVALID_REQUEST', 'Liquidation proceedsCurrency must be USDC');
+    }
+    if (loan.status !== 'MarginCall' && loan.status !== 'Defaulted') {
+      return invalidTransition(reply, loan.status, 'Liquidated');
+    }
+
+    const distribution = request.body.distribution ?? loan.liquidationPreview.distribution;
+    try {
+      const liquidation = await web3.liquidateLoan({
+        loan,
+        reason: request.body.reason,
+        proceedsAmount: request.body.proceedsAmount,
+        proceedsCurrency: 'USDC',
+        distribution,
+        liquidationTxHash: request.body.liquidationTxHash
+      });
+      const nextLoan: Loan = { ...loan, status: 'Liquidated' };
+      store.replaceLoan(nextLoan);
+      store.appendEvent(baseEvent('Liquidated', nextLoan.loanId, liquidation.txHash, {
+        eventType: 'Liquidated',
+        loanId: nextLoan.loanId,
+        liquidationTxHash: liquidation.txHash,
+        proceedsAmount: liquidation.proceedsAmount,
+        proceedsCurrency: 'USDC',
+        distribution: liquidation.distribution,
+        status: 'Liquidated'
+      }));
+      return {
+        loanId: nextLoan.loanId,
+        status: 'Liquidated',
+        liquidationTxHash: liquidation.txHash,
+        proceedsAmount: liquidation.proceedsAmount,
+        proceedsCurrency: 'USDC',
+        distribution: liquidation.distribution
+      };
+    } catch (error) {
+      return sendApiError(reply, 502, 'WEB3_ACTION_FAILED', error instanceof Error ? error.message : 'Web3 liquidation failed');
+    }
   });
 }
 

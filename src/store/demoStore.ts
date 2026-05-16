@@ -1,3 +1,4 @@
+import type { PaymentAttestation } from '../domain/paymentAttestations.js';
 import type { Loan, LoanScenario, LoanStatus, OnChainEvent, RiskAssessment, SeedFile } from '../domain/types.js';
 import { buildSeedEvents } from './seedEvents.js';
 
@@ -14,6 +15,7 @@ export class DemoStore {
   private readonly loans: Loan[];
   private readonly events: OnChainEvent[];
   private readonly riskAssessments: Map<string, RiskAssessment>;
+  private readonly paymentAttestations = new Map<string, PaymentAttestation>();
 
   private constructor(seed: SeedFile) {
     this.loans = clone(seed.loans);
@@ -79,6 +81,19 @@ export class DemoStore {
     const assessment = this.riskAssessments.get(riskAssessmentId);
     return assessment ? clone(assessment) : undefined;
   }
+
+  savePaymentAttestation(attestation: PaymentAttestation): void {
+    this.paymentAttestations.set(paymentAttestationKey(attestation.loanId, attestation.installmentId, attestation.attestationHash), clone(attestation));
+  }
+
+  findPaymentAttestation(loanId: string, installmentId: string, attestationHash: string): PaymentAttestation | undefined {
+    const attestation = this.paymentAttestations.get(paymentAttestationKey(loanId, installmentId, attestationHash));
+    return attestation ? clone(attestation) : undefined;
+  }
+}
+
+function paymentAttestationKey(loanId: string, installmentId: string, attestationHash: string): string {
+  return `${loanId}::${installmentId}::${attestationHash}`;
 }
 
 function clone<T>(value: T): T {

@@ -4,6 +4,7 @@ import { createMockWeb3Adapter, type Web3Adapter } from './adapters/web3.js';
 import { registerEventRoutes } from './modules/events/routes.js';
 import { registerHealthRoutes } from './modules/health/routes.js';
 import { registerLoanRoutes } from './modules/loans/routes.js';
+import { registerPaymentRoutes } from './modules/payments/routes.js';
 import { registerQuoteRoutes } from './modules/quotes/routes.js';
 import { registerRiskRoutes } from './modules/risk/routes.js';
 import { DemoStore } from './store/demoStore.js';
@@ -26,6 +27,7 @@ export function buildFastifyApp(deps: Partial<AppDeps> = {}): FastifyInstance {
     await registerQuoteRoutes(scopedApp);
     await registerRiskRoutes(scopedApp, store, wavyNode);
     await registerLoanRoutes(scopedApp, store, web3);
+    await registerPaymentRoutes(scopedApp, store, web3);
     await registerEventRoutes(scopedApp, store);
   });
 

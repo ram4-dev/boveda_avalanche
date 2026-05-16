@@ -6,7 +6,9 @@ PR 1 / Work Units 1-2 completed on branch `feature/batch-2-pr1-scaffold-read-api
 
 PR 2 / Work Units 3-4 completed on branch `feature/batch-2-pr2-quotes-lifecycle`.
 
-Resolved delivery path: `auto-chain / feature-branch-chain`. PR 2 intentionally stops before Work Units 5-8.
+PR 3 / Work Units 5-6 completed on branch `feature/batch-2-pr3-payments-liquidation`.
+
+Resolved delivery path: `auto-chain / feature-branch-chain`. PR 3 intentionally stops before Work Units 7-8.
 
 ## Completed Tasks
 
@@ -268,3 +270,91 @@ passed
 ## Memory
 
 Callable Engram memory tools were not exposed to this delegated executor, so apply progress was persisted to OpenSpec only.
+
+## PR 3 / Work Units 5-6 Update
+
+### Completed Tasks
+
+- [x] Work Unit 5 RED: wrote payment attestation integration tests before `/loans/{loanId}/payments/attest`, payment hashing domain code, payment store records, and web3 payment registration existed.
+- [x] Work Unit 5 GREEN: implemented canonical payment payload serialization, SHA-256 attestation hashes, mock web3 payment registration, outstanding-principal updates, idempotent retry detection, and `InstallmentPaid` events.
+- [x] Work Unit 5 TRIANGULATE: covered final payment to `Repaid`, partial payment preserving `MarginCall`, changed-evidence hash differences, currency mismatch rejection, and terminal-loan rejection without mutation.
+- [x] Work Unit 5 REFACTOR: kept canonical payload/hash logic in `src/domain/paymentAttestations.ts`, decimal helpers in `src/domain/money.ts`, and idempotency before principal/event mutation.
+- [x] Work Unit 6 RED: wrote margin-call/liquidation/failure integration tests before `/margin-call`, `/liquidate`, and web3 liquidation behavior existed.
+- [x] Work Unit 6 GREEN: implemented margin-call threshold validation, liquidation eligibility checks, USDC-only liquidation, mock web3 liquidation outcomes, `Liquidated` events, and adapter failure preservation.
+- [x] Work Unit 6 TRIANGULATE: covered below-threshold rejection, Active-loan liquidation rejection, successful MarginCall -> Liquidated, non-USDC rejection, double liquidation rejection, and injected web3 failure.
+- [x] Work Unit 6 REFACTOR: centralized payment routes in a dedicated module, added adapter outcome methods, and reused existing API error helpers while limiting scope to PR3 endpoints.
+
+### Files Changed In PR 3
+
+- `openspec/changes/batch-2-backend-risk-attestations/tasks.md`
+- `openspec/changes/batch-2-backend-risk-attestations/apply-progress.md`
+- `tests/payment-attestations.test.ts`
+- `tests/liquidation-web3-failure.test.ts`
+- `src/domain/paymentAttestations.ts`
+- `src/domain/money.ts`
+- `src/modules/payments/routes.ts`
+- `src/modules/loans/routes.ts`
+- `src/adapters/web3.ts`
+- `src/store/demoStore.ts`
+- `src/app.ts`
+- `src/api/errors.ts`
+
+### TDD Cycle Evidence — PR 3
+
+| Work Unit | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|---|---|---|---|---|---|---|---|
+| WU5 Payment attestation hashing and idempotency | `tests/payment-attestations.test.ts` | Integration (Fastify inject) | ✅ `npm test -- --run tests/loan-lifecycle.test.ts tests/seed-read-api.test.ts && npm run typecheck` passed: 2 files / 8 tests plus typecheck | ✅ `npm test -- --run tests/payment-attestations.test.ts` failed: canonical payment endpoint returned 404 | ✅ `npm test -- --run tests/payment-attestations.test.ts` passed: 3 tests after payment route/domain/store/web3 registration implementation | ✅ partial payment + idempotent retry, final repayment, MarginCall partial preservation, hash-difference, currency mismatch, and terminal rejection all covered | ✅ focused payment + lifecycle tests passed and `npm run typecheck` passed after extracting payload/hash and decimal helpers |
+| WU6 Margin call, liquidation, and web3 failure safety | `tests/liquidation-web3-failure.test.ts` | Integration (Fastify inject) | ✅ `npm test -- --run tests/payment-attestations.test.ts tests/loan-lifecycle.test.ts && npm run typecheck` passed after WU5 | ✅ `npm test -- --run tests/liquidation-web3-failure.test.ts` failed: margin-call/liquidate endpoints returned 404 | ✅ `npm test -- --run tests/liquidation-web3-failure.test.ts` passed: 3 tests after margin-call/liquidation routes and adapter method | ✅ below-threshold, Active-loan liquidation, successful liquidation, non-USDC, double liquidation, and injected adapter failure paths covered | ✅ PR3 focused tests plus lifecycle tests and `npm run typecheck` passed after web3 outcome/error handling cleanup |
+
+### Test Commands Run For PR 3
+
+- `npm test -- --run tests/loan-lifecycle.test.ts tests/seed-read-api.test.ts && npm run typecheck` → safety net passed, 2 files / 8 tests plus typecheck.
+- `npm test -- --run tests/payment-attestations.test.ts` → RED failed with endpoint 404.
+- `npm test -- --run tests/payment-attestations.test.ts` → GREEN/TRIANGULATE passed, 3 tests.
+- `npm test -- --run tests/payment-attestations.test.ts tests/loan-lifecycle.test.ts && npm run typecheck` → first typecheck exposed a `PaymentAttestation.status` narrowing issue; fixed during GREEN cleanup.
+- `npm test -- --run tests/payment-attestations.test.ts tests/loan-lifecycle.test.ts && npm run typecheck` → passed, 2 files / 8 tests plus typecheck.
+- `npm test -- --run tests/liquidation-web3-failure.test.ts` → RED failed with margin-call/liquidate endpoints 404.
+- `npm test -- --run tests/liquidation-web3-failure.test.ts` → GREEN/TRIANGULATE passed, 3 tests.
+- `npm test -- --run tests/liquidation-web3-failure.test.ts tests/payment-attestations.test.ts tests/loan-lifecycle.test.ts && npm run typecheck` → passed, 3 files / 11 tests plus typecheck.
+
+### Verification Evidence — PR 3
+
+```text
+npm test -- --run tests/payment-attestations.test.ts
+Test Files  1 passed (1)
+Tests       3 passed (3)
+
+npm test -- --run tests/liquidation-web3-failure.test.ts
+Test Files  1 passed (1)
+Tests       3 passed (3)
+
+npm test -- --run
+Test Files  6 passed (6)
+Tests       21 passed (21)
+
+npm run typecheck
+passed
+
+npm run build
+passed
+
+npm run lint
+passed
+```
+
+### Deviations From Design — PR 3
+
+- `DemoStore` continues the PR2 explicit helper style (`replaceLoan`, `appendEvent`, `savePaymentAttestation`, `findPaymentAttestation`) instead of introducing a new generic `mutateLoan` abstraction mid-slice.
+- Payment and liquidation web3 adapter failures are modeled as thrown exceptions from the injected adapter in tests; the default mock adapter remains deterministic and successful.
+- Dashboard aggregation and OpenAPI smoke/docs were intentionally not implemented; they remain PR4 / Work Units 7-8.
+
+### Workload / PR Boundary — PR 3
+
+- PR boundary: `feature/batch-2-pr3-payments-liquidation` contains only PR 3 / Work Units 5-6 on top of committed PR 2 (`f3f9004`).
+- Work Units 7-8 were not implemented.
+- Reviewable PR3 source/test changes are focused on payment attestations, margin calls, liquidation, web3 adapter methods, and OpenSpec progress/tasks.
+
+### Remaining Tasks After PR 3
+
+- PR 4 / Work Unit 7: dashboard aggregation and event filtering refresh path.
+- PR 4 / Work Unit 8: OpenAPI contract smoke, docs, and final hardening.

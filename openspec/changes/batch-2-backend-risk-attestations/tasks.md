@@ -106,29 +106,29 @@ Use targeted Vitest file commands during RED/GREEN, for example `npm test -- --r
 
 ### PR 3 / Work Unit 5 — Payment attestation hashing and idempotency
 
-- [ ] RED: add payment attestation tests.
+- [x] RED: add payment attestation tests.
   - Files: `tests/payment-attestations.test.ts`.
   - Target behavior: canonical `POST /loans/{loanId}/payments/attest`; deterministic hash; identical retry is idempotent; partial payment remains `Active`; final payment becomes `Repaid`; terminal loan rejects without mutation.
   - Test command: `npm test -- --run tests/payment-attestations.test.ts`.
-- [ ] GREEN: implement canonical payment payload, hash generation, web3 registration call, outstanding principal update, attestation storage, and `InstallmentPaid` events.
+- [x] GREEN: implement canonical payment payload, hash generation, web3 registration call, outstanding principal update, attestation storage, and `InstallmentPaid` events.
   - Files: `src/domain/paymentAttestations.ts`, `src/modules/payments/routes.ts`, `src/adapters/web3.ts`, `src/store/demoStore.ts`, `src/domain/money.ts`.
   - Finish: response includes `loanId`, `installmentId`, `amount`, `currency`, `attestationHash`, `remainingPrincipal`, and resulting `status`.
-- [ ] TRIANGULATE: add changed-evidence hash-difference and currency mismatch tests.
-- [ ] REFACTOR: keep idempotency check before principal decrement and event append.
+- [x] TRIANGULATE: add changed-evidence hash-difference and currency mismatch tests.
+- [x] REFACTOR: keep idempotency check before principal decrement and event append.
   - Verification: payment tests, lifecycle tests, `npm run typecheck`.
   - Rollback boundary: remove payment route/module and attestation store additions.
 
 ### PR 3 / Work Unit 6 — Margin call, liquidation, and web3 failure safety
 
-- [ ] RED: add margin-call/liquidation/failure tests.
+- [x] RED: add margin-call/liquidation/failure tests.
   - Files: `tests/liquidation-web3-failure.test.ts`.
   - Target behavior: margin call requires active loan and threshold LTV; liquidation requires `MarginCall` or `Defaulted`; liquidation proceeds are always `USDC`; mock liquidation records canonical event; injected adapter failure preserves state/events.
   - Test command: `npm test -- --run tests/liquidation-web3-failure.test.ts`.
-- [ ] GREEN: implement margin-call and liquidation route behavior through mock web3 adapter.
+- [x] GREEN: implement margin-call and liquidation route behavior through mock web3 adapter.
   - Files: `src/modules/loans/routes.ts`, `src/adapters/web3.ts`, `src/domain/stateMachine.ts`, `src/store/demoStore.ts`.
   - Finish: `POST /loans/{loanId}/margin-call` and `POST /loans/{loanId}/liquidate` satisfy specs and use USDC constant.
-- [ ] TRIANGULATE: add rejection tests for non-USDC proceeds and terminal double-liquidation.
-- [ ] REFACTOR: centralize adapter outcome handling and error codes.
+- [x] TRIANGULATE: add rejection tests for non-USDC proceeds and terminal double-liquidation.
+- [x] REFACTOR: centralize adapter outcome handling and error codes.
   - Verification: targeted test, payment tests, lifecycle tests, `npm run typecheck`.
   - Rollback boundary: revert margin/liquidation endpoints while leaving activation/payment adapter methods intact.
 

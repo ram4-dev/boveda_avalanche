@@ -32,3 +32,11 @@ export function usdToCurrency(usdAmount: number, currency: string): string {
 export function applyBps(amount: number, bps: number): number {
   return (amount * bps) / 10000;
 }
+
+export function compareDecimalStrings(left: string, right: string): number {
+  return Number(left) - Number(right);
+}
+
+export function subtractDecimalStrings(left: string, right: string): string {
+  return normalizeDecimalString(Math.max(0, Number(left) - Number(right)));
+}
