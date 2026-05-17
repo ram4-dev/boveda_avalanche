@@ -28,6 +28,7 @@ contract CollateralVault {
     event CollateralToppedUp(uint256 indexed loanId, address indexed borrower, uint256 amount, uint256 newTotalAmount);
     event CollateralReleased(uint256 indexed loanId, uint256 amount);
     event CollateralLiquidated(uint256 indexed loanId, uint256 amount);
+    event CollateralLiquidatedTo(uint256 indexed loanId, address indexed collateralToken, address indexed recipient, uint256 amount);
     event LiquidationEngineSet(address indexed oldEngine, address indexed newEngine);
 
     modifier onlyAdmin() {
@@ -114,6 +115,18 @@ contract CollateralVault {
     }
 
     function liquidateCollateral(uint256 loanId) external {
+        require(msg.sender == liquidationEngine, "Only liquidation engine can liquidate");
+        ILoanRegistry.Loan memory loan = loanRegistry.getLoan(loanId);
+        _liquidateCollateralTo(loanId, loan.originator);
+    }
+
+    function liquidateCollateralTo(uint256 loanId, address recipient) external returns (address collateralToken, uint256 amount, address borrower) {
+        require(msg.sender == liquidationEngine, "Only liquidation engine can liquidate");
+        require(recipient != address(0), "Invalid liquidation recipient");
+        return _liquidateCollateralTo(loanId, recipient);
+    }
+
+    function _liquidateCollateralTo(uint256 loanId, address recipient) internal returns (address collateralToken, uint256 amount, address borrower) {
         Vault storage vault = vaults[loanId];
         require(vault.loanId != 0, "Vault not found");
         require(!vault.liquidated, "Collateral already liquidated");
@@ -121,7 +134,6 @@ contract CollateralVault {
 
         ILoanRegistry.Loan memory loan = loanRegistry.getLoan(loanId);
         require(loan.loanId != 0, "Loan not found");
-        require(msg.sender == liquidationEngine, "Only liquidation engine can liquidate");
         require(
             loan.status == uint8(ILoanRegistry.LoanStatus.Active) ||
             loan.status == uint8(ILoanRegistry.LoanStatus.MarginCall) ||
@@ -129,15 +141,18 @@ contract CollateralVault {
             "Loan not liquidatable"
         );
 
-        uint256 amount = vault.amount;
+        collateralToken = vault.collateralToken;
+        amount = vault.amount;
+        borrower = vault.borrower;
         vault.amount = 0;
         vault.locked = false;
         vault.liquidated = true;
 
-        require(IERC20(vault.collateralToken).transfer(loan.originator, amount), "Transfer failed");
+        require(IERC20(collateralToken).transfer(recipient, amount), "Transfer failed");
         loanRegistry.setLoanStatus(loanId, uint8(ILoanRegistry.LoanStatus.Liquidated));
 
         emit CollateralLiquidated(loanId, amount);
+        emit CollateralLiquidatedTo(loanId, collateralToken, recipient, amount);
     }
 
     function calculateLtv(uint256 loanId, uint256 collateralPrice, uint256 priceDecimals) external view returns (uint256) {

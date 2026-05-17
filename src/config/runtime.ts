@@ -50,7 +50,7 @@ export function parseRuntimeMode(value: string | undefined): RuntimeMode {
   return value === 'fuji' ? 'fuji' : 'demo';
 }
 
-export function loadRuntimeConfig(options: { mode?: RuntimeMode } = {}): RuntimeConfig {
+export function loadRuntimeConfig(options: { mode?: RuntimeMode; env?: NodeJS.ProcessEnv } = {}): RuntimeConfig {
   const mode = options.mode ?? 'demo';
   if (mode === 'demo') {
     return buildDemoRuntimeConfig();
@@ -61,7 +61,18 @@ export function loadRuntimeConfig(options: { mode?: RuntimeMode } = {}): Runtime
     return buildFujiRuntimeConfig({ prerequisites: 'missing', validationErrors: contracts.errors });
   }
 
-  return buildFujiRuntimeConfig({ prerequisites: 'missing', contracts: contracts.config });
+  const env = options.env ?? process.env;
+  const prerequisites = hasFujiWriteRuntimePrerequisites(env) ? 'ready' : 'missing';
+  return buildFujiRuntimeConfig({ prerequisites, contracts: contracts.config });
+}
+
+export function hasFujiWriteRuntimePrerequisites(env: NodeJS.ProcessEnv = process.env): boolean {
+  return Boolean(
+    env.BOVEDA_FUJI_ATTESTOR_PRIVATE_KEY &&
+    env.BOVEDA_FUJI_BORROWER_PRIVATE_KEY &&
+    env.BOVEDA_FUJI_ORIGINATOR_PRIVATE_KEY &&
+    env.BOVEDA_FUJI_FUNDING_PARTNER_ADDRESS
+  );
 }
 
 export function toPublicRuntimeMetadata(runtime: RuntimeConfig): PublicRuntimeMetadata {

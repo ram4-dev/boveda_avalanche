@@ -51,16 +51,16 @@ describe('borrower journey state', () => {
 
   it('stores quote and risk results while preserving the selected loan on action errors', async () => {
     const base = { ...createInitialJourneyState(), loadStatus: 'ready' as const, selectedLoan: activeLoan, events: [] };
-    const quoteClient = { createQuote: vi.fn(async (_input: unknown) => ({ scenario: 'WEB3_BRIDGE', suggestedPrincipal: { amount: '150000', currency: 'USD' }, requiredCollateralValueUsd: '300000', terms: { initialLtvBps: 5000, marginCallLtvBps: 7000, liquidationLtvBps: 8000, aprBps: 1450, tenorDays: 90, repaymentFrequency: 'MONTHLY', liquidationCurrency: 'USDC' } })) };
-    const withQuote = await refreshQuote(quoteClient, base, '0xA11CE00000000000000000000000000000000001');
+    const quoteClient = { createQuote: vi.fn(async (_input: unknown) => ({ scenario: 'WEB3_BRIDGE', suggestedPrincipal: { amount: '170', currency: 'MXN' }, requiredCollateralValueUsd: '15', terms: { initialLtvBps: 5000, marginCallLtvBps: 7000, liquidationLtvBps: 8000, aprBps: 1450, tenorDays: 90, repaymentFrequency: 'MONTHLY', liquidationCurrency: 'USDC' } })) };
+    const withQuote = await refreshQuote(quoteClient, base, '0x6f981Bf8d4fA751db294Bb62dDEB3d904514F2CF');
     expect(withQuote.quote?.terms.liquidationCurrency).toBe('USDC');
     const quotePayload = quoteClient.createQuote.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(quotePayload).toMatchObject({ requestedPrincipal: { amount: '150000', currency: 'USD' } });
+    expect(quotePayload).toMatchObject({ requestedPrincipal: { amount: '170', currency: 'MXN' } });
     expect(quotePayload).not.toHaveProperty('requestedAmount');
     expect(quotePayload).not.toHaveProperty('requestedCurrency');
 
     const riskClient = { assessWalletRisk: vi.fn(async () => { throw new Error('risk unavailable'); }) };
-    const withRiskError = await refreshRisk(riskClient, withQuote, '0xA11CE00000000000000000000000000000000001');
+    const withRiskError = await refreshRisk(riskClient, withQuote, '0x6f981Bf8d4fA751db294Bb62dDEB3d904514F2CF');
     expect(withRiskError.selectedLoan?.loanId).toBe('loan-web3-001');
     expect(withRiskError.errors.risk?.message).toBe('risk unavailable');
   });

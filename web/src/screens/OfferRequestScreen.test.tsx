@@ -6,7 +6,7 @@ import { sampleLoan, sampleQuote, sampleRiskAssessment } from '../state/demoPayl
 import type { QuoteResponse } from '../api/types.js';
 
 const baseProps = {
-  loan: sampleLoan({ loanId: 'loan-web3-001', status: 'Active' }),
+  loan: sampleLoan({ loanId: 'loan-sample-arch', status: 'Active' }),
   wallet: { status: 'unavailable' as const },
   quote: null,
   risk: null,
@@ -22,15 +22,15 @@ describe('OfferRequestScreen', () => {
     render(<OfferRequestScreen {...baseProps} />);
 
     expect(screen.getByRole('heading', { name: /Borrower offer/i })).toBeInTheDocument();
-    expect(screen.getByText('150000 USD')).toBeInTheDocument();
-    expect(screen.getByText('2750 AVAX')).toBeInTheDocument();
+    expect(screen.getByText('170 MXN')).toBeInTheDocument();
+    expect(screen.getByText('15 USDC')).toBeInTheDocument();
     expect(screen.getAllByText('50.00%')[0]).toBeInTheDocument();
     expect(screen.getByText('14.50% APR')).toBeInTheDocument();
     expect(screen.getByText('90 days')).toBeInTheDocument();
     expect(screen.getByText('70.00% / 80.00%')).toBeInTheDocument();
     expect(screen.getAllByText('USDC')[0]).toBeInTheDocument();
-    expect(screen.getByText('Ark Capital Demo Fund')).toBeInTheDocument();
-    expect(screen.getByText('Bóveda Bridge Credit Pool')).toBeInTheDocument();
+    expect(screen.getByText('Arkangeles IFC Operator')).toBeInTheDocument();
+    expect(screen.getByText('Bóveda Demo Credit Pool')).toBeInTheDocument();
     expect(screen.getByText(/Ready for payment attestation/i)).toBeInTheDocument();
     expect(screen.queryByText(/[{}\[\]"]/)).not.toBeInTheDocument();
   });
@@ -42,8 +42,8 @@ describe('OfferRequestScreen', () => {
     await userEvent.click(screen.getByRole('button', { name: /Connect injected wallet/i }));
     expect(onConnectWallet).toHaveBeenCalled();
 
-    rerender(<OfferRequestScreen {...baseProps} wallet={{ status: 'connected', address: '0xA11CE00000000000000000000000000000000001' }} />);
-    expect(screen.getByText('0xA11C…0001')).toBeInTheDocument();
+    rerender(<OfferRequestScreen {...baseProps} wallet={{ status: 'connected', address: '0x6f981Bf8d4fA751db294Bb62dDEB3d904514F2CF' }} />);
+    expect(screen.getByText('0x6f98…F2CF')).toBeInTheDocument();
 
     rerender(<OfferRequestScreen {...baseProps} wallet={{ status: 'rejected', message: 'User rejected request' }} />);
     expect(screen.getByRole('alert')).toHaveTextContent('User rejected request');
@@ -52,7 +52,7 @@ describe('OfferRequestScreen', () => {
   it('displays quote fields and REVIEW/BLOCK risk copy from API responses', () => {
     const { rerender } = render(<OfferRequestScreen {...baseProps} quote={sampleQuote()} risk={sampleRiskAssessment({ amlStatus: 'REVIEW', riskScore: 62 })} />);
     expect(screen.getByText('Required collateral')).toBeInTheDocument();
-    expect(screen.getByText('300000 USD')).toBeInTheDocument();
+    expect(screen.getByText('15 USD')).toBeInTheDocument();
     expect(screen.getByText('50.00% / 70.00% / 80.00%')).toBeInTheDocument();
     expect(screen.getByText('14.50% APR, 90 days')).toBeInTheDocument();
     expect(screen.getAllByText('USDC').length).toBeGreaterThan(1);

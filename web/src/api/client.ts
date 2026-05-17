@@ -1,5 +1,5 @@
 import { ApiClientError } from './errors.js';
-import type { ActivateLoanRequest, CollateralDepositRequest, CollateralTopUpRequest, DashboardSummary, EventsResponse, FujiReadOnlyStatus, LiquidationRequest, Loan, LoanScenario, LoansResponse, LoanStatus, MarginCallRequest, PaymentAttestationRequest, QuoteRequest, RiskAssessmentRequest, RuntimeMetadata, RuntimeMode } from './types.js';
+import type { ActivateLoanRequest, ApproveLoanRequest, CancelLoanRequest, CollateralDepositRequest, CollateralTopUpRequest, CreateLoanRequest, DashboardSummary, DemoResetResponse, EventsResponse, FujiReadOnlyStatus, FujiUsdcBalancesResponse, LiquidationRequest, Loan, LoanScenario, LoansResponse, LoanStatus, MarginCallRequest, PaymentAttestationRequest, QuoteRequest, RiskAssessmentRequest, RuntimeMetadata, RuntimeMode } from './types.js';
 export { ApiClientError } from './errors.js';
 export type * from './types.js';
 
@@ -19,11 +19,17 @@ export function createBovedaApiClient(options: ClientOptions = {}) {
   return {
     getRuntime: (): Promise<RuntimeMetadata> => request(fetcher, url(baseUrl, '/runtime'), { method: 'GET' }) as Promise<RuntimeMetadata>,
     getFujiReadOnlyStatus: (): Promise<FujiReadOnlyStatus> => request(fetcher, url(baseUrl, '/runtime/fuji-smoke'), { method: 'GET' }) as Promise<FujiReadOnlyStatus>,
+    getFujiUsdcBalances: (input: { tokenAddress: string; addresses: string[] }): Promise<FujiUsdcBalancesResponse> => request(fetcher, url(baseUrl, '/runtime/fuji-usdc-balances', { tokenAddress: input.tokenAddress, addresses: input.addresses.join(',') }), { method: 'GET' }) as Promise<FujiUsdcBalancesResponse>,
     getDashboardSummary: (): Promise<DashboardSummary> => request(fetcher, url(baseUrl, '/dashboard/summary'), { method: 'GET' }) as Promise<DashboardSummary>,
     listLoans: (filter?: { scenario?: LoanScenario; status?: LoanStatus }): Promise<LoansResponse> => request(fetcher, url(baseUrl, '/loans', filter), { method: 'GET' }) as Promise<LoansResponse>,
     getLoan: (loanId: string): Promise<Loan> => request(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}`), { method: 'GET' }) as Promise<Loan>,
     createQuote: (input: QuoteRequest) => post(fetcher, url(baseUrl, '/quotes'), input),
     assessWalletRisk: (input: RiskAssessmentRequest) => post(fetcher, url(baseUrl, '/risk/wallet'), input),
+    createLoan: (input: CreateLoanRequest): Promise<Loan> => post(fetcher, url(baseUrl, '/loans'), input) as Promise<Loan>,
+    approveLoan: (loanId: string, input: ApproveLoanRequest): Promise<Loan> => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/approve`), input) as Promise<Loan>,
+    cancelLoan: (loanId: string, input: CancelLoanRequest = {}): Promise<Loan> => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/cancel`), input) as Promise<Loan>,
+    resetDemo: (): Promise<DemoResetResponse> => post(fetcher, url(baseUrl, '/demo/reset'), {}) as Promise<DemoResetResponse>,
+    releaseAndReset: (): Promise<DemoResetResponse> => post(fetcher, url(baseUrl, '/demo/release-and-reset'), {}) as Promise<DemoResetResponse>,
     depositCollateral: (loanId: string, input: CollateralDepositRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/collateral/deposit`), input),
     topUpCollateral: (loanId: string, input: CollateralTopUpRequest) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/collateral/top-up`), input),
     activateLoan: (loanId: string, input: ActivateLoanRequest = {}) => post(fetcher, url(baseUrl, `/loans/${encodePath(loanId)}/activate`), input),

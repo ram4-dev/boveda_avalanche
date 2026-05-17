@@ -43,11 +43,14 @@ contract DeployBoveda is Script {
             console.log("Using existing USDC token at:", proceedsTokenAddress);
         }
 
+        uint16 originatorFeeBps = uint16(vm.envOr("ORIGINATOR_FEE_BPS", uint256(1000)));
+        require(originatorFeeBps <= 10000, "Invalid ORIGINATOR_FEE_BPS");
+
         LiquidationEngine liquidationEngine = new LiquidationEngine(
             address(loanRegistry),
             address(collateralVault),
             proceedsTokenAddress,
-            200
+            originatorFeeBps
         );
 
         uint256 maxStalenessSeconds = vm.envOr("CHAINLINK_MAX_STALENESS_SECONDS", uint256(1 days));
@@ -74,6 +77,7 @@ contract DeployBoveda is Script {
         console.log("LiquidationEngine:", address(liquidationEngine));
         console.log("ChainlinkPriceOracle:", address(priceOracle));
         console.log("OracleMaxStalenessSeconds:", maxStalenessSeconds);
+        console.log("OriginatorFeeBps:", originatorFeeBps);
         console.log("ProceedsToken:", proceedsTokenAddress);
 
         vm.stopBroadcast();

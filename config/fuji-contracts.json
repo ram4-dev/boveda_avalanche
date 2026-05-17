@@ -4,24 +4,24 @@
   "explorerBaseUrl": "https://testnet.snowtrace.io",
   "contracts": {
     "LoanRegistry": {
-      "address": "0xb6832e4c43e97d5ad11e99abcb23d9a734a4be14",
-      "abiArtifact": "out/LoanRegistry.sol/LoanRegistry.json"
+      "address": "0x75eBfec02dAE1e0cd631C2d4961c5EE1849D4Fd3",
+      "abiArtifact": "config/abi/LoanRegistry.json"
     },
     "CollateralVault": {
-      "address": "0xe550a10f585e5595ae187f08a701bdef890de057",
-      "abiArtifact": "out/CollateralVault.sol/CollateralVault.json"
+      "address": "0x45E96820551466861d20f081ab390CAA9368F68B",
+      "abiArtifact": "config/abi/CollateralVault.json"
     },
     "LoanReceiptNFT": {
-      "address": "0xf88b6e8c107a0a5da6f398734783541cbe12a38c",
-      "abiArtifact": "out/LoanReceiptNFT.sol/LoanReceiptNFT.json"
+      "address": "0x03AbD300629808fA9763DdB820469B2FC065e64F",
+      "abiArtifact": "config/abi/LoanReceiptNFT.json"
     },
     "PaymentAttestation": {
-      "address": "0xa222a02e828d5480be971b80d4157f2abe1fabda",
-      "abiArtifact": "out/PaymentAttestation.sol/PaymentAttestation.json"
+      "address": "0x3dDC450C16231807d63f560c01455808ce130B0e",
+      "abiArtifact": "config/abi/PaymentAttestation.json"
     },
     "LiquidationEngine": {
-      "address": "0x212f6565319caa343c8c39e9b11a447febf2055a",
-      "abiArtifact": "out/LiquidationEngine.sol/LiquidationEngine.json"
+      "address": "0xe29EAEbCc8D90b18BD13AfEdbf5ceF274f3a58c4",
+      "abiArtifact": "config/abi/LiquidationEngine.json"
     }
   }
 }

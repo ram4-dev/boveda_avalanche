@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/index.ts",
+    "dev:fuji": "tsx scripts/dev-fuji.mjs",
     "dev:web": "vite --config vite.config.ts",
     "keeper:dry-run": "tsx src/keeper/dryRunCli.ts",
+    "start": "node dist/src/index.js",
     "test": "vitest",
     "typecheck": "npm run typecheck:api && npm run typecheck:web",
     "typecheck:api": "tsc --noEmit --pretty false -p tsconfig.json",

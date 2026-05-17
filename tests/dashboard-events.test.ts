@@ -3,11 +3,11 @@ import { buildFastifyApp } from '../src/app.js';
 
 const paymentPayload = {
   installmentId: 'inst-dashboard-001',
-  amount: '12500',
-  currency: 'USD',
-  paymentRail: 'WIRE_SIMULATED',
+  amount: '85',
+  currency: 'MXN',
+  paymentRail: 'SPEI_SIMULATED',
   paidAt: '2026-06-15T00:00:00Z',
-  externalPaymentRef: 'wire-dashboard-001'
+  externalPaymentRef: 'spei-dashboard-001'
 };
 
 const marginCallPayload = {
@@ -19,12 +19,12 @@ const marginCallPayload = {
 
 const liquidationPayload = {
   reason: 'LTV_BREACH',
-  proceedsAmount: '154200',
+  proceedsAmount: '15000000',
   proceedsCurrency: 'USDC',
   distribution: {
-    fundingPartnerAmount: '150000',
-    originatorFeeAmount: '2100',
-    borrowerRemainderAmount: '2100'
+    fundingPartnerAmount: '10000000',
+    originatorFeeAmount: '500000',
+    borrowerRemainderAmount: '4500000'
   }
 };
 
@@ -32,10 +32,10 @@ describe('dashboard aggregation and event filtering', () => {
   it('filters events by loan and derives seeded dashboard metrics from loans and events', async () => {
     const app = buildFastifyApp();
 
-    const filteredEvents = await app.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' });
+    const filteredEvents = await app.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' });
     expect(filteredEvents.statusCode).toBe(200);
     expect(filteredEvents.json().events).toHaveLength(5);
-    expect(filteredEvents.json().events.every((event: { loanId: string }) => event.loanId === 'loan-web3-001')).toBe(true);
+    expect(filteredEvents.json().events.every((event: { loanId: string }) => event.loanId === 'loan-sample-arch')).toBe(true);
     expect(filteredEvents.json().events.map((event: { eventType: string }) => event.eventType)).toEqual([
       'LoanCreated',
       'LoanApproved',
@@ -47,13 +47,13 @@ describe('dashboard aggregation and event filtering', () => {
     const dashboard = await app.inject({ method: 'GET', url: '/dashboard/summary' });
     expect(dashboard.statusCode).toBe(200);
     expect(dashboard.json()).toMatchObject({
-      activePrincipalUsd: '150000',
+      activePrincipalUsd: '10',
       activeVaults: 1,
       averageLtvBps: 5000,
       loansInMarginCall: 0,
       paymentsAttested: 0,
       liquidationsExecuted: 0,
-      exposureByAsset: [{ asset: 'AVAX', valueUsd: '300000' }]
+      exposureByAsset: [{ asset: 'USDC', valueUsd: '15' }]
     });
     expect(dashboard.json().recentEvents).toHaveLength(7);
     expect(dashboard.json().recentEvents[0]).toMatchObject({
@@ -66,13 +66,13 @@ describe('dashboard aggregation and event filtering', () => {
   it('updates dashboard counters and recent events after payment and liquidation mutations', async () => {
     const app = buildFastifyApp();
 
-    const payment = await app.inject({ method: 'POST', url: '/loans/loan-web3-001/payments/attest', payload: paymentPayload });
+    const payment = await app.inject({ method: 'POST', url: '/loans/loan-sample-arch/payments/attest', payload: paymentPayload });
     expect(payment.statusCode).toBe(200);
 
     const afterPayment = await app.inject({ method: 'GET', url: '/dashboard/summary' });
     expect(afterPayment.statusCode).toBe(200);
     expect(afterPayment.json()).toMatchObject({
-      activePrincipalUsd: '137500',
+      activePrincipalUsd: '5',
       activeVaults: 1,
       averageLtvBps: 5000,
       loansInMarginCall: 0,
@@ -81,13 +81,13 @@ describe('dashboard aggregation and event filtering', () => {
     });
     expect(afterPayment.json().recentEvents[0]).toMatchObject({
       eventType: 'InstallmentPaid',
-      loanId: 'loan-web3-001',
+      loanId: 'loan-sample-arch',
       payload: {
-        loanId: 'loan-web3-001',
+        loanId: 'loan-sample-arch',
         installmentId: 'inst-dashboard-001',
-        amount: '12500',
-        currency: 'USD',
-        remainingPrincipal: '137500',
+        amount: '85',
+        currency: 'MXN',
+        remainingPrincipal: '85',
         status: 'Active',
         evidence: {
           source: 'demo-simulated',
@@ -97,9 +97,9 @@ describe('dashboard aggregation and event filtering', () => {
       }
     });
 
-    const marginCall = await app.inject({ method: 'POST', url: '/loans/loan-web3-001/margin-call', payload: marginCallPayload });
+    const marginCall = await app.inject({ method: 'POST', url: '/loans/loan-sample-arch/margin-call', payload: marginCallPayload });
     expect(marginCall.statusCode).toBe(200);
-    const liquidation = await app.inject({ method: 'POST', url: '/loans/loan-web3-001/liquidate', payload: liquidationPayload });
+    const liquidation = await app.inject({ method: 'POST', url: '/loans/loan-sample-arch/liquidate', payload: liquidationPayload });
     expect(liquidation.statusCode).toBe(200);
 
     const afterLiquidation = await app.inject({ method: 'GET', url: '/dashboard/summary' });
@@ -120,7 +120,7 @@ describe('dashboard aggregation and event filtering', () => {
     ]);
     expect(afterLiquidation.json().recentEvents[0]).toMatchObject({
       eventType: 'Liquidated',
-      loanId: 'loan-web3-001',
+      loanId: 'loan-sample-arch',
       payload: {
         reason: 'LTV_BREACH',
         trigger: {
@@ -129,9 +129,9 @@ describe('dashboard aggregation and event filtering', () => {
         },
         proceedsCurrency: 'USDC',
         distribution: {
-          fundingPartnerAmount: '150000',
-          originatorFeeAmount: '2100',
-          borrowerRemainderAmount: '2100'
+          fundingPartnerAmount: '10000000',
+          originatorFeeAmount: '500000',
+          borrowerRemainderAmount: '4500000'
         },
         status: 'Liquidated',
         evidence: {

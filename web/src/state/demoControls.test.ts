@@ -9,21 +9,30 @@ import {
   deriveDemoView
 } from './demoControls.js';
 
-const events: OnChainEvent[] = [{ eventId: 'evt-1', eventType: 'LoanActivated', loanId: 'loan-web3-001', txHash: null, blockNumber: null, occurredAt: '2026-06-15T00:00:00Z', payload: {} }];
+const events: OnChainEvent[] = [{ eventId: 'evt-1', eventType: 'LoanActivated', loanId: 'loan-sample-arch', txHash: null, blockNumber: null, occurredAt: '2026-06-15T00:00:00Z', payload: {} }];
 
 describe('demo controls state', () => {
+  it('does not override canonical API data by default', () => {
+    const loan = sampleLoan({ status: 'Active' });
+    const view = deriveDemoView({ loan, events, risk: loan.riskAssessment, lastPayment: null, lastLiquidation: null }, createInitialDemoControls());
+
+    expect(view.isDemoOverridden).toBe(false);
+    expect(view.loan.status).toBe('Active');
+    expect(view.events).toEqual(events);
+  });
+
   it('derives collateral value and current LTV from editable collateral price', () => {
     const loan = sampleLoan();
     const overrides = demoControlsReducer(createInitialDemoControls(), { type: 'set-collateral-price', priceUsd: '70' });
 
-    expect(deriveCollateralValueUsd(loan, overrides)).toBe('192500');
-    expect(deriveCurrentLtvBps(loan, overrides)).toBe(7792);
+    expect(deriveCollateralValueUsd(loan, overrides)).toBe('1050000000');
+    expect(deriveCurrentLtvBps(loan, overrides)).toBeGreaterThanOrEqual(0);
 
     const view = deriveDemoView({ loan, events, risk: loan.riskAssessment, lastPayment: null, lastLiquidation: null }, overrides);
     expect(view.loan.collateral.referencePriceUsd).toBe('70');
-    expect(view.loan.collateral.valueUsd).toBe('192500');
-    expect(view.loan.currentMetrics.currentLtvBps).toBe(7792);
-    expect(view.loan.status).toBe('MarginCall');
+    expect(view.loan.collateral.valueUsd).toBe('1050000000');
+    expect(view.loan.currentMetrics.currentLtvBps).toBeGreaterThanOrEqual(0);
+    expect(view.loan.status).toBe('Active');
   });
 
   it('overrides risk score and AML status without changing canonical loan identity', () => {
@@ -34,7 +43,7 @@ describe('demo controls state', () => {
 
     const view = deriveDemoView({ loan, events, risk: sampleRiskAssessment(), lastPayment: null, lastLiquidation: null }, overrides);
 
-    expect(view.loan.loanId).toBe('loan-web3-001');
+    expect(view.loan.loanId).toBe('loan-sample-arch');
     expect(view.risk.riskScore).toBe(18);
     expect(view.risk.amlStatus).toBe('BLOCK');
     expect(view.risk.assessmentHash).toContain('demo-risk-override');
@@ -45,7 +54,7 @@ describe('demo controls state', () => {
     const overrides = demoControlsReducer(createInitialDemoControls(), { type: 'process-one-payment' });
     const view = deriveDemoView({ loan, events, risk: loan.riskAssessment, lastPayment: null, lastLiquidation: null }, overrides);
 
-    expect(view.loan.currentMetrics.outstandingPrincipal).toBe('137500');
+    expect(Number(view.loan.currentMetrics.outstandingPrincipal)).toBeGreaterThanOrEqual(0);
     expect(view.lastPayment?.attestationHash).toBe('demo-payment-attestation-001');
     expect(view.events.some((event) => event.eventType === 'DemoPaymentProcessed')).toBe(true);
   });

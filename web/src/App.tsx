@@ -4,22 +4,16 @@ import { InstitutionalDashboardScreen } from './screens/InstitutionalDashboardSc
 import { OfferRequestScreen } from './screens/OfferRequestScreen.js';
 import { LoanActivityScreen } from './screens/LoanActivityScreen.js';
 import { DemoControlsPanel } from './components/DemoControlsPanel.js';
-import { RuntimeModeBanner } from './components/RuntimeModeBanner.js';
 import { useBorrowerJourney } from './state/borrowerJourney.js';
 import { createInitialDemoControls, demoControlsReducer, deriveDemoView, getCurrentDemoPathStep } from './state/demoControls.js';
 import { useInjectedWallet } from './wallet/useInjectedWallet.js';
-import { isFujiReadOnlyStatus, isRuntimeMetadata, resolveRuntimeRoute, type FujiReadOnlyStatus, type RuntimeMetadata } from './runtime/runtimeMode.js';
+import { resolveRuntimeRoute, type RuntimeMetadata } from './runtime/runtimeMode.js';
 import './styles/app.css';
-
-type AppView = 'borrower' | 'dashboard';
 
 export function App() {
   const [pathname, setPathname] = useState(() => window.location.pathname);
   const runtimeRoute = useMemo(() => resolveRuntimeRoute(pathname), [pathname]);
   const client = useMemo(() => createBovedaApiClient({ runtimeMode: runtimeRoute.mode }), [runtimeRoute.mode]);
-  const [view, setView] = useState<AppView>('borrower');
-  const [runtimeMetadata, setRuntimeMetadata] = useState<RuntimeMetadata | null>(null);
-  const [fujiReadOnlyStatus, setFujiReadOnlyStatus] = useState<FujiReadOnlyStatus | null>(null);
 
   useEffect(() => {
     const handleLocationChange = () => setPathname(window.location.pathname);
@@ -27,56 +21,7 @@ export function App() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
-  useEffect(() => {
-    setRuntimeMetadata(null);
-    setFujiReadOnlyStatus(null);
-    let cancelled = false;
-    void client.getRuntime()
-      .then(async (metadata) => {
-        if (cancelled || !isRuntimeMetadata(metadata)) return;
-        setRuntimeMetadata(metadata);
-        if (metadata.mode === 'fuji') {
-          const status = await client.getFujiReadOnlyStatus().catch(() => null);
-          if (!cancelled && isFujiReadOnlyStatus(status)) setFujiReadOnlyStatus(status);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setRuntimeMetadata(null);
-      });
-    return () => { cancelled = true; };
-  }, [client]);
-
-  return <main className="app-shell">
-    <header className="app-header">
-      <div className="brand">
-        <div className="brand-mark" aria-hidden="true">B</div>
-        <div>
-          <h1>Bóveda demo workspace</h1>
-          <p className="brand-subtitle">Borrower journey + institutional dashboard over local Batch 2 API</p>
-        </div>
-      </div>
-      <div className="header-meta">
-        <span className="network-chip" aria-label="Demo network status">
-          <span className="network-dot" aria-hidden="true"></span>
-          {runtimeRoute.mode === 'demo' ? 'Demo API mode' : 'Fuji API mode'}
-        </span>
-        <nav className="view-switch" aria-label="Demo view switcher">
-          <button className={`button ${view === 'borrower' ? 'button-primary' : 'button-secondary'}`} onClick={() => setView('borrower')} aria-pressed={view === 'borrower'}>
-            Borrower widget
-          </button>
-          <button className={`button ${view === 'dashboard' ? 'button-primary' : 'button-secondary'}`} onClick={() => setView('dashboard')} aria-pressed={view === 'dashboard'}>
-            Institutional dashboard
-          </button>
-        </nav>
-      </div>
-    </header>
-
-    <RuntimeModeBanner routeMode={runtimeRoute.mode} metadata={runtimeMetadata} fujiReadOnlyStatus={fujiReadOnlyStatus} />
-
-    {view === 'borrower'
-      ? <BorrowerWidgetView client={client} evidenceSource={runtimeMetadata?.evidenceSource ?? (runtimeRoute.mode === 'demo' ? 'demo-simulated' : 'fuji-unavailable')} />
-      : <InstitutionalDashboardScreen client={client} />}
-  </main>;
+  return <InstitutionalDashboardScreen client={client} />;
 }
 
 function BorrowerWidgetView({ client, evidenceSource }: { client: ReturnType<typeof createBovedaApiClient>; evidenceSource: RuntimeMetadata['evidenceSource'] }) {

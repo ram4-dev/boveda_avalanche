@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="es-MX" data-theme="light"><head>
+<meta charset="utf-8">
+<title>Bóveda · Infraestructura de crédito con colateral en cadena</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Bóveda es la infraestructura que permite a SOFOMs, IFCs y bancos en México originar préstamos en MXN respaldados por colateral cripto en Avalanche — con cumplimiento CNBV y UIF integrado.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<style>/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("/landing/assets/8447e444-a20e-42ce-9972-2aeab81c8c1f.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("/landing/assets/234cc61d-a468-48ad-8aed-b4d412308079.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("/landing/assets/223562ec-ecb8-43a4-810f-8aa3c510a96d.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/8447e444-a20e-42ce-9972-2aeab81c8c1f.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/234cc61d-a468-48ad-8aed-b4d412308079.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/223562ec-ecb8-43a4-810f-8aa3c510a96d.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/8447e444-a20e-42ce-9972-2aeab81c8c1f.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/234cc61d-a468-48ad-8aed-b4d412308079.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/223562ec-ecb8-43a4-810f-8aa3c510a96d.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/8447e444-a20e-42ce-9972-2aeab81c8c1f.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/234cc61d-a468-48ad-8aed-b4d412308079.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/223562ec-ecb8-43a4-810f-8aa3c510a96d.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/428eb6cc-13f7-48ab-80fd-f7ffa48004f7.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/02cc258d-ed3a-4e97-95bb-089c484a67fe.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/b20b2054-4a8e-473a-ab12-9d046fa3b48a.woff2") format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/108c2811-d05c-4d3a-bdab-cf56652732c3.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/e2aceb40-0068-45fc-9826-fe7e58481639.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/b3692a49-68f6-4ba3-8bf8-402f62dcddd1.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/a51764f0-157d-4c91-88f7-265914c22d44.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/428eb6cc-13f7-48ab-80fd-f7ffa48004f7.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/02cc258d-ed3a-4e97-95bb-089c484a67fe.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/b20b2054-4a8e-473a-ab12-9d046fa3b48a.woff2") format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/108c2811-d05c-4d3a-bdab-cf56652732c3.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/e2aceb40-0068-45fc-9826-fe7e58481639.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/b3692a49-68f6-4ba3-8bf8-402f62dcddd1.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/a51764f0-157d-4c91-88f7-265914c22d44.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/428eb6cc-13f7-48ab-80fd-f7ffa48004f7.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/02cc258d-ed3a-4e97-95bb-089c484a67fe.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/b20b2054-4a8e-473a-ab12-9d046fa3b48a.woff2") format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/108c2811-d05c-4d3a-bdab-cf56652732c3.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/e2aceb40-0068-45fc-9826-fe7e58481639.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/b3692a49-68f6-4ba3-8bf8-402f62dcddd1.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/a51764f0-157d-4c91-88f7-265914c22d44.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/landing/assets/428eb6cc-13f7-48ab-80fd-f7ffa48004f7.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/landing/assets/02cc258d-ed3a-4e97-95bb-089c484a67fe.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/landing/assets/b20b2054-4a8e-473a-ab12-9d046fa3b48a.woff2") format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/landing/assets/108c2811-d05c-4d3a-bdab-cf56652732c3.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/landing/assets/e2aceb40-0068-45fc-9826-fe7e58481639.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/landing/assets/b3692a49-68f6-4ba3-8bf8-402f62dcddd1.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Inter Tight';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/landing/assets/a51764f0-157d-4c91-88f7-265914c22d44.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/7dc3138d-b1c8-481d-ae54-636b9f4c580d.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/305e4995-2c68-42ae-9eca-e7afca0eba78.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/1729ad2f-87e2-4eb4-b285-bd622615aaae.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/a28846cf-f62f-46a2-9b68-3e3e84c5ef82.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/228a2580-3d82-4a71-8f6e-7808e3adb42e.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/landing/assets/5068838e-711c-45f2-955a-137fb83bfb99.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/7dc3138d-b1c8-481d-ae54-636b9f4c580d.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/305e4995-2c68-42ae-9eca-e7afca0eba78.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/1729ad2f-87e2-4eb4-b285-bd622615aaae.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/a28846cf-f62f-46a2-9b68-3e3e84c5ef82.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/228a2580-3d82-4a71-8f6e-7808e3adb42e.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/landing/assets/5068838e-711c-45f2-955a-137fb83bfb99.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/7dc3138d-b1c8-481d-ae54-636b9f4c580d.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/305e4995-2c68-42ae-9eca-e7afca0eba78.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/1729ad2f-87e2-4eb4-b285-bd622615aaae.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/a28846cf-f62f-46a2-9b68-3e3e84c5ef82.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/228a2580-3d82-4a71-8f6e-7808e3adb42e.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/landing/assets/5068838e-711c-45f2-955a-137fb83bfb99.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+  /* ──────────────────────────────────────────────────────────────────
+     Tokens — light is default; .dark variant flips a few
+     ────────────────────────────────────────────────────────────────── */
+  :root, [data-theme="light"] {
+    --bg:        #F5F5F6;
+    --bg-2:      #FFFFFF;
+    --surface:   #FFFFFF;
+    --elev:      #F4F4F5;
+    --elev-2:    #E4E4E7;
+    --border:    #D4D4D8;
+    --border-2:  #A1A1AA;
+    --rule:      #E4E4E7;
+
+    --fg:        #09090B;
+    --fg-2:      #3F3F46;
+    --fg-3:      #71717A;
+    --fg-inv:    #FFFFFF;
+
+    --red:       #E84142;
+    --red-deep:  #C93738;
+    --gold:      #8B5E2A;
+    --gold-bg:   #FBF5EC;
+    --green:     #047857;
+    --green-bg:  #ECFDF5;
+    --amber:     #B45309;
+    --amber-bg:  #FFF7ED;
+
+    --grain:     rgba(0,0,0,0.05);
+    --halo:      rgba(232,65,66,0.06);
+  }
+  [data-theme="dark"] {
+    --bg:        #0A0A0B;
+    --bg-2:      #0F0F11;
+    --surface:   #141416;
+    --elev:      #18181B;
+    --elev-2:    #232328;
+    --border:    #2A2A2E;
+    --border-2:  #3A3A40;
+    --rule:      #1F1F22;
+
+    --fg:        #F5F5F7;
+    --fg-2:      #A1A1AA;
+    --fg-3:      #71717A;
+    --fg-inv:    #09090B;
+
+    --red:       #E84142;
+    --red-deep:  #F04A4B;
+    --gold:      #D4A574;
+    --gold-bg:   rgba(212,165,116,0.08);
+    --green:     #10B981;
+    --green-bg:  rgba(16,185,129,0.08);
+    --amber:     #F59E0B;
+    --amber-bg:  rgba(245,158,11,0.08);
+
+    --grain:     rgba(255,255,255,0.025);
+    --halo:      rgba(232,65,66,0.10);
+  }
+
+  /* Accent tweak — defaults red, can flip to gold */
+  [data-accent="gold"] {
+    --red:       #8B5E2A;
+    --red-deep:  #7A521E;
+  }
+  [data-theme="dark"][data-accent="gold"] {
+    --red:       #D4A574;
+    --red-deep:  #B8884A;
+  }
+
+  /* ─── Base ─── */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: "Inter Tight", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    transition: background 200ms, color 200ms;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: radial-gradient(circle at center, var(--grain) 0.6px, transparent 0.6px);
+    background-size: 32px 32px;
+  }
+  body::after {
+    content: ""; position: fixed; top:-300px; right:-200px; width: 900px; height: 900px; pointer-events: none; z-index: 0;
+    background: radial-gradient(circle, var(--halo) 0%, transparent 60%);
+  }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--red); color: #fff; }
+
+  /* Type utilities */
+  .serif { font-family: "Fraunces", "Times New Roman", serif; font-weight: 400; letter-spacing: -0.018em; }
+  .mono  { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; }
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em;
+    color: var(--fg-2); font-weight: 500;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .eyebrow::before {
+    content: ""; width: 6px; height: 6px; background: var(--red); display: inline-block;
+  }
+  .gold { color: var(--gold); }
+
+  /* Frame */
+  .frame { max-width: 1240px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+  section { position: relative; z-index: 1; }
+
+  /* ─── Nav ─── */
+  .nav-wrap {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav { display: grid; grid-template-columns: auto 1fr auto; align-items: center; height: 64px; gap: 28px; }
+  .logo { display: inline-flex; align-items: center; gap: 12px; }
+  .logo-mark {
+    width: 22px; height: 22px; background: var(--red);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .logo-mark::after { content:""; width: 8px; height: 8px; background: var(--bg); }
+  .logo-word { font-family: "Fraunces", serif; font-weight: 400; font-size: 19px; letter-spacing: -0.018em; }
+  .nav-links { display: flex; justify-content: center; gap: 28px; }
+  .nav-links a { font-size: 13.5px; color: var(--fg-2); transition: color 120ms; font-weight: 500; }
+  .nav-links a:hover { color: var(--fg); }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .nav-right a.login { font-size: 13.5px; color: var(--fg-2); font-weight: 500; }
+  .nav-right a.login:hover { color: var(--fg); }
+
+  /* Theme toggle button (visible in nav) */
+  .theme-toggle {
+    width: 36px; height: 36px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--fg-2); cursor: pointer;
+    transition: all 140ms ease;
+    position: relative; overflow: hidden;
+  }
+  .theme-toggle:hover { color: var(--fg); border-color: var(--fg-3); background: var(--elev); }
+  .theme-toggle svg { width: 15px; height: 15px; transition: transform 320ms cubic-bezier(.2,0,0,1), opacity 220ms; }
+  .theme-toggle .icon-sun  { position: absolute; }
+  .theme-toggle .icon-moon { position: absolute; }
+  [data-theme="light"] .theme-toggle .icon-sun  { opacity: 1; transform: rotate(0deg) scale(1); }
+  [data-theme="light"] .theme-toggle .icon-moon { opacity: 0; transform: rotate(-90deg) scale(0.6); }
+  [data-theme="dark"]  .theme-toggle .icon-sun  { opacity: 0; transform: rotate(90deg) scale(0.6); }
+  [data-theme="dark"]  .theme-toggle .icon-moon { opacity: 1; transform: rotate(0deg) scale(1); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 38px; padding: 0 16px;
+    border: 1px solid var(--border-2); background: var(--surface); color: var(--fg);
+    font-family: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer;
+    transition: all 140ms ease;
+  }
+  .btn:hover { border-color: var(--fg-3); background: var(--elev); }
+  .btn.primary { background: var(--red); color: #fff; border-color: var(--red); }
+  .btn.primary:hover { background: var(--red-deep); border-color: var(--red-deep); }
+  .btn.ghost { background: transparent; border-color: transparent; padding: 0 4px; color: var(--fg); }
+  .btn.ghost:hover { background: transparent; color: var(--red); }
+  .btn.lg { height: 44px; padding: 0 20px; font-size: 14.5px; }
+
+  /* Live dot */
+  .live-dot { position: relative; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .live-dot::after {
+    content:""; position:absolute; inset: -4px; border-radius:50%;
+    background: var(--green); opacity: 0.30; animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0% { transform: scale(0.6); opacity: 0.5; } 100% { transform: scale(1.8); opacity: 0; } }
+
+  /* ─── Hero ─── */
+  .hero { padding: 80px 0 88px; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 60px; align-items: center; }
+  .hero h1 {
+    font-family: "Fraunces", serif; font-weight: 400;
+    font-size: clamp(48px, 5.4vw, 76px); line-height: 1.02;
+    letter-spacing: -0.028em; margin: 22px 0 28px;
+  }
+  .hero h1 em { font-style: normal; font-family: "Fraunces", serif; font-weight: 400; font-style: italic; }
+  .hero p.sub {
+    font-size: 17px; line-height: 1.5; color: var(--fg-2);
+    max-width: 540px; margin-bottom: 32px;
+    text-wrap: pretty;
+  }
+  .hero .cta-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .hero-meta {
+    margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--border);
+    display: flex; gap: 22px; flex-wrap: wrap;
+    font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--fg-2); letter-spacing: 0.04em;
+  }
+  .hero-meta span { display: inline-flex; align-items: center; gap: 8px; }
+  .hero-meta b { color: var(--fg); font-weight: 600; }
+
+  /* Attestation card */
+  .attest-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    position: relative;
+    transition: transform 600ms cubic-bezier(.2,0,.0,1), opacity 600ms;
+  }
+  .attest-card::before {
+    content:""; position: absolute; top:-1px; left:-1px; right:-1px; height: 3px;
+    background: linear-gradient(90deg, var(--red) 0%, var(--red) 35%, var(--gold) 60%, var(--gold) 100%);
+  }
+  .ac-head {
+    padding: 18px 22px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.16em; color: var(--fg-2); font-weight: 600;
+  }
+  .ac-head .live {
+    color: var(--green); display: inline-flex; align-items: center; gap: 8px;
+    text-transform: none; letter-spacing: 0.04em; font-size: 11px; font-weight: 500;
+  }
+  .ac-body { padding: 4px 22px; }
+  .ac-row {
+    display: grid; grid-template-columns: 1fr auto; padding: 12px 0;
+    border-bottom: 1px dashed var(--border); align-items: baseline;
+  }
+  .ac-row:last-child { border-bottom: none; }
+  .ac-row .k { font-size: 13px; color: var(--fg-2); }
+  .ac-row .v { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--fg); font-weight: 600; }
+  .ac-row .v.serif { font-family: "Fraunces", serif; font-weight: 500; font-size: 17px; letter-spacing: -0.01em; }
+  .ac-row .v.gold { color: var(--gold); }
+  .ac-row .v.hash { color: var(--gold); font-weight: 500; }
+  .ac-foot {
+    padding: 14px 22px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--elev);
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--fg-2); font-weight: 500;
+  }
+  .ac-foot .ok {
+    color: var(--green); display: inline-flex; align-items: center; gap: 6px;
+    text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600;
+  }
+  .ac-foot .ok svg { width: 11px; height: 11px; }
+
+  /* hero side cards stack */
+  .hero-stack { display: flex; flex-direction: column; gap: 14px; }
+  .ticker-card {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 14px;
+    font-family: "JetBrains Mono", monospace; font-size: 11.5px;
+    color: var(--fg-2); font-weight: 500;
+  }
+  .ticker-card .num { color: var(--fg); font-weight: 600; }
+  .ticker-card .blk { color: var(--fg); }
+
+  /* ─── Trust strip ─── */
+  .trust {
+    border-bottom: 1px solid var(--border);
+    padding: 26px 0;
+  }
+  .trust-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 32px; flex-wrap: wrap;
+  }
+  .trust-label {
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.16em; color: var(--fg-3); font-weight: 500;
+  }
+  .trust-list { display: flex; gap: 38px; flex-wrap: wrap; align-items: center; color: var(--fg-2); font-weight: 500; font-size: 14px; }
+  .trust-list .t-item { display: inline-flex; align-items: center; gap: 8px; }
+  .trust-list .t-mark {
+    width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--elev-2); color: var(--fg); font-family: "JetBrains Mono"; font-size: 10px; font-weight: 700;
+  }
+
+  /* ─── Section base ─── */
+  .section { padding: 96px 0; border-bottom: 1px solid var(--border); }
+  .section-head { max-width: 720px; margin-bottom: 56px; }
+  .section-head .eyebrow { margin-bottom: 18px; }
+  .section-head h2 {
+    font-family: "Fraunces", serif; font-weight: 400;
+    font-size: clamp(36px, 3.6vw, 48px); line-height: 1.08;
+    letter-spacing: -0.022em; margin-bottom: 18px;
+  }
+  .section-head p {
+    font-size: 17px; color: var(--fg-2); line-height: 1.5; max-width: 620px;
+    text-wrap: pretty;
+  }
+
+  /* ─── Cómo funciona ─── */
+  .rails {
+    display: grid; grid-template-columns: 200px 1fr; gap: 0;
+    border: 1px solid var(--border); background: var(--surface);
+    margin-top: 8px;
+  }
+  .rails .rail-l {
+    border-right: 1px solid var(--border);
+    padding: 32px 24px;
+    background: var(--elev);
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .rails .rail-l .rl-top {
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.14em; color: var(--fg-2); font-weight: 600;
+  }
+  .rails .rail-l .rl-name {
+    font-family: "Fraunces", serif; font-weight: 500; font-size: 22px;
+    letter-spacing: -0.01em; margin: 10px 0 4px;
+  }
+  .rails .rail-l .rl-sub {
+    font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-2); font-weight: 500;
+  }
+  .rails .rail-l .rl-tag {
+    margin-top: 22px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border);
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--fg-2);
+    text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 8px; width: fit-content;
+  }
+  .rails .rail-r { padding: 0; }
+  .step {
+    display: grid; grid-template-columns: 64px 1fr 240px; gap: 24px;
+    padding: 28px 28px;
+    border-bottom: 1px solid var(--border);
+    align-items: start;
+  }
+  .step:last-child { border-bottom: none; }
+  .step .num {
+    font-family: "Fraunces", serif; font-weight: 400; font-style: italic;
+    font-size: 36px; color: var(--red); letter-spacing: -0.02em; line-height: 1;
+  }
+  .step h3 {
+    font-family: "Fraunces", serif; font-weight: 500; font-size: 22px;
+    letter-spacing: -0.012em; margin-bottom: 10px;
+  }
+  .step p { font-size: 14.5px; color: var(--fg-2); line-height: 1.55; max-width: 460px; }
+  .step .step-meta {
+    border-left: 1px solid var(--border); padding-left: 20px;
+  }
+  .step .step-meta .ml {
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.14em; color: var(--fg-3); margin-bottom: 8px; font-weight: 600;
+  }
+  .step .step-meta .mt {
+    font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--fg); font-weight: 600;
+  }
+  .step .step-meta .ms {
+    font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-2); margin-top: 4px;
+  }
+
+  /* ─── Surfaces grid ─── */
+  .surfaces-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
+    background: var(--border); border: 1px solid var(--border);
+  }
+  .surf {
+    background: var(--surface); padding: 32px 32px 28px;
+    display: flex; flex-direction: column; gap: 0;
+    transition: background 200ms;
+  }
+  .surf:hover { background: var(--bg-2); }
+  .surf .s-eyebrow {
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .surf h4 {
+    font-family: "Fraunces", serif; font-weight: 500; font-size: 26px;
+    letter-spacing: -0.015em; margin-bottom: 10px;
+  }
+  .surf p { font-size: 14.5px; color: var(--fg-2); line-height: 1.5; max-width: 480px; margin-bottom: 24px; }
+  .surf .preview {
+    margin-top: auto; padding: 16px; background: var(--elev); border: 1px solid var(--border);
+    font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-2); font-weight: 500;
+  }
+  .surf .preview .row { display: flex; justify-content: space-between; padding: 4px 0; }
+  .surf .preview .row b { color: var(--fg); font-weight: 600; }
+  .surf .s-link {
+    margin-top: 22px; display: inline-flex; align-items: center; gap: 6px;
+    color: var(--red); font-weight: 600; font-size: 13.5px;
+  }
+  .surf:hover .s-link { gap: 10px; transition: gap 160ms; }
+
+  /* ─── For funders (Bankaool) ─── */
+  .funder-section { background: var(--bg-2); }
+  .funder-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: start; }
+  .funder-list { list-style: none; margin-top: 8px; }
+  .funder-list li {
+    padding: 22px 0; border-bottom: 1px solid var(--border);
+    display: grid; grid-template-columns: 28px 1fr; gap: 18px;
+  }
+  .funder-list li:last-child { border-bottom: none; }
+  .funder-list .ico {
+    width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--red);
+  }
+  .funder-list h5 {
+    font-family: "Fraunces", serif; font-weight: 500; font-size: 17px;
+    letter-spacing: -0.01em; margin-bottom: 4px;
+  }
+  .funder-list p { font-size: 14px; color: var(--fg-2); line-height: 1.5; }
+
+  /* mini bankaool card */
+  .bk-mini {
+    background: var(--surface); border: 1px solid var(--border);
+    position: sticky; top: 84px;
+  }
+  .bk-mini .bk-head {
+    padding: 18px 22px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .bk-mini .bk-head .who {
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--fg-2);
+    text-transform: uppercase; letter-spacing: 0.14em; font-weight: 600;
+  }
+  .bk-mini .bk-head .nm {
+    font-family: "Fraunces", serif; font-weight: 500; font-size: 22px;
+    letter-spacing: -0.01em; margin-top: 4px;
+  }
+  .bk-mini .bk-head .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 9px; font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+    color: var(--green); background: var(--green-bg);
+    border: 1px solid color-mix(in srgb, var(--green) 35%, transparent);
+    text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+  }
+  .bk-mini .bk-body { padding: 4px 22px; }
+  .bk-mini .row {
+    display: flex; justify-content: space-between; padding: 12px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .bk-mini .row:last-of-type { border-bottom: none; }
+  .bk-mini .row .k { font-size: 13px; color: var(--fg-2); }
+  .bk-mini .row .v { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--fg); font-weight: 600; }
+  .bk-mini .row .v.serif { font-family: "Fraunces", serif; font-size: 17px; color: var(--gold); font-weight: 500; }
+  .bk-mini .bar { margin: 14px 0 6px; height: 6px; background: var(--elev-2); position: relative; }
+  .bk-mini .bar i { position: absolute; inset: 0 30% 0 0; background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, white), var(--gold)); }
+  .bk-mini .bk-foot {
+    padding: 14px 22px; border-top: 1px solid var(--border);
+    background: var(--elev);
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--fg-2); font-weight: 500;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .bk-mini .bk-foot .verif { color: var(--green); font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
+
+  /* ─── Seguridad grid ─── */
+  .sec-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--border); border: 1px solid var(--border);
+  }
+  .sec-cell {
+    background: var(--surface); padding: 26px 24px 28px;
+    display: flex; flex-direction: column; gap: 12px;
+    min-height: 200px;
+  }
+  .sec-cell .ic {
+    width: 28px; height: 28px; color: var(--red);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .sec-cell h5 {
+    font-family: "Fraunces", serif; font-weight: 500; font-size: 17px;
+    letter-spacing: -0.008em; margin-top: 4px;
+  }
+  .sec-cell p { font-size: 13px; color: var(--fg-2); line-height: 1.5; }
+  .sec-cell .detail {
+    margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border);
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--fg-3); font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .sec-cell .detail b { color: var(--fg); font-weight: 600; }
+
+  /* ─── Stat strip ─── */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--border); border: 1px solid var(--border);
+    margin-top: 8px;
+  }
+  .stat-cell {
+    background: var(--surface); padding: 28px 28px 30px;
+  }
+  .stat-cell .sn {
+    font-family: "Fraunces", serif; font-weight: 400;
+    font-size: 44px; letter-spacing: -0.025em; line-height: 1; color: var(--fg);
+  }
+  .stat-cell .sn.gold { color: var(--gold); }
+  .stat-cell .sn .unit {
+    font-size: 14px; color: var(--fg-2); font-family: "JetBrains Mono", monospace;
+    margin-left: 4px; font-weight: 500; vertical-align: middle;
+  }
+  .stat-cell .sl {
+    margin-top: 14px;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.14em; color: var(--fg-2); font-weight: 600;
+  }
+  .stat-cell .ss {
+    margin-top: 6px; font-size: 12.5px; color: var(--fg-2); line-height: 1.5;
+  }
+
+  /* ─── CTA ─── */
+  .cta-section {
+    padding: 110px 0 110px; text-align: center;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: relative; overflow: hidden;
+  }
+  .cta-section::before {
+    content:""; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 0%, color-mix(in srgb, var(--red) 8%, transparent) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 100%, color-mix(in srgb, var(--gold) 8%, transparent) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .cta-section h2 {
+    font-family: "Fraunces", serif; font-weight: 400;
+    font-size: clamp(44px, 5vw, 64px); line-height: 1.05;
+    letter-spacing: -0.026em; margin-bottom: 18px;
+    position: relative; z-index: 1;
+  }
+  .cta-section h2 em { font-style: italic; }
+  .cta-section .sub {
+    font-size: 17px; color: var(--fg-2); max-width: 560px; margin: 0 auto 36px;
+    text-wrap: pretty; position: relative; z-index: 1;
+  }
+  .cta-form {
+    display: inline-flex; align-items: center; gap: 0; max-width: 560px; width: 100%;
+    margin: 0 auto; position: relative; z-index: 1;
+  }
+  .cta-form input {
+    flex: 1; height: 50px; padding: 0 18px;
+    border: 1px solid var(--border-2); border-right: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: inherit; font-size: 15px; outline: 0;
+    transition: border-color 140ms;
+  }
+  .cta-form input:focus { border-color: var(--fg); }
+  .cta-form button {
+    height: 50px; padding: 0 24px;
+    background: var(--red); color: #fff;
+    border: 1px solid var(--red);
+    font-family: inherit; font-size: 14.5px; font-weight: 600;
+    cursor: pointer; transition: background 140ms;
+  }
+  .cta-form button:hover { background: var(--red-deep); border-color: var(--red-deep); }
+  .cta-meta {
+    margin-top: 22px; font-family: "JetBrains Mono", monospace; font-size: 11.5px;
+    color: var(--fg-2); position: relative; z-index: 1; font-weight: 500;
+  }
+
+  /* ─── Footer ─── */
+  footer {
+    padding: 64px 0 32px;
+    background: var(--bg-2);
+  }
+  .foot-grid {
+    display: grid; grid-template-columns: 1.3fr repeat(4, 1fr); gap: 40px;
+    padding-bottom: 56px; border-bottom: 1px solid var(--border);
+  }
+  .foot-grid h6 {
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.14em; color: var(--fg-3); font-weight: 600;
+    margin-bottom: 18px;
+  }
+  .foot-grid ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .foot-grid ul a { font-size: 13.5px; color: var(--fg-2); font-weight: 500; transition: color 120ms; }
+  .foot-grid ul a:hover { color: var(--fg); }
+  .foot-brand .blurb { font-size: 13.5px; color: var(--fg-2); margin-top: 16px; max-width: 280px; line-height: 1.55; }
+  .foot-bottom {
+    padding-top: 24px;
+    display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--fg-3); font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .foot-bottom .reg b { color: var(--fg-2); font-weight: 600; }
+
+  /* ─── Tweaks panel ─── */
+  .tweaks-panel {
+    position: fixed; bottom: 20px; right: 20px; z-index: 100;
+    width: 260px;
+    background: var(--surface); border: 1px solid var(--border-2);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.10);
+    display: none;
+  }
+  .tweaks-panel.open { display: block; }
+  .tweaks-head {
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--elev);
+  }
+  .tweaks-head .t {
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.14em; color: var(--fg-2); font-weight: 600;
+  }
+  .tweaks-head .x {
+    width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--fg-2);
+  }
+  .tweaks-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+  .tw-row { display: flex; flex-direction: column; gap: 8px; }
+  .tw-row .lbl { font-size: 12px; color: var(--fg-2); font-weight: 500; }
+  .tw-seg {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+    border: 1px solid var(--border); height: 30px;
+  }
+  .tw-seg button {
+    background: transparent; border: 0; border-right: 1px solid var(--border);
+    color: var(--fg-2); font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+  }
+  .tw-seg button:last-child { border-right: 0; }
+  .tw-seg button.on { background: var(--fg); color: var(--bg); }
+  .tw-toggle {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12.5px; color: var(--fg);
+  }
+  .tw-switch {
+    width: 32px; height: 18px; border-radius: 999px; background: var(--elev-2); position: relative;
+    border: 1px solid var(--border-2); cursor: pointer; transition: background 160ms;
+  }
+  .tw-switch::after {
+    content:""; position: absolute; top: 1px; left: 1px; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--surface); border: 1px solid var(--border-2);
+    transition: left 160ms;
+  }
+  .tw-switch.on { background: var(--green); border-color: var(--green); }
+  .tw-switch.on::after { left: 15px; border-color: var(--green); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .hero-grid, .funder-grid { grid-template-columns: 1fr; gap: 40px; }
+    .surfaces-grid, .stats { grid-template-columns: 1fr; }
+    .sec-grid { grid-template-columns: 1fr 1fr; }
+    .nav-links { display: none; }
+    .rails { grid-template-columns: 1fr; }
+    .rails .rail-l { border-right: 0; border-bottom: 1px solid var(--border); }
+    .step { grid-template-columns: 48px 1fr; }
+    .step .step-meta { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--border); padding: 16px 0 0; }
+    .foot-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+
+
+</head>
+
+<body>
+
+<!-- ──────────── NAV ──────────── -->
+<div class="nav-wrap">
+  <div class="frame nav">
+    <a class="logo" href="#top">
+      <span class="logo-mark"></span>
+      <span class="logo-word">Bóveda</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#producto">Producto</a>
+      <a href="#funciona">Cómo funciona</a>
+      <a href="#fondeadores">Para fondeadores</a>
+      <a href="#seguridad">Seguridad</a>
+      <a href="#">Documentación</a>
+    </nav>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema (claro / oscuro)">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
+      <a href="/" class="login">Abrir demo</a>
+      <a class="btn primary" href="/">Solicitar acceso</a>
+    </div>
+  </div>
+</div>
+
+<!-- ──────────── HERO ──────────── -->
+<section class="hero" id="top">
+  <div class="frame hero-grid">
+    <div class="hero-left">
+      <span class="eyebrow">Infraestructura · Avalanche · México · CNBV reg. 0117</span>
+      <h1>Crédito en pesos.<br><em>Colateral en cadena.</em></h1>
+      <p class="sub">Bóveda es la infraestructura que permite a SOFOMs, IFCs y bancos en México originar préstamos en MXN respaldados por colateral cripto — sin operar wallets, sin custodia propia, con cumplimiento CNBV y UIF integrado en cada operación.</p>
+      <div class="cta-row">
+        <a class="btn primary lg" href="/">Abrir demo Fuji live</a>
+        <a class="btn ghost lg" href="#funciona">Ver cómo funciona →</a>
+      </div>
+      <div class="hero-meta">
+        <span><span class="live-dot"></span>En producción · <b>Avalanche mainnet</b></span>
+        <span>Operando desde abr 2025</span>
+        <span><b id="liveBlock">47,238,194</b> · bloque actual</span>
+      </div>
+    </div>
+
+    <div class="hero-stack">
+      <div class="attest-card">
+        <div class="ac-head">
+          <span>Atestación · borrowing base</span>
+          <span class="live"><span class="live-dot"></span>en vivo</span>
+        </div>
+        <div class="ac-body">
+          <div class="ac-row"><span class="k">Originador</span><span class="v">Arkangeles IFC</span></div>
+          <div class="ac-row"><span class="k">Fondeador</span><span class="v">Bankaool · línea $12M</span></div>
+          <div class="ac-row"><span class="k">Cartera viva</span><span class="v serif gold">$24,387,540 MXN</span></div>
+          <div class="ac-row"><span class="k">Cobertura colateral</span><span class="v serif gold">192%</span></div>
+          <div class="ac-row"><span class="k">Préstamos activos</span><span class="v">143</span></div>
+          <div class="ac-row"><span class="k">LTV promedio</span><span class="v">52.3%</span></div>
+          <div class="ac-row"><span class="k">Bloque</span><span class="v">47,238,194</span></div>
+          <div class="ac-row"><span class="k">Firmada por</span><span class="v hash">0xbov…attest</span></div>
+        </div>
+        <div class="ac-foot">
+          <span class="ok">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"></path></svg>
+            Verificable
+          </span>
+          <span>Avalanche · hace 6 min</span>
+        </div>
+      </div>
+
+      <div class="ticker-card">
+        <span class="live-dot"></span>
+        <span>14:23:08</span>
+        <span style="color: var(--fg);">Pago recibido</span>
+        <span>·</span>
+        <span>LN-1456</span>
+        <span>·</span>
+        <span class="num">$12,400 MXN</span>
+        <span style="margin-left:auto;">tx <span class="gold">0xa3f…c891</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── TRUST STRIP ──────────── -->
+<section class="trust">
+  <div class="frame trust-inner">
+    <div class="trust-label">Construido con</div>
+    <div class="trust-list">
+      <span class="t-item"><span class="t-mark" style="background:#E84142; color:#fff;">A</span>Avalanche</span>
+      <span class="t-item"><span class="t-mark" style="background:#375BD2; color:#fff;">CL</span>Chainlink</span>
+      <span class="t-item"><span class="t-mark" style="background:#26A17B; color:#fff;">BK</span>Bankaool</span>
+      <span class="t-item"><span class="t-mark">CB</span>CNBV</span>
+      <span class="t-item"><span class="t-mark">UI</span>UIF</span>
+      <span class="t-item"><span class="t-mark">SP</span>STP / SPEI</span>
+      <span class="t-item"><span class="t-mark" style="background:#000; color:#fff;">CA</span>Chainalysis</span>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── CÓMO FUNCIONA ──────────── -->
+<section class="section" id="funciona">
+  <div class="frame">
+    <div class="section-head">
+      <span class="eyebrow">Cómo funciona</span>
+      <h2>Tres movimientos. Dos rieles.</h2>
+      <p>Un préstamo de Bóveda se mueve por dos rieles paralelos — el peso por SPEI, el colateral por Avalanche — coordinados por contratos auditados que tu equipo nunca necesita tocar.</p>
+    </div>
+
+    <!-- Riel on-chain -->
+    <div class="rails">
+      <div class="rail-l">
+        <div>
+          <div class="rl-top">Riel · colateral</div>
+          <div class="rl-name">Avalanche</div>
+          <div class="rl-sub">C-Chain · finality ~3s</div>
+        </div>
+        <span class="rl-tag"><span class="live-dot"></span>Mainnet</span>
+      </div>
+      <div class="rail-r">
+        <div class="step">
+          <span class="num">01</span>
+          <div>
+            <h3>El borrower deposita colateral</h3>
+            <p>Su wallet envía USDC, USDT, BTC.b o WAVAX a un vault desplegado por Bóveda. La cantidad queda bloqueada en cadena — el borrower puede verla, pero no moverla — hasta que el préstamo se salde o se incumpla.</p>
+          </div>
+          <div class="step-meta">
+            <div class="ml">Contrato</div>
+            <div class="mt">VaultRegistry.<b>createVault()</b></div>
+            <div class="ms">gas ~$0.04 USD · ~3 segundos</div>
+          </div>
+        </div>
+        <div class="step">
+          <span class="num">02</span>
+          <div>
+            <h3>Tu equipo aprueba el desembolso</h3>
+            <p>El analista revisa el dashboard: Risk Score on-chain, KYC tradicional, AML, LTV propuesto. Con un click, Bankaool (u otro fondeador) libera el monto en MXN; el SPEI llega a la cuenta del borrower en minutos. Tu equipo nunca toca cripto.</p>
+          </div>
+          <div class="step-meta">
+            <div class="ml">Pago</div>
+            <div class="mt">SPEI · STP · &lt; 5 min</div>
+            <div class="ms">TIIE 28d + margen acordado</div>
+          </div>
+        </div>
+        <div class="step">
+          <span class="num">03</span>
+          <div>
+            <h3>Bóveda monitorea, atestigua, liquida</h3>
+            <p>Oráculos Chainlink alimentan precios cada bloque. Si el LTV cruza tu umbral, se notifica al borrower; si llega al límite de liquidación, el contrato vende colateral en un DEX agregado y devuelve MXN a Bankaool. Todo queda firmado on-chain y auditable.</p>
+          </div>
+          <div class="step-meta">
+            <div class="ml">Atestación</div>
+            <div class="mt">cada 5 minutos</div>
+            <div class="ms">auditado · Sherlock mar 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ──────────── STATS ──────────── -->
+<section class="section" style="padding-top: 0; padding-bottom: 96px; border-bottom: 1px solid var(--border);">
+  <div class="frame">
+    <div class="section-head">
+      <span class="eyebrow">Tracción · mayo 2026</span>
+      <h2>Probado con dinero real.</h2>
+      <p>Cifras agregadas de los originadores que ya operan con Bóveda en producción. Todas las métricas son verificables on-chain.</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat-cell">
+        <div class="sn gold">$24.4<span class="unit">M MXN</span></div>
+        <div class="sl">Cartera viva</div>
+        <div class="ss">Originada en 13 meses · 287 préstamos cerrados sin pérdida neta para fondeadores.</div>
+      </div>
+      <div class="stat-cell">
+        <div class="sn">143<span class="unit">activos</span></div>
+        <div class="sl">Préstamos vivos</div>
+        <div class="ss">Ticket promedio $170K MXN · plazos de 3 a 24 meses.</div>
+      </div>
+      <div class="stat-cell">
+        <div class="sn">192<span class="unit">%</span></div>
+        <div class="sl">Cobertura colateral</div>
+        <div class="ss">Verificada cada 5 min con oráculos Chainlink y atestación firmada.</div>
+      </div>
+      <div class="stat-cell">
+        <div class="sn">42<span class="unit">s</span></div>
+        <div class="sl">Tiempo de liquidación</div>
+        <div class="ss">Slippage promedio 0.18% · ejecutado en TraderJoe v2 + Pangolin.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── SURFACES ──────────── -->
+<section class="section" id="producto">
+  <div class="frame">
+    <div class="section-head">
+      <span class="eyebrow">Producto</span>
+      <h2>Una consola para tu equipo de crédito. Una API para tu integración.</h2>
+      <p>Bóveda es modular. Conecta lo que necesitas — interfaz, contratos, atestaciones, reportería regulatoria — y deja lo demás afuera.</p>
+    </div>
+
+    <div class="surfaces-grid">
+      <a class="surf" href="/">
+        <span class="s-eyebrow">01 · Consola</span>
+        <h4>Dashboard del originador</h4>
+        <p>Cola de solicitudes, monitoreo en vivo de LTV, decisiones con un click, reportes UIF generados automáticamente. Diseñado para directores de crédito, no para crypto-traders.</p>
+        <div class="preview">
+          <div class="row"><span>Cartera activa</span><b>$24,387,540 MXN</b></div>
+          <div class="row"><span>Solicitudes pendientes</span><b>7</b></div>
+          <div class="row"><span>Préstamos en watch</span><b>3</b></div>
+        </div>
+        <span class="s-link">Ver consola en vivo →</span>
+      </a>
+      <a class="surf" href="#producto">
+        <span class="s-eyebrow">02 · On-chain</span>
+        <h4>Vault registry</h4>
+        <p>Cada préstamo tiene un contrato propio. Tu fondeador puede auditar la cobertura sin pedirte permiso, y tu equipo de cumplimiento puede demostrar cada movimiento ante CNBV.</p>
+        <div class="preview">
+          <div class="row"><span>Vaults activos</span><b>143</b></div>
+          <div class="row"><span>Contrato registry</span><b class="gold">0xbov…1d4f</b></div>
+          <div class="row"><span>Última atestación</span><b>hace 6 min</b></div>
+        </div>
+        <span class="s-link">Ver registry →</span>
+      </a>
+      <a class="surf" href="#seguridad">
+        <span class="s-eyebrow">03 · Cumplimiento</span>
+        <h4>Reportes UIF / CNBV automáticos</h4>
+        <p>Reportes mensuales para UIF, trimestrales para CNBV, semestrales para activos virtuales. Borrador listo cada 15 del mes, firmado con hash on-chain para inmutabilidad.</p>
+        <div class="preview">
+          <div class="row"><span>Próximo vencimiento</span><b>22 may · 7 días</b></div>
+          <div class="row"><span>Reportes YTD</span><b>142</b></div>
+          <div class="row"><span>Observaciones abiertas</span><b style="color:var(--green);">0</b></div>
+        </div>
+        <span class="s-link">Ver flujo →</span>
+      </a>
+      <a class="surf" href="#">
+        <span class="s-eyebrow">04 · Integración</span>
+        <h4>API · Webhooks · SDKs</h4>
+        <p>Para fintechs que prefieren conectar Bóveda a su propio CRM o motor de decisión. REST + webhooks firmados, SDK en TypeScript y Python, sandbox con datos sintéticos.</p>
+        <div class="preview">
+          <div class="row"><span>POST</span><b class="gold">/v1/vaults</b></div>
+          <div class="row"><span>POST</span><b class="gold">/v1/loans/originate</b></div>
+          <div class="row"><span>GET</span><b class="gold">/v1/attestations</b></div>
+        </div>
+        <span class="s-link">Documentación →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── FONDEADORES ──────────── -->
+<section class="section funder-section" id="fondeadores">
+  <div class="frame">
+    <div class="section-head">
+      <span class="eyebrow">Para fondeadores · bancos · family offices</span>
+      <h2>Tu cartera, atestada en cadena.</h2>
+      <p>Si tu banco está fondeando una SOFOM o IFC que origina con Bóveda, recibes acceso a una vista de fondeador exclusiva: cobertura colateral en tiempo real, borrowing-base elegible verificada cada 5 minutos, y atestaciones firmadas que reemplazan al reporte semanal por correo.</p>
+    </div>
+
+    <div class="funder-grid">
+      <ul class="funder-list">
+        <li>
+          <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 3 7v6c0 5 4 9 9 9s9-4 9-9V7z"></path><path d="m9 12 2 2 4-4"></path></svg></span>
+          <div>
+            <h5>Borrowing-base verificable, no declarada</h5>
+            <p>En vez de creerle al originador, lo verificas tú. El contrato firma un snapshot cada 5 minutos con la cartera viva, el colateral total y el LTV agregado.</p>
+          </div>
+        </li>
+        <li>
+          <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"></path><path d="m7 14 4-4 4 4 6-6"></path></svg></span>
+          <div>
+            <h5>Monitoreo continuo, no semanal</h5>
+            <p>Vista en vivo de cada préstamo, cada margin call, cada liquidación. Si algo cruza un umbral, tu equipo se entera al mismo tiempo que el originador.</p>
+          </div>
+        </li>
+        <li>
+          <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="14" rx="0"></rect><path d="M3 10h18"></path><circle cx="12" cy="15" r="2"></circle></svg></span>
+          <div>
+            <h5>Custodia distribuida, no concentrada</h5>
+            <p>El colateral no vive en una billetera del originador. Vive en contratos individuales por préstamo, con multisig 3-of-5 y reglas de liquidación firmadas en código.</p>
+          </div>
+        </li>
+        <li>
+          <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 6v6l4 2"></path></svg></span>
+          <div>
+            <h5>Ejecución automática de liquidaciones</h5>
+            <p>Si un préstamo cruza el umbral de liquidación, el contrato vende colateral en DEX agregados y devuelve MXN al originador en menos de un minuto — sin intervención humana, sin slippage opaco.</p>
+          </div>
+        </li>
+        <li>
+          <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M9 13h6M9 17h4"></path></svg></span>
+          <div>
+            <h5>Auditoría histórica, no recuperada</h5>
+            <p>Cada evento queda inmutable en Avalanche. Cuando tu auditor externo pida 18 meses de actividad, no es un mes de trabajo — es una consulta.</p>
+          </div>
+        </li>
+      </ul>
+
+      <aside class="bk-mini">
+        <div class="bk-head">
+          <div>
+            <div class="who">Vista de fondeador · Bankaool</div>
+            <div class="nm">Cobertura on-chain</div>
+          </div>
+          <span class="pill"><span class="live-dot"></span>Verificada</span>
+        </div>
+        <div class="bk-body">
+          <div class="row"><span class="k">Línea total comprometida</span><span class="v serif">$12,000,000 MXN</span></div>
+          <div class="row"><span class="k">Utilizada</span><span class="v">$8,400,000</span></div>
+          <div class="bar"><i></i></div>
+          <div class="row"><span class="k">Borrowing-base elegible</span><span class="v" style="color:var(--green);">$11,200,000</span></div>
+          <div class="row"><span class="k">Cobertura colateral</span><span class="v serif" style="color:var(--gold);">192%</span></div>
+          <div class="row"><span class="k">Préstamos en margin call</span><span class="v" style="color:var(--amber);">1 · LN-1734</span></div>
+          <div class="row"><span class="k">Pérdidas históricas (12m)</span><span class="v" style="color:var(--green);">$0</span></div>
+        </div>
+        <div class="bk-foot">
+          <span class="verif">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"></path></svg>
+            firmada hace 6 min
+          </span>
+          <span>blk 47,238,194</span>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── SEGURIDAD ──────────── -->
+<section class="section" id="seguridad">
+  <div class="frame">
+    <div class="section-head">
+      <span class="eyebrow">Seguridad · cumplimiento</span>
+      <h2>Construido para auditores. Operado para directores de crédito.</h2>
+      <p>Bóveda existe en la intersección entre la CNBV y un contrato inteligente. Cada decisión de diseño respeta ambos lenguajes.</p>
+    </div>
+
+    <div class="sec-grid">
+      <div class="sec-cell">
+        <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 22 12 12 22 2 12"></polygon></svg></span>
+        <h5>Avalanche C-Chain</h5>
+        <p>Finality sub-segundo, EVM-compatible, validado por &gt;1,300 nodos. Misma cadena que usa JP Morgan en Onyx para fondos tokenizados.</p>
+        <div class="detail">chain id <b>43114</b></div>
+      </div>
+      <div class="sec-cell">
+        <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12 11 14 15 10"></path><circle cx="12" cy="12" r="9"></circle></svg></span>
+        <h5>Auditado por Sherlock</h5>
+        <p>Auditoría continua del contrato VaultRegistry y de los módulos de liquidación. Cero hallazgos críticos en la revisión de marzo 2026.</p>
+        <div class="detail">reporte <b>SHK-2026-03</b></div>
+      </div>
+      <div class="sec-cell">
+        <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"></circle><circle cx="12" cy="12" r="9"></circle></svg></span>
+        <h5>Multisig 3-of-5 · Gnosis Safe</h5>
+        <p>Las llaves del contrato no viven en un servidor. Operaciones críticas — pausar, actualizar oráculo, modificar umbrales — requieren tres firmas de cinco custodios independientes.</p>
+        <div class="detail">safe <b>0xbov…multisig</b></div>
+      </div>
+      <div class="sec-cell">
+        <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h12"></path></svg></span>
+        <h5>CNBV reg. 0117</h5>
+        <p>Bóveda opera como infraestructura tecnológica para SOFOMs ENR registradas. Cada originador conserva su propia regulación y reporta a través del módulo UIF integrado.</p>
+        <div class="detail">opera como <b>SOFOM ENR</b></div>
+      </div>
+      <div class="sec-cell">
+        <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg></span>
+        <h5>Chainlink Price Feeds</h5>
+        <p>Oráculos descentralizados para precios de USDC, USDT, BTC.b y AVAX. Actualizados cada bloque, con desviaciones máximas configurables. Sin un oráculo único de fallo.</p>
+        <div class="detail">4 feeds activos · <b>~10s</b></div>
+      </div>
+      <div class="sec-cell">
+        <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></span>
+        <h5>Chainalysis · Sanctions Oracle</h5>
+        <p>Screening on-chain contra OFAC, EU CFSP y UK OFSI antes de aprobar cualquier vault. Las wallets con hits no se aceptan al originar y se reportan a UIF.</p>
+        <div class="detail">oracle <b>0xchk…a1d4</b></div>
+      </div>
+      <div class="sec-cell">
+        <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg></span>
+        <h5>API UIF · CNBV-IR-001</h5>
+        <p>Reportería integrada con la API de la UIF: operaciones inusuales, reportes mensuales, escalaciones AML. Borrador automático cada mes, firmado on-chain antes de presentar.</p>
+        <div class="detail">142 reportes <b>presentados YTD</b></div>
+      </div>
+      <div class="sec-cell">
+        <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 17l10 5 10-5M2 12l10 5 10-5M12 2 2 7l10 5 10-5z"></path></svg></span>
+        <h5>STP · SPEI</h5>
+        <p>Liquidación en MXN vía conexión directa con STP. Desembolsos al borrower en minutos, recepción de cuotas con conciliación automática contra el ledger on-chain.</p>
+        <div class="detail">cuenta <b>Bankaool ordenante</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── CTA ──────────── -->
+<section class="cta-section" id="contacto">
+  <div class="frame">
+    <h2>¿Originas crédito con colateral cripto?<br><em>Hablemos.</em></h2>
+    <p class="sub">Si eres SOFOM, IFC, neobanco o family office y crees que tu cartera puede crecer con colateral on-chain, agenda 30 minutos con nuestro equipo.</p>
+    <form class="cta-form" onsubmit="event.preventDefault(); this.querySelector('button').textContent = 'Enviado ✓';">
+      <input type="email" placeholder="tu@institucion.mx" required="">
+      <button type="submit">Solicitar acceso</button>
+    </form>
+    <div class="cta-meta">o escribe a <b style="color:var(--fg);">equipo@boveda.mx</b> · WhatsApp business <b style="color:var(--fg);">+52 55 4434 0117</b></div>
+  </div>
+</section>
+
+<!-- ──────────── FOOTER ──────────── -->
+<footer>
+  <div class="frame">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="logo">
+          <span class="logo-mark"></span>
+          <span class="logo-word">Bóveda</span>
+        </a>
+        <p class="blurb">Infraestructura de crédito con colateral en cadena para originadores regulados en México.</p>
+      </div>
+      <div>
+        <h6>Producto</h6>
+        <ul>
+          <li><a href="/">Consola</a></li>
+          <li><a href="#producto">Vault registry</a></li>
+          <li><a href="#seguridad">Reportes UIF</a></li>
+          <li><a href="#">API · SDK</a></li>
+          <li><a href="#">Sandbox</a></li>
+        </ul>
+      </div>
+      <div>
+        <h6>Empresa</h6>
+        <ul>
+          <li><a href="#">Quiénes somos</a></li>
+          <li><a href="#">Inversores</a></li>
+          <li><a href="#">Carrera</a></li>
+          <li><a href="#">Prensa</a></li>
+        </ul>
+      </div>
+      <div>
+        <h6>Recursos</h6>
+        <ul>
+          <li><a href="#">Documentación</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Auditoría · Sherlock</a></li>
+          <li><a href="#">Estado del sistema</a></li>
+        </ul>
+      </div>
+      <div>
+        <h6>Legal</h6>
+        <ul>
+          <li><a href="#">Aviso de privacidad</a></li>
+          <li><a href="#">Términos</a></li>
+          <li><a href="#">Disclosure CNBV</a></li>
+          <li><a href="#">Política AML</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div class="reg">© 2026 Bóveda Technologies SAPI de CV · <b>CNBV reg. 0117</b> · <b>RFC BTC240118ABC</b></div>
+      <div>Operando en México · Avalanche mainnet</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ──────────── TWEAKS PANEL ──────────── -->
+<aside class="tweaks-panel" id="tweaksPanel">
+  <div class="tweaks-head">
+    <span class="t">Tweaks</span>
+    <span class="x" id="tweaksClose">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+    </span>
+  </div>
+  <div class="tweaks-body">
+    <div class="tw-row">
+      <span class="lbl">Tema</span>
+      <div class="tw-seg" data-tw="theme">
+        <button data-v="light" class="on">Claro</button>
+        <button data-v="dark">Oscuro</button>
+      </div>
+    </div>
+    <div class="tw-row">
+      <span class="lbl">Acento</span>
+      <div class="tw-seg" data-tw="accent">
+        <button data-v="red" class="on">Rojo Avalanche</button>
+        <button data-v="gold">Gold</button>
+      </div>
+    </div>
+    <div class="tw-toggle">
+      <span>Bloque en vivo</span>
+      <span class="tw-switch on" data-tw-toggle="liveBlock"></span>
+    </div>
+    <div class="tw-toggle">
+      <span>Tarjeta de atestación</span>
+      <span class="tw-switch on" data-tw-toggle="showAttest"></span>
+    </div>
+  </div>
+</aside>
+
+<script>
+  // Tweak defaults (persisted via host)
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "theme": "light",
+    "accent": "red",
+    "liveBlock": true,
+    "showAttest": true
+  }/*EDITMODE-END*/;
+
+  const state = { ...TWEAK_DEFAULTS };
+
+  // Honor user's localStorage preference if set (overrides default)
+  try {
+    const savedTheme = localStorage.getItem('boveda.theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') state.theme = savedTheme;
+  } catch (e) {}
+
+  function apply() {
+    document.documentElement.setAttribute('data-theme', state.theme);
+    document.documentElement.setAttribute('data-accent', state.accent);
+    const lb = document.getElementById('liveBlock');
+    if (lb) lb.style.opacity = state.liveBlock ? 1 : 0.3;
+    const ac = document.querySelector('.attest-card');
+    if (ac) ac.style.display = state.showAttest ? '' : 'none';
+    // Keep tweak controls in sync
+    document.querySelectorAll('.tw-seg').forEach(seg => {
+      const key = seg.dataset.tw;
+      seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === state[key]));
+    });
+    document.querySelectorAll('[data-tw-toggle]').forEach(sw => {
+      const key = sw.dataset.twToggle;
+      sw.classList.toggle('on', !!state[key]);
+    });
+  }
+  function persist() {
+    try { localStorage.setItem('boveda.theme', state.theme); } catch (e) {}
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { ...state } }, '*');
+  }
+  apply();
+
+  // Visible nav toggle
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+    apply(); persist();
+  });
+
+  // Live block ticker
+  (function(){
+    const el = document.getElementById('liveBlock');
+    if (!el) return;
+    let n = 47238194;
+    setInterval(() => {
+      if (!state.liveBlock) return;
+      n += Math.floor(Math.random() * 2) + 1;
+      el.textContent = n.toLocaleString('en-US');
+    }, 3200);
+  })();
+
+  // Tweaks panel wiring
+  const panel = document.getElementById('tweaksPanel');
+  const closeBtn = document.getElementById('tweaksClose');
+
+  window.addEventListener('message', (e) => {
+    if (!e.data || !e.data.type) return;
+    if (e.data.type === '__activate_edit_mode') panel.classList.add('open');
+    if (e.data.type === '__deactivate_edit_mode') panel.classList.remove('open');
+  });
+  closeBtn.addEventListener('click', () => {
+    panel.classList.remove('open');
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  });
+
+  // Apply current state to controls
+  document.querySelectorAll('.tw-seg').forEach(seg => {
+    const key = seg.dataset.tw;
+    seg.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('on', b.dataset.v === state[key]);
+      b.addEventListener('click', () => {
+        state[key] = b.dataset.v;
+        seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.v === state[key]));
+        apply(); persist();
+      });
+    });
+  });
+  document.querySelectorAll('[data-tw-toggle]').forEach(sw => {
+    const key = sw.dataset.twToggle;
+    sw.classList.toggle('on', !!state[key]);
+    sw.addEventListener('click', () => {
+      state[key] = !state[key];
+      sw.classList.toggle('on', state[key]);
+      apply(); persist();
+    });
+  });
+
+  // Announce availability after listener is live
+  window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+</script>
+
+
+
+</body></html>

@@ -119,6 +119,13 @@ contract LiquidationEngine {
         if (vault.liquidated) {
             return (false, "LiquidationEngine: collateral already liquidated");
         }
+        if (loan.collateralToken != address(proceedsToken)) {
+            return (false, "LiquidationEngine: collateral token must match proceeds token");
+        }
+
+        if (loan.status == defaulted) {
+            return (true, "LiquidationEngine: loan defaulted");
+        }
 
         uint256 collateralValue = (vault.amount * resolvedPrice) / (10 ** resolvedDecimals);
         if (collateralValue == 0) {
@@ -161,11 +168,8 @@ contract LiquidationEngine {
         (bool allowed, string memory reason) = canLiquidate(loanId, collateralPrice, priceDecimals);
         require(allowed, reason);
 
-        (uint256 resolvedPrice, uint256 resolvedDecimals) = _resolvePrice(loan, collateralPrice, priceDecimals);
-        CollateralVault.Vault memory vault = collateralVault.getVault(loanId);
-        uint256 proceedsAmount = (vault.amount * resolvedPrice) / (10 ** resolvedDecimals);
-
-        collateralVault.liquidateCollateral(loanId);
+        (address collateralToken, uint256 proceedsAmount,) = collateralVault.liquidateCollateralTo(loanId, address(this));
+        require(collateralToken == address(proceedsToken), "LiquidationEngine: collateral token must match proceeds token");
 
         (
             uint256 fundingPartnerAmount,

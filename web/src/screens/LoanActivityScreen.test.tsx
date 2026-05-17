@@ -5,7 +5,7 @@ import { LoanActivityScreen } from './LoanActivityScreen.js';
 import { sampleLoan } from '../state/demoPayloads.js';
 import type { OnChainEvent } from '../api/types.js';
 
-const event = (eventType: string, payload: Record<string, unknown> = {}): OnChainEvent => ({ eventId: `evt-${eventType}`, eventType, loanId: 'loan-web3-001', txHash: '0x1234567890abcdef1234', blockNumber: null, occurredAt: '2026-06-15T00:00:00Z', payload });
+const event = (eventType: string, payload: Record<string, unknown> = {}): OnChainEvent => ({ eventId: `evt-${eventType}`, eventType, loanId: 'loan-sample-arch', txHash: '0x1234567890abcdef1234', blockNumber: null, occurredAt: '2026-06-15T00:00:00Z', payload });
 
 const props = {
   loan: sampleLoan({ status: 'Active' }),
@@ -28,7 +28,7 @@ describe('LoanActivityScreen', () => {
     render(<LoanActivityScreen {...props} onAttestPayment={onAttestPayment} />);
 
     expect(screen.getByRole('heading', { name: /Loan activity/i })).toBeInTheDocument();
-    expect(screen.getByText('150000 USD')).toBeInTheDocument();
+    expect(screen.getByText('170 MXN')).toBeInTheDocument();
     expect(screen.getByText('50.00%')).toBeInTheDocument();
     expect(screen.getByText('Receipt #1')).toBeInTheDocument();
     expect(screen.getByText(/soulbound demo evidence/i)).toBeInTheDocument();
@@ -72,10 +72,10 @@ describe('LoanActivityScreen', () => {
   });
 
   it('shows payment attestation feedback and preserves borrower-readable errors', () => {
-    render(<LoanActivityScreen {...props} lastPayment={{ loanId: 'loan-web3-001', installmentId: 'inst-001', amount: '12500', currency: 'USD', attestationHash: '0xabc123456789', remainingPrincipal: '137500', status: 'Active' }} errors={{ payment: { code: 'INVALID_REQUEST', message: 'Bad amount' }, topUp: { code: 'INVALID_REQUEST', message: 'Bad top-up' } }} />);
+    render(<LoanActivityScreen {...props} lastPayment={{ loanId: 'loan-sample-arch', installmentId: 'inst-001', amount: '12500', currency: 'USDC', attestationHash: '0xabc123456789', remainingPrincipal: '9987500', status: 'Active' }} errors={{ payment: { code: 'INVALID_REQUEST', message: 'Bad amount' }, topUp: { code: 'INVALID_REQUEST', message: 'Bad top-up' } }} />);
 
     expect(screen.getByText(/0xabc123456789/i)).toBeInTheDocument();
-    expect(screen.getByText(/137500 USD remaining/i)).toBeInTheDocument();
+    expect(screen.getByText(/9987500 USDC remaining/i)).toBeInTheDocument();
     expect(screen.getByText('INVALID_REQUEST: Bad amount')).toBeInTheDocument();
     expect(screen.getByText('INVALID_REQUEST: Bad top-up')).toBeInTheDocument();
   });

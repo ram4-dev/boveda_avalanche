@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bóveda — Pitch Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0A0A0B;
+  --surface: #141416;
+  --surface-2: #1C1C20;
+  --surface-3: #26262B;
+  --border: #2A2A2E;
+  --border-strong: #3A3A40;
+  --text: #F5F5F7;
+  --text-2: #A1A1AA;
+  --text-3: #71717A;
+  --avax: #E84142;
+  --gold: #D4A574;
+  --green: #10B981;
+  --blue: #60A5FA;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter Tight', sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.deck {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 4rem 5rem;
+  opacity: 0;
+  transform: translateX(40px);
+  pointer-events: none;
+  transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1), transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.slide.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.slide.previous { transform: translateX(-40px); }
+
+.chrome {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.chrome-top {
+  top: 1.5rem;
+  left: 5rem;
+  right: 5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.chrome-bottom {
+  bottom: 1.5rem;
+  left: 5rem;
+  right: 5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  pointer-events: auto;
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand-mark::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--avax);
+  border-radius: 1px;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+  pointer-events: auto;
+}
+
+.nav button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav button:hover {
+  border-color: var(--avax);
+  color: var(--text);
+}
+
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: var(--avax);
+  transition: width 0.4s ease;
+  z-index: 100;
+}
+
+.slide-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--avax);
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.slide-label::before {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--avax);
+}
+
+.display-xl {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: clamp(3rem, 7vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-variation-settings: 'opsz' 144;
+}
+
+.display-lg {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: clamp(2.5rem, 4.5vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variation-settings: 'opsz' 96;
+}
+
+.display-md {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.body-lg {
+  font-size: 1.15rem;
+  line-height: 1.55;
+  color: var(--text-2);
+  font-weight: 400;
+}
+
+.body {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.body-sm {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+.kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.italic {
+  font-style: italic;
+  font-family: 'Fraunces', serif;
+}
+
+em { color: var(--gold); font-style: normal; font-weight: 500; }
+strong { color: var(--text); font-weight: 500; }
+
+.cover {
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0 5rem;
+}
+
+.cover-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  width: 100%;
+  align-items: center;
+}
+
+.cover-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: clamp(4rem, 9vw, 8rem);
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+  font-variation-settings: 'opsz' 144, 'SOFT' 50;
+}
+
+.cover-title em {
+  font-style: italic;
+  color: var(--avax);
+  font-weight: 400;
+}
+
+.cover-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+  color: var(--text-2);
+}
+
+.meta-row:last-child { border-bottom: 1px solid var(--border); }
+
+.meta-row span:first-child {
+  color: var(--text-3);
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+}
+
+.bg-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0);
+  background-size: 32px 32px;
+}
+
+.bg-blob {
+  position: absolute;
+  pointer-events: none;
+  filter: blur(120px);
+  opacity: 0.18;
+}
+
+.split-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  flex: 1;
+  align-items: start;
+}
+
+.split-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.split-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-top: 2.5rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  position: relative;
+}
+
+.card-strong {
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  padding: 1.5rem;
+}
+
+.card-accent {
+  background: linear-gradient(135deg, rgba(232,65,66,0.05), transparent);
+  border: 1px solid rgba(232,65,66,0.3);
+  padding: 1.5rem;
+}
+
+.card-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 0.8rem;
+}
+
+.card h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 1.25rem;
+  margin-bottom: 0.6rem;
+  letter-spacing: -0.01em;
+}
+
+.card p { color: var(--text-2); font-size: 0.9rem; line-height: 1.5; }
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  margin-top: 2rem;
+}
+
+.stat {
+  background: var(--bg);
+  padding: 1.5rem;
+}
+
+.stat-num {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: 2.4rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--gold);
+}
+
+.stat-num.avax { color: var(--avax); }
+.stat-num.green { color: var(--green); }
+
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-top: 0.6rem;
+}
+
+.stat-source {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--text-3);
+  margin-top: 0.3rem;
+  opacity: 0.7;
+}
+
+.numbered-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  counter-reset: item;
+}
+
+.numbered-list li {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 1rem;
+  align-items: start;
+  counter-increment: item;
+}
+
+.numbered-list li::before {
+  content: counter(item, decimal-leading-zero);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--avax);
+  letter-spacing: 0.1em;
+  padding-top: 0.3rem;
+}
+
+.bullet-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bullet-list li {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 0.85rem;
+  align-items: start;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.bullet-list li::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--avax);
+  margin-top: 0.55rem;
+}
+
+.fact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin-top: 1rem;
+}
+
+.fact-block {
+  border-left: 2px solid var(--avax);
+  padding: 0.15rem 0 0.15rem 1rem;
+}
+
+.fact-key {
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+}
+
+.fact-desc {
+  font-size: 0.88rem;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+.video-slide {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.video-frame {
+  width: min(80vw, 1100px);
+  aspect-ratio: 16/9;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.video-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(45deg, transparent 49%, rgba(232,65,66,0.04) 50%, transparent 51%),
+    linear-gradient(-45deg, transparent 49%, rgba(232,65,66,0.04) 50%, transparent 51%);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+.play-icon {
+  width: 80px;
+  height: 80px;
+  border: 1.5px solid var(--avax);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+.play-icon::before {
+  content: '';
+  border-style: solid;
+  border-width: 14px 0 14px 22px;
+  border-color: transparent transparent transparent var(--avax);
+  margin-left: 6px;
+}
+
+.video-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  position: relative;
+  z-index: 2;
+}
+
+table.compare {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+}
+
+table.compare th, table.compare td {
+  text-align: left;
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+table.compare th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 400;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+table.compare tr.highlight td {
+  background: rgba(232,65,66,0.06);
+}
+
+table.compare tr.highlight td:first-child {
+  border-left: 2px solid var(--avax);
+}
+
+table.compare td.good { color: var(--green); }
+table.compare td.bad { color: var(--avax); }
+table.compare td.warn { color: var(--gold); }
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  margin-top: 2rem;
+  align-items: start;
+}
+
+.flow-step { position: relative; }
+
+.flow-step:not(:last-child)::after {
+  content: '→';
+  position: absolute;
+  right: -1.25rem;
+  top: 1.5rem;
+  color: var(--avax);
+  font-size: 1.4rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.flow-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--avax);
+  letter-spacing: 0.15em;
+  margin-bottom: 0.5rem;
+}
+
+.flow-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+  line-height: 1.2;
+}
+
+.flow-desc {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  line-height: 1.45;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.pill-avax { border-color: var(--avax); color: var(--avax); }
+.pill-gold { border-color: var(--gold); color: var(--gold); }
+.pill-green { border-color: var(--green); color: var(--green); }
+
+.phase-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  margin-top: 2rem;
+}
+
+.phase {
+  background: var(--bg);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  position: relative;
+}
+
+.phase-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--text-3);
+}
+
+.phase-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.35rem;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.phase-period {
+  color: var(--avax);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.big-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.big-num {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(3rem, 5vw, 4.5rem);
+  font-weight: 300;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.big-num.gold { color: var(--gold); }
+.big-num.avax { color: var(--avax); }
+
+.big-num-sub {
+  font-size: 0.9rem;
+  color: var(--text-2);
+}
+
+.problem-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  flex: 1;
+  margin-top: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.problem-side {
+  padding: 2rem;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+.problem-side:last-child { border-right: none; }
+
+.problem-side h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--avax);
+  margin-bottom: 0.8rem;
+}
+
+.problem-side h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 1.55rem;
+  margin-bottom: 1rem;
+  line-height: 1.1;
+}
+
+.arch-diagram {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.arch-layer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.arch-layer.accent {
+  border-color: var(--avax);
+  background: rgba(232,65,66,0.04);
+}
+
+.arch-layer.gold {
+  border-color: var(--gold);
+  background: rgba(212,165,116,0.04);
+}
+
+.arch-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  min-width: 90px;
+}
+
+.arch-content { color: var(--text-2); }
+.arch-emphasis { color: var(--text); }
+
+.final { justify-content: center; text-align: left; }
+
+.final-quote {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  max-width: 1100px;
+  color: var(--text);
+}
+
+.final-quote em {
+  font-style: italic;
+  color: var(--avax);
+}
+
+.mt-2 { margin-top: 0.5rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-8 { margin-top: 2rem; }
+.mt-12 { margin-top: 3rem; }
+.flex-grow { flex: 1; }
+
+.slide-1 .bg-blob.one { top: -200px; right: -200px; width: 600px; height: 600px; background: var(--avax); }
+.slide-1 .bg-blob.two { bottom: -200px; left: -100px; width: 500px; height: 500px; background: var(--gold); opacity: 0.1; }
+.slide-3 .bg-blob.one { top: 50%; right: -300px; width: 600px; height: 600px; background: var(--avax); opacity: 0.08; }
+.slide-6 .bg-blob.one { top: -300px; left: 50%; transform: translateX(-50%); width: 800px; height: 800px; background: var(--avax); opacity: 0.06; }
+.slide-14 .bg-blob.one { bottom: -200px; right: -200px; width: 700px; height: 700px; background: var(--avax); opacity: 0.12; }
+
+.slide-counter { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 1024px) {
+  .slide { padding: 3rem 3rem; }
+  .chrome-top, .chrome-bottom { left: 3rem; right: 3rem; }
+  .split-2 { gap: 2.5rem; grid-template-columns: 1fr; }
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
+  .split-4 { grid-template-columns: repeat(2, 1fr); }
+  .flow { grid-template-columns: repeat(2, 1fr); gap: 2rem; }
+  .flow-step::after { display: none; }
+  .phase-grid { grid-template-columns: 1fr; }
+  .problem-pair { grid-template-columns: 1fr; }
+  .problem-side { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="chrome chrome-top">
+  <div class="brand-mark">BÓVEDA</div>
+  <div>HACKATHON · AVAX LATAM INSTITUCIONAL · MAY 16–17 / 2026</div>
+</div>
+
+<div class="chrome chrome-bottom">
+  <div class="slide-counter" id="counter">01 / 14</div>
+  <div class="nav">
+    <button onclick="prevSlide()">← ANT</button>
+    <button onclick="nextSlide()">SIG →</button>
+  </div>
+</div>
+
+<div class="deck" id="deck">
+
+<!-- SLIDE 1 — COVER -->
+<section class="slide slide-1 cover active">
+  <div class="bg-blob one"></div>
+  <div class="bg-blob two"></div>
+  <div class="bg-grain"></div>
+  <div class="cover-grid">
+    <div>
+      <div class="kicker mt-4">Infraestructura institucional</div>
+      <h1 class="cover-title" style="margin-top:1rem;">Bó<em>veda</em></h1>
+      <p class="display-md" style="margin-top:2rem; max-width: 540px; color: var(--text-2); font-weight: 300;">
+        Crédito fiat respaldado por colateral cripto, sin que el banco toque cripto.
+      </p>
+    </div>
+    <div class="cover-meta">
+      <div class="meta-row"><span>Sede</span><span>Avalanche L1 · México</span></div>
+      <div class="meta-row"><span>Track</span><span>Crédito Descentralizado</span></div>
+      <div class="meta-row"><span>Partners</span><span>Bankaool · Arkangeles · Wavy</span></div>
+      <div class="meta-row"><span>Capa</span><span>B2B Infrastructure</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 2 — PROBLEMA -->
+<section class="slide">
+  <div class="slide-label">01 · El problema</div>
+  <h2 class="display-lg" style="max-width: 1100px;">
+    En México la demanda de crédito cripto-colateralizado existe. <em>La oferta institucional no.</em>
+  </h2>
+  <div class="problem-pair">
+    <div class="problem-side">
+      <h4>Lado usuario</h4>
+      <h3>Cripto líquida, invisible al sistema crediticio</h3>
+      <p class="body">PyMEs exportadoras que cobran en USDC, freelancers internacionales, startups con tesoro on-chain, personas que reciben remesas en stablecoin. Ninguno aparece en buró. Para conseguir pesos hoy tienen que vender, pagar impuestos y perder upside.</p>
+      <div class="stat-row" style="grid-template-columns: 1fr 1fr; margin-top: auto; padding-top: 1.5rem;">
+        <div class="stat" style="padding: 1rem 1.25rem;">
+          <div class="stat-num" style="font-size: 1.7rem;">$71.2B</div>
+          <div class="stat-label">Vol. cripto MX 2025</div>
+          <div class="stat-source">Chainalysis</div>
+        </div>
+        <div class="stat" style="padding: 1rem 1.25rem;">
+          <div class="stat-num" style="font-size: 1.7rem;">47%</div>
+          <div class="stat-label">en stablecoins</div>
+          <div class="stat-source">Bitso 2025</div>
+        </div>
+      </div>
+    </div>
+    <div class="problem-side">
+      <h4>Lado institución</h4>
+      <h3>Bancos no pueden tocar cripto · SOFOMs sí, sin infra</h3>
+      <p class="body">Banxico Circular 4/2019 mantiene "sana distancia": ninguna institución de crédito está autorizada a custodiar, intercambiar o transmitir activos virtuales al público. Los originadores no-bancarios (SOFOMs, IFCs) pueden, pero no tienen vaults, oráculos, scoring on-chain ni motor de liquidación.</p>
+      <div class="stat-row" style="grid-template-columns: 1fr 1fr; margin-top: auto; padding-top: 1.5rem;">
+        <div class="stat" style="padding: 1rem 1.25rem;">
+          <div class="stat-num avax" style="font-size: 1.7rem;">4.9M</div>
+          <div class="stat-label">PyMEs en MX</div>
+          <div class="stat-source">INEGI · 4.4% bancarizadas</div>
+        </div>
+        <div class="stat" style="padding: 1rem 1.25rem;">
+          <div class="stat-num avax" style="font-size: 1.7rem;">$36B</div>
+          <div class="stat-label">Cartera SOFOMs PyME</div>
+          <div class="stat-source">Moody's / ASOFOM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 3 — SOLUCIÓN -->
+<section class="slide slide-3">
+  <div class="bg-blob one"></div>
+  <div class="slide-label">02 · La solución</div>
+  <h2 class="display-lg" style="max-width: 1200px;">
+    Bóveda es la capa de <em>colateral programable</em> que conecta DeFi con originadores regulados.
+  </h2>
+  <p class="body-lg mt-8" style="max-width: 900px;">
+    El usuario deposita cripto en un vault en Avalanche. El originador (SOFOM, IFC) le presta pesos. El banco fondea al originador con visibilidad on-chain de la cartera elegible. <strong>Nadie toca cripto fuera del vault.</strong>
+  </p>
+  <div class="split-3 mt-12">
+    <div class="card-accent">
+      <div class="card-title">Para el originador</div>
+      <h3>Producto nuevo, plug-and-play</h3>
+      <p>API de scoring, vault programable, motor de liquidación. Sin construir infraestructura cripto interna.</p>
+    </div>
+    <div class="card-accent">
+      <div class="card-title">Para el banco fondeador</div>
+      <h3>Cartera elegible verificable</h3>
+      <p>Dashboard institucional con LTV en tiempo real, atestaciones firmadas, audit trail completo. Borrowing-base on-chain.</p>
+    </div>
+    <div class="card-accent">
+      <div class="card-title">Para el usuario</div>
+      <h3>Pesos, sin vender un satoshi</h3>
+      <p>Crédito fiat de contraparte regulada, reportable a buró. Construye historial sin renunciar a su tesoro digital.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 4 — POR QUÉ AHORA -->
+<section class="slide">
+  <div class="slide-label">03 · Por qué ahora</div>
+  <h2 class="display-lg" style="max-width: 1100px;">
+    Cinco fuerzas convergen en <em>2026</em>.
+  </h2>
+  <div class="stat-row" style="margin-top: 2.5rem;">
+    <div class="stat">
+      <div class="stat-num">$73.6B</div>
+      <div class="stat-label">Crypto-lending Q3 '25</div>
+      <div class="stat-source">Galaxy Research · ATH</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num avax">+949%</div>
+      <div class="stat-label">RWA TVL Avalanche YoY</div>
+      <div class="stat-source">$1.33B · Messari Q4 '25</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">$82B</div>
+      <div class="stat-label">TPV stablecoin LatAm</div>
+      <div class="stat-source">Bitso Business 2025</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num gold">71%</div>
+      <div class="stat-label">institucionales c/digital assets</div>
+      <div class="stat-source">EY Survey 2025</div>
+    </div>
+  </div>
+  <div class="split-3 mt-12">
+    <div class="card">
+      <div class="card-title">Bancos globales</div>
+      <h3>JPMorgan, Itaú, Nubank aceptan cripto-colateral</h3>
+      <p>JPM lanzó BTC/ETH como colateral fin de 2025. Itaú "ion" en Brasil. Nubank OCC approval ene '26. Para México no es <em>si</em>, sino <em>cuándo</em>.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Regulación se mueve</div>
+      <h3>GENIUS Act US + Iniciativa Murat MX</h3>
+      <p>GENIUS firmado jul '25. Iniciativa de Activos Virtuales Estables (AVE) en Senado MX mayo '26. Ventana regulatoria abriéndose.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Plan México 2030</div>
+      <h3>Meta: 30% PyMEs con financiamiento formal</h3>
+      <p>Política federal explícita. ABM-gobierno firmaron ampliación 2026. SOFOMs son canal natural. Bóveda les da producto diferenciado.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 5 — CÓMO FUNCIONA -->
+<section class="slide">
+  <div class="slide-label">04 · Producto · Flujo principal</div>
+  <h2 class="display-lg" style="max-width: 1100px;">
+    Cinco pasos. <em>Onchain donde importa</em>, offchain donde regula.
+  </h2>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-num">01</div>
+      <div class="flow-title">Solicitud + Wavy Node</div>
+      <div class="flow-desc">Usuario solicita en plataforma del originador. KYC fiat-side. Bóveda consulta Wavy Node: risk score on-chain + AML wallet screening.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">02</div>
+      <div class="flow-title">Vault personalizado</div>
+      <div class="flow-desc">Smart contract en Avalanche crea vault por préstamo. Usuario deposita colateral. LoanReceipt NFT soulbound se emite a su wallet.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">03</div>
+      <div class="flow-title">Desembolso fiat</div>
+      <div class="flow-desc">Originador desembolsa MXN al usuario por rieles habituales (SPEI). Activación se registra on-chain. Préstamo entra estado Active.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">04</div>
+      <div class="flow-title">Atestaciones de pago</div>
+      <div class="flow-desc">Usuario paga cuotas al originador. Backend Bóveda firma atestación. Hash on-chain. Datos sensibles offchain.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">05</div>
+      <div class="flow-title">Liberación o liquidación</div>
+      <div class="flow-desc">Si paga: vault libera colateral. Si default o LTV crítico: keeper liquida vía DEX. USDC al originador. Excedente al usuario.</div>
+    </div>
+  </div>
+  <div class="card-strong mt-12" style="display: flex; gap: 2rem; align-items: center;">
+    <div class="pill pill-avax">Diferencial</div>
+    <p class="body" style="flex: 1; color: var(--text);">
+      Vs Aave/Compound (DeFi, output stablecoin) y Ledn/Nexo (CeFi custodial, output USD offshore): <strong>Bóveda entrega pesos en cuenta bancaria mexicana, con contraparte regulada local, historial reportable a buró, y vault on-chain sin rehypothecation.</strong>
+    </p>
+  </div>
+</section>
+
+<!-- SLIDE 6 — DEMO VIDEO -->
+<section class="slide slide-6 video-slide">
+  <div class="bg-blob one"></div>
+  <div class="slide-label" style="position: absolute; top: 4rem; left: 5rem;">05 · Demo</div>
+  <div class="video-frame">
+    <div class="play-icon"></div>
+    <div class="video-label">[ Demo · 2 min ]</div>
+    <div style="text-align: center; max-width: 600px; position: relative; z-index: 2;">
+      <div class="display-md italic" style="color: var(--text); font-size: 1.4rem;">PyME deposita USDC → recibe MXN del originador → paga cuotas → vault libera</div>
+    </div>
+  </div>
+  <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+    <span class="pill pill-avax">Avalanche Fuji</span>
+    <span class="pill">Wavy Node Live</span>
+    <span class="pill pill-gold">USDC Vault</span>
+    <span class="pill">SPEI mock</span>
+  </div>
+</section>
+
+<!-- SLIDE 7 — VIABILIDAD TÉCNICA -->
+<section class="slide">
+  <div class="slide-label">06 · Viabilidad técnica</div>
+  <h2 class="display-lg" style="max-width: 1100px;">
+    Avalanche como infraestructura. <em>Razones técnicas, no marketing.</em>
+  </h2>
+  <div class="split-2 mt-8">
+    <div>
+      <div class="card-title">Arquitectura on-chain</div>
+      <div class="arch-diagram">
+        <div class="arch-layer accent">
+          <span class="arch-tag">Avalanche</span>
+          <span class="arch-content"><span class="arch-emphasis">CollateralVault</span> · custodia programable por préstamo</span>
+        </div>
+        <div class="arch-layer">
+          <span class="arch-tag">Avalanche</span>
+          <span class="arch-content"><span class="arch-emphasis">LoanRegistry</span> · estado central + transiciones</span>
+        </div>
+        <div class="arch-layer">
+          <span class="arch-tag">Avalanche</span>
+          <span class="arch-content"><span class="arch-emphasis">LoanReceipt NFT</span> · soulbound, hashes, sin PII</span>
+        </div>
+        <div class="arch-layer">
+          <span class="arch-tag">Avalanche</span>
+          <span class="arch-content"><span class="arch-emphasis">LiquidationEngine</span> · DEX-routed, sub-segundo</span>
+        </div>
+        <div class="arch-layer gold">
+          <span class="arch-tag">Wavy Node</span>
+          <span class="arch-content"><span class="arch-emphasis">RiskAttestationVerifier</span> · score + AML firmado</span>
+        </div>
+        <div class="arch-layer">
+          <span class="arch-tag">Chainlink</span>
+          <span class="arch-content"><span class="arch-emphasis">PriceOracleAdapter</span> · LTV real-time + fallback</span>
+        </div>
+      </div>
+      <div class="card-strong mt-4">
+        <div class="card-title">Stack integraciones</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem;">
+          <span class="pill pill-avax">Avalanche Fuji</span>
+          <span class="pill pill-gold">Wavy Node API</span>
+          <span class="pill">Chainlink</span>
+          <span class="pill">NVIO/Bitso</span>
+          <span class="pill">Oracle Cloud</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card-title">Por qué Avalanche, técnicamente</div>
+      <div class="fact-list">
+        <div class="fact-block">
+          <div class="fact-key">Sub-2-segundo finality · Granite, nov '25</div>
+          <div class="fact-desc">La liquidación ejecuta antes de que la cascada de precio siga cayendo en mercado volátil — diferencia crítica en eventos de margin call masivo.</div>
+        </div>
+        <div class="fact-block">
+          <div class="fact-key">Octane redujo fees -99.6%</div>
+          <div class="fact-desc">Las liquidaciones se vuelven económicamente viables en préstamos retail de $5K a $50K, ticket en el que Ethereum mainnet hoy no es competitivo por costo de gas.</div>
+        </div>
+        <div class="fact-block">
+          <div class="fact-key">L1 permissioned + ICM nativo</div>
+          <div class="fact-desc">El vault puede correr en un L1 institucional con KYC en el conjunto de validadores, conectado a C-Chain para liquidez stablecoin cuando se necesite.</div>
+        </div>
+        <div class="fact-block">
+          <div class="fact-key">Tracción institucional ya validada</div>
+          <div class="fact-desc">BlackRock BUIDL ($500M), FIS+Intain con 2,000 bancos en EE.UU. y la propia red Bankaool exploring Avalanche — no construimos sobre tesis especulativa.</div>
+        </div>
+        <div class="fact-block">
+          <div class="fact-key">EVM compatible</div>
+          <div class="fact-desc">Auditabilidad con herramientas estándar (Slither, Mythril, OpenZeppelin), integración con wallets y dev tooling existente. Cero curva de adopción para integradores.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 8 — VIABILIDAD LEGAL -->
+<section class="slide">
+  <div class="slide-label">07 · Viabilidad legal · El moat regulatorio</div>
+  <h2 class="display-lg" style="max-width: 1100px;">
+    Diseñada para cumplir <em>"sana distancia"</em> desde el día uno.
+  </h2>
+  <p class="body-lg mt-4" style="max-width: 1100px;">
+    Banxico Circular 4/2019 prohíbe a bancos custodiar, intercambiar o transmitir activos virtuales al público. <strong>Bóveda no rompe esa regla — la hace negocio.</strong>
+  </p>
+  <table class="compare mt-8">
+    <colgroup>
+      <col style="width: 19%">
+      <col style="width: 28%">
+      <col style="width: 21%">
+      <col style="width: 32%">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Pieza</th>
+        <th>Figura legal</th>
+        <th>¿Toca cripto?</th>
+        <th>Obligaciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="highlight">
+        <td><strong>Bóveda Tech MX</strong></td>
+        <td>S.A.P.I. de C.V. + holding Cayman</td>
+        <td class="good">No · solo atestaciones criptográficas</td>
+        <td>Registro UIF como Actividad Vulnerable bajo LFPIORPI art. 17 fracción XVI</td>
+      </tr>
+      <tr>
+        <td><strong>Originador (SOFOM ENR)</strong></td>
+        <td>SOFOM ENR registrada en CONDUSEF y UIF</td>
+        <td class="warn">Recibe USDC en liquidación vía socio autorizado</td>
+        <td>KYC fiat-side completo más reporte UIF habitual</td>
+      </tr>
+      <tr>
+        <td><strong>Custodio técnico</strong></td>
+        <td>NVIO/Bitso · IFPE autorizada por CNBV</td>
+        <td class="warn">Sí, pero ya cuenta con la licencia para hacerlo</td>
+        <td>Travel Rule, Proof of Reserves y compliance ITF estándar</td>
+      </tr>
+      <tr>
+        <td><strong>Banco fondeador</strong></td>
+        <td>Bankaool · Banca Múltiple regulada CNBV/Banxico</td>
+        <td class="good">Nunca · solo fondea cartera elegible</td>
+        <td>Las habituales del crédito a SOFOMs, sin riesgo cripto adicional</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="card-strong mt-8" style="border-color: var(--green);">
+    <div class="card-title" style="color: var(--green);">Resultado</div>
+    <p class="body" style="color: var(--text); font-size: 1rem;">
+      El banco actúa como financiador tradicional con visibilidad on-chain de cartera elegible. <strong>Cumple "sana distancia" sin renunciar al producto.</strong> Bóveda es el primer modelo en LatAm que resuelve esta asimetría con arquitectura, no con cabildeo.
+    </p>
+  </div>
+</section>
+
+<!-- SLIDE 9 — MERCADO -->
+<section class="slide">
+  <div class="slide-label">08 · Mercado · TAM/SAM/SOM</div>
+  <h2 class="display-lg" style="max-width: 1100px;">
+    Cliente año 1: <em>PyMEs y exportadores con flujos USDC.</em>
+  </h2>
+  <div class="split-2 mt-4" style="gap: 3rem;">
+    <div>
+      <div class="card-title">Segmentación ranqueada</div>
+      <table class="compare">
+        <thead>
+          <tr>
+            <th style="width: 30px">#</th>
+            <th>Segmento</th>
+            <th>SOM año 1</th>
+            <th>Encaje</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight">
+            <td><strong>1</strong></td>
+            <td><strong>PyMEs/exportadores USDC</strong></td>
+            <td>$10–30M</td>
+            <td class="good">★★★★★</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>HNW con cripto</td>
+            <td>$50–150M</td>
+            <td class="good">★★★★</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Retail cripto &gt;$10K</td>
+            <td>$30–75M</td>
+            <td class="warn">★★★★</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Fondos VC web3</td>
+            <td>$15–50M</td>
+            <td class="warn">★★★</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Startups web3 LatAm</td>
+            <td>$10–25M</td>
+            <td class="warn">★★★</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Receptores remesas</td>
+            <td>$15–75M</td>
+            <td class="bad">★★</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div class="card-title">Año 1 · Por qué PyMEs USDC</div>
+      <div class="big-stack" style="margin-top: 0.5rem;">
+        <div class="big-num gold">1,900+</div>
+        <div class="big-num-sub">clientes institucionales en Bitso Business — flujo USDC documentado en tesorerías de PyMEs mexicanas.</div>
+      </div>
+      <div class="fact-list">
+        <div class="fact-block">
+          <div class="fact-key">Encaje regulatorio nativo</div>
+          <div class="fact-desc">Las SOFOMs ya prestan a PyMEs y representan el 60% de su cartera. Añadir USDC como colateral es contractualmente compatible con la LGOAAC.</div>
+        </div>
+        <div class="fact-block">
+          <div class="fact-key">Demanda validada</div>
+          <div class="fact-desc">El 47% del volumen institucional stablecoin de LatAm es de México. Bitso Business confirma flujo real hoy, no demanda hipotética.</div>
+        </div>
+        <div class="fact-block">
+          <div class="fact-key">Política alineada</div>
+          <div class="fact-desc">Plan México 2030 con meta explícita de 30% PyMEs con financiamiento formal. Acuerdo ABM-gobierno 2026 para ampliar crédito a este segmento.</div>
+        </div>
+        <div class="fact-block">
+          <div class="fact-key">Ticket óptimo $50K–$500K</div>
+          <div class="fact-desc">Sweet spot donde los bancos grandes no llegan y las SOFOMs sí compiten — pero sin un mecanismo de garantía programable como Bóveda.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 10 — COMPETENCIA -->
+<section class="slide">
+  <div class="slide-label">09 · Competencia</div>
+  <h2 class="display-lg" style="max-width: 1100px;">
+    Una cancha vacía entre <em>tres categorías</em>.
+  </h2>
+  <table class="compare mt-8">
+    <thead>
+      <tr>
+        <th>Dimensión</th>
+        <th>DeFi (Aave)</th>
+        <th>CeFi (Ledn, Nexo)</th>
+        <th>Bancos LatAm</th>
+        <th>Bóveda</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Output al usuario</strong></td>
+        <td class="bad">Stablecoin</td>
+        <td class="bad">USD offshore</td>
+        <td class="warn">N/A</td>
+        <td class="good">Pesos en cuenta MX</td>
+      </tr>
+      <tr>
+        <td><strong>Custodia colateral</strong></td>
+        <td>Smart contract</td>
+        <td class="bad">Discrecional CeFi</td>
+        <td class="bad">N/A</td>
+        <td class="good">Vault programable</td>
+      </tr>
+      <tr>
+        <td><strong>Rehypothecation</strong></td>
+        <td>Posible</td>
+        <td class="bad">Posible</td>
+        <td>N/A</td>
+        <td class="good">Imposible por diseño</td>
+      </tr>
+      <tr>
+        <td><strong>Reporte a buró</strong></td>
+        <td class="bad">No</td>
+        <td class="bad">No</td>
+        <td>Sí (sin producto)</td>
+        <td class="good">Sí, vía originador</td>
+      </tr>
+      <tr>
+        <td><strong>Contraparte regulada MX</strong></td>
+        <td class="bad">No</td>
+        <td class="bad">No</td>
+        <td>Sí (sin producto)</td>
+        <td class="good">SOFOM/IFC + IFPE</td>
+      </tr>
+      <tr>
+        <td><strong>Disponible en México hoy</strong></td>
+        <td>Sin marco local</td>
+        <td>Offshore</td>
+        <td>No existe</td>
+        <td class="good">Diseñada para esto</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="card-strong mt-8">
+    <p class="body" style="color: var(--text);">
+      <strong>Defensibilidad</strong>: cada Loan Receipt NFT en wallet del usuario es una pieza de identidad crediticia on-chain pseudónima. <em>Mientras más originadores usen Bóveda, más data, más valiosa para todos.</em> Es el playbook Plaid: empieza siendo conector, se vuelve estándar.
+    </p>
+  </div>
+</section>
+
+<!-- SLIDE 11 — MODELO DE NEGOCIO -->
+<section class="slide">
+  <div class="slide-label">10 · Modelo de negocio</div>
+  <h2 class="display-lg" style="max-width: 1100px;">
+    SaaS + take-rate. <em>Sin depender de liquidaciones.</em>
+  </h2>
+  <div class="split-2 mt-4" style="gap: 4rem;">
+    <div>
+      <div class="card-title">Revenue streams</div>
+      <ol class="numbered-list mt-4">
+        <li>
+          <div>
+            <div style="font-family: 'Fraunces', serif; font-size: 1.1rem; margin-bottom: 0.25rem;">Origination fee · 1–2%</div>
+            <div class="body-sm">Por préstamo activado. Línea más fácil de escalar y el motor principal del revenue. Benchmark Ledn: 2% fuera de US/Canada.</div>
+          </div>
+        </li>
+        <li>
+          <div>
+            <div style="font-family: 'Fraunces', serif; font-size: 1.1rem; margin-bottom: 0.25rem;">Plataforma · variable, no fija</div>
+            <div class="body-sm">Sin cuota mensual fija al inicio. Se cobra por uso real — API calls, atestaciones, eventos de vault — alineado al volumen del originador. Reduce fricción de adopción y mantiene incentivos alineados.</div>
+          </div>
+        </li>
+        <li>
+          <div>
+            <div style="font-family: 'Fraunces', serif; font-size: 1.1rem; margin-bottom: 0.25rem;">Collateral mgmt · 0.25–0.5% anual</div>
+            <div class="body-sm">Sobre el valor del colateral activo bajo vault. Recurrente, sticky, crece con la cartera del originador.</div>
+          </div>
+        </li>
+        <li>
+          <div>
+            <div style="font-family: 'Fraunces', serif; font-size: 1.1rem; margin-bottom: 0.25rem;">Setup fee · $5K–$25K</div>
+            <div class="body-sm">Onboarding, integración técnica y training. One-time pero garantiza compromiso real del partner.</div>
+          </div>
+        </li>
+      </ol>
+    </div>
+    <div>
+      <div class="card-title">Unit economics</div>
+      <div class="big-stack" style="margin-top: 0.5rem;">
+        <div class="big-num avax">~$300K</div>
+        <div class="big-num-sub">ARR por originador con cartera de $10M y 200 préstamos activos.</div>
+      </div>
+      <div class="card-strong">
+        <div class="card-title">Path a ARR</div>
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem 1.5rem; margin-top: 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
+          <span style="color: var(--text-2);">Año 1 · 3 originadores piloto</span>
+          <span style="color: var(--gold); text-align: right;">~$1M</span>
+          <span style="color: var(--text-2);">Año 2 · 10 originadores</span>
+          <span style="color: var(--gold); text-align: right;">~$3M</span>
+          <span style="color: var(--text-2);">Año 3 · 30 originadores</span>
+          <span style="color: var(--gold); text-align: right;">~$9M</span>
+          <span style="color: var(--text-2);">Año 5 · 60 originadores</span>
+          <span style="color: var(--gold); text-align: right;">$15–50M</span>
+        </div>
+        <div class="body-sm" style="margin-top: 1rem; color: var(--text-3);">Break-even estimado: $3–5M ARR · 10–15 originadores activos.</div>
+      </div>
+      <div class="card mt-4">
+        <p class="body-sm" style="color: var(--text-2); margin: 0;"><strong>Principio</strong>: el revenue principal viene del flujo normal — origination y collateral management. Sin cuotas fijas al inicio, sin depender de eventos de liquidación. Los incentivos quedan alineados con el éxito del originador.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 12 — GTM -->
+<section class="slide">
+  <div class="slide-label">11 · Go-to-market · Tres fases</div>
+  <h2 class="display-lg" style="max-width: 1100px;">
+    De cripto-nativos a estándar de mercado.
+  </h2>
+  <div class="phase-grid">
+    <div class="phase">
+      <div class="phase-num">FASE 01</div>
+      <div class="phase-period">0–12 meses · Piloto</div>
+      <div class="phase-title">Originadores cripto-friendly + PyMEs USDC</div>
+      <p class="body-sm">Arrancar con 2–3 SOFOMs cripto-amigables + Arkangeles como IFC originadora. Activos: USDC, BTC.b, WAVAX. LTV conservador. Cartera meta: $10–30M. Bankaool fondea primera SOFOM.</p>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.5rem;">
+        <span class="pill pill-avax">Arkangeles</span>
+        <span class="pill">2–3 SOFOMs</span>
+        <span class="pill">Bankaool</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">FASE 02</div>
+      <div class="phase-period">12–24 meses · Escalamiento</div>
+      <div class="phase-title">SOFOMs tradicionales + HNW + Bankaool ampliado</div>
+      <p class="body-sm">5–10 originadores no-nativos. Bankaool amplía líneas con borrowing-base controlado. Activamos HNW vía private banking Bankaool + Arkangeles. Off-ramp NVIO/Bitso productivo.</p>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.5rem;">
+        <span class="pill pill-gold">HNW Banking</span>
+        <span class="pill">10 originadores</span>
+        <span class="pill">NVIO/Bitso</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">FASE 03</div>
+      <div class="phase-period">24–48 meses · Estándar</div>
+      <div class="phase-title">Retail cripto + Buró pseudónimo + Multi-país</div>
+      <p class="body-sm">SOFOM ENR propia (Bóveda Capital) para originación retail directa. Loan Receipt NFT como buró cripto pseudónimo. Expansión a Brasil, Colombia. Evaluar IFPE propia post-reforma.</p>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.5rem;">
+        <span class="pill pill-green">Buró on-chain</span>
+        <span class="pill">Multi-LatAm</span>
+        <span class="pill">IFPE propia</span>
+      </div>
+    </div>
+  </div>
+  <div class="card-strong mt-8">
+    <div class="card-title">El playbook canónico</div>
+    <p class="body" style="color: var(--text); margin-top: 0.5rem;">
+      Sigue la ruta validada por <strong>Nubank, Stori, Klar</strong> en México: <em>S.A.P.I. → SOFOM ENR → IFPE → Banco</em>. Bóveda no necesita licencia financiera para el MVP — la consigue cuando la cartera lo justifique.
+    </p>
+  </div>
+</section>
+
+<!-- SLIDE 13 — PARTNERS Y ROADMAP -->
+<section class="slide">
+  <div class="slide-label">12 · Partners + Roadmap post-hackathon</div>
+  <h2 class="display-lg" style="max-width: 1100px;">
+    Encaje real, no forzado.
+  </h2>
+  <div class="split-2 mt-4" style="gap: 4rem;">
+    <div>
+      <div class="card-title">Ecosistema partners</div>
+      <div class="arch-diagram">
+        <div class="arch-layer">
+          <span class="arch-tag" style="color: var(--gold); min-width: 110px;">Bankaool</span>
+          <span class="arch-content">Channel + fondeador de SOFOMs · adoptante directo post-IPO 2026</span>
+        </div>
+        <div class="arch-layer">
+          <span class="arch-tag" style="color: var(--gold); min-width: 110px;">Arkangeles</span>
+          <span class="arch-content">IFC originadora · capta inversores HNW cripto-nativos</span>
+        </div>
+        <div class="arch-layer accent">
+          <span class="arch-tag" style="min-width: 110px;">Wavy Node</span>
+          <span class="arch-content">Risk scoring + AML on-chain — input central del motor</span>
+        </div>
+        <div class="arch-layer">
+          <span class="arch-tag" style="color: var(--text); min-width: 110px;">Avalanche</span>
+          <span class="arch-content">Smart contracts · L1 institucional · ICM · Team1</span>
+        </div>
+        <div class="arch-layer">
+          <span class="arch-tag" style="color: var(--text); min-width: 110px;">NVIO/Bitso</span>
+          <span class="arch-content">Off-ramp MXN↔USDC vía IFPE (fase 2)</span>
+        </div>
+        <div class="arch-layer">
+          <span class="arch-tag" style="color: var(--text); min-width: 110px;">Oracle</span>
+          <span class="arch-content">Backend cloud · top-3 conexión inversión</span>
+        </div>
+        <div class="arch-layer">
+          <span class="arch-tag" style="color: var(--text); min-width: 110px;">Ledger</span>
+          <span class="arch-content">Mentoría legal post-hackathon · preguntas regulatorias</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card-title">Roadmap 90 días post-hackathon</div>
+      <div class="fact-list">
+        <div class="fact-block">
+          <div class="fact-key">Mes 1 · Hardening técnico</div>
+          <div class="fact-desc">Auditoría de smart contracts con OpenZeppelin o Halborn. Wavy Node en ambiente productivo. Onboarding técnico del primer originador piloto.</div>
+        </div>
+        <div class="fact-block">
+          <div class="fact-key">Mes 2 · Validación regulatoria</div>
+          <div class="fact-desc">Mentoría con Ledger Leaders para cerrar la estructura legal final. Alta ante UIF como Actividad Vulnerable. Primer piloto controlado con 10 a 20 préstamos reales.</div>
+        </div>
+        <div class="fact-block">
+          <div class="fact-key">Mes 3 · Escalamiento inicial</div>
+          <div class="fact-desc">Integración productiva de NVIO/Bitso para off-ramp MXN. Loan Receipt NFT v2 con metadata reputacional portable. 50 préstamos activos. Cierre de ronda Seed.</div>
+        </div>
+      </div>
+      <div class="card-strong mt-8">
+        <div class="card-title">Compromiso de continuidad</div>
+        <p class="body" style="color: var(--text); margin-top: 0.5rem;">Bóveda continúa Wavy Node integration en producción. Roadmap explícito de L1 permissioned para fase 2. Equipo full-time post-hackathon.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 14 — CIERRE -->
+<section class="slide slide-14 final">
+  <div class="bg-blob one"></div>
+  <div class="bg-grain"></div>
+  <div class="slide-label">13 · Por qué Bóveda gana esta hackathon</div>
+  <p class="final-quote">
+    Bóveda es la <em>infraestructura institucional</em> que permite a originadores regulados ofrecer crédito fiat respaldado por cripto, y a los bancos fondear esa cartera con garantías borrowing-base verificables on-chain — <em>sin tocar cripto.</em>
+  </p>
+  <div class="split-4 mt-12">
+    <div>
+      <div class="kicker">Encaje hackathon</div>
+      <p class="body-sm mt-2">"Soluciones reales a problemas reales" · roles concretos para Bankaool y Arkangeles</p>
+    </div>
+    <div>
+      <div class="kicker">Avalanche protagónico</div>
+      <p class="body-sm mt-2">Vault, NFT, atestaciones, liquidación viven en Avalanche · no decoración</p>
+    </div>
+    <div>
+      <div class="kicker">Wavy Node central</div>
+      <p class="body-sm mt-2">Risk score y AML como input core del motor · no badge</p>
+    </div>
+    <div>
+      <div class="kicker">MVP demostrable</div>
+      <p class="body-sm mt-2">Dos casos de uso · misma infraestructura · cubre dos audiencias</p>
+    </div>
+  </div>
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 3rem;">
+    <div>
+      <div class="kicker">Equipo Bóveda</div>
+      <h3 class="display-md italic mt-4" style="color: var(--text); max-width: 600px;">
+        Gracias.
+      </h3>
+    </div>
+    <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-3); letter-spacing: 0.1em;">
+      <div>boveda · github · demo</div>
+      <div style="margin-top: 0.5rem;">Q&amp;A</div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+const counter = document.getElementById('counter');
+const progressBar = document.getElementById('progressBar');
+let current = 0;
+
+function pad(n) { return n.toString().padStart(2, '0'); }
+
+function goToSlide(idx) {
+  if (idx < 0 || idx >= total) return;
+  slides.forEach((s, i) => {
+    s.classList.remove('active', 'previous');
+    if (i === idx) s.classList.add('active');
+    else if (i < idx) s.classList.add('previous');
+  });
+  current = idx;
+  counter.textContent = `${pad(current + 1)} / ${pad(total)}`;
+  progressBar.style.width = `${((current + 1) / total) * 100}%`;
+}
+
+function nextSlide() { goToSlide(Math.min(current + 1, total - 1)); }
+function prevSlide() { goToSlide(Math.max(current - 1, 0)); }
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+    e.preventDefault();
+    nextSlide();
+  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    e.preventDefault();
+    prevSlide();
+  } else if (e.key === 'Home') {
+    goToSlide(0);
+  } else if (e.key === 'End') {
+    goToSlide(total - 1);
+  } else if (/^[0-9]$/.test(e.key)) {
+    const n = parseInt(e.key) - 1;
+    if (n < total && n >= 0) goToSlide(n);
+  }
+});
+
+let touchStartX = 0;
+document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+document.addEventListener('touchend', (e) => {
+  const diff = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(diff) > 50) {
+    if (diff < 0) nextSlide();
+    else prevSlide();
+  }
+});
+
+goToSlide(0);
+</script>
+
+</body>
+</html>

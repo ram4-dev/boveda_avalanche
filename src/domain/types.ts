@@ -44,11 +44,13 @@ export type Originator = {
   originatorId: string;
   displayName: string;
   originatorType: 'VC_FUND' | 'SOFOM' | 'BANK_PARTNER' | 'FINTECH_LENDER';
+  walletAddress?: string | null;
 };
 
 export type FundingPartner = {
   fundingPartnerId: string;
   displayName: string;
+  walletAddress?: string | null;
 };
 
 export type Money = {
@@ -68,6 +70,8 @@ export type Collateral = {
   tokenAddress?: string | null;
   chainId: number;
   amount: string;
+  amountBaseUnits?: string;
+  tokenDecimals?: number;
   referencePriceUsd?: string;
   valueUsd: string;
   vaultAddress?: string | null;
@@ -121,6 +125,7 @@ export type LiquidationPreview = {
 
 export type Loan = {
   loanId: string;
+  onChainLoanId?: string | null;
   scenario: LoanScenario;
   status: LoanStatus;
   borrower: Borrower;

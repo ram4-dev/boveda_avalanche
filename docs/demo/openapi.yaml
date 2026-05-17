@@ -629,6 +629,9 @@ components:
       properties:
         loanId:
           type: string
+        onChainLoanId:
+          type: [string, "null"]
+          description: Numeric LoanRegistry id captured from LoanCreated event when the loan was originated on Fuji. Null in demo mode and for fuji loans not yet on-chain.
         scenario:
           $ref: "#/components/schemas/LoanScenario"
         status:
@@ -738,7 +741,14 @@ components:
 
     CollateralDepositRequest:
       type: object
-      required: [token, amount, txHash, vaultAddress]
+      required: [token, amount]
+      description: |
+        Mode-aware request body. In demo mode (evidenceSource demo-simulated) the
+        client MUST supply txHash and vaultAddress and the backend will verify them.
+        In fuji-live mode with prerequisites ready, txHash and vaultAddress are
+        optional: the backend originates USDC.approve (only when allowance is below
+        amount) and CollateralVault.depositCollateral with the BORROWER signer and
+        returns the resulting on-chain evidence.
       properties:
         token:
           type: string
@@ -746,8 +756,10 @@ components:
           type: string
         txHash:
           type: string
+          description: Required in demo mode; ignored in fuji-live ready mode (backend originates the tx).
         vaultAddress:
           type: string
+          description: Required in demo mode; ignored in fuji-live ready mode (backend uses the configured CollateralVault address).
 
     ActivateLoanRequest:
       type: object
@@ -788,6 +800,43 @@ components:
         externalPaymentRef:
           type: string
 
+    OnChainEvidenceStep:
+      type: object
+      required: [step, txHash, blockNumber, status]
+      properties:
+        step:
+          type: string
+          enum:
+            [
+              createLoan,
+              approve,
+              depositCollateral,
+              registerPayment,
+              setLoanStatusRepaid,
+              setLoanStatusDefaulted,
+              releaseCollateral,
+              canLiquidate,
+              liquidateLoan,
+            ]
+        txHash:
+          type: [string, "null"]
+        blockNumber:
+          type: [integer, "null"]
+        status:
+          type: string
+          enum: [confirmed, pending, noop, failed]
+        explorerUrl:
+          type: [string, "null"]
+        note:
+          type: string
+    CanLiquidateInfo:
+      type: object
+      required: [allowed, reason]
+      properties:
+        allowed:
+          type: boolean
+        reason:
+          type: string
     PaymentAttestation:
       type: object
       required:
@@ -807,6 +856,15 @@ components:
           type: string
         status:
           $ref: "#/components/schemas/LoanStatus"
+        evidence:
+          $ref: "#/components/schemas/EvidenceMetadata"
+        releaseEvidence:
+          $ref: "#/components/schemas/CollateralReleaseEvidence"
+        onChainEvidence:
+          type: array
+          description: Structured per-step evidence of the on-chain payment + release lifecycle. Empty in demo mode.
+          items:
+            $ref: "#/components/schemas/OnChainEvidenceStep"
 
     MarginCallRequest:
       type: object
@@ -858,6 +916,15 @@ components:
           const: USDC
         distribution:
           $ref: "#/components/schemas/ProceedsDistribution"
+        evidence:
+          $ref: "#/components/schemas/EvidenceMetadata"
+        canLiquidate:
+          $ref: "#/components/schemas/CanLiquidateInfo"
+        onChainEvidence:
+          type: array
+          description: Structured per-step evidence of the on-chain default + liquidation lifecycle. Empty in demo mode.
+          items:
+            $ref: "#/components/schemas/OnChainEvidenceStep"
 
     DashboardSummary:
       type: object
@@ -897,6 +964,61 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OnChainEvent"
+
+    CollateralReleaseEvidence:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [confirmed, pending, unavailable]
+        txHash:
+          type: string
+        blockNumber:
+          type: [integer, "null"]
+        token:
+          type: string
+        amountBaseUnits:
+          type: string
+        decimals:
+          type: integer
+
+    EvidenceTokenContext:
+      type: object
+      required: [symbol]
+      properties:
+        symbol:
+          type: string
+        address:
+          type: [string, "null"]
+        decimals:
+          type: integer
+        amountBaseUnits:
+          type: string
+
+    EvidenceMetadata:
+      type: object
+      required: [mode, source, status, label]
+      properties:
+        mode:
+          type: string
+          enum: [demo, fuji]
+        source:
+          type: string
+          enum: [demo-simulated, fuji-live, fuji-unavailable]
+        status:
+          type: string
+          enum: [simulated, confirmed, pending, unavailable]
+        label:
+          type: string
+        txHash:
+          type: string
+        blockNumber:
+          type: [integer, "null"]
+        explorerUrl:
+          type: [string, "null"]
+        token:
+          $ref: "#/components/schemas/EvidenceTokenContext"
 
     OnChainEvent:
       type: object

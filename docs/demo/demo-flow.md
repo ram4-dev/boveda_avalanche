@@ -44,8 +44,9 @@ Este documento fija el flujo canónico de la demo para que frontend, backend y c
    - La transferencia fiat queda fuera de Bóveda y se representa como `fiatDisbursementRef`.
 
 5. **Collateral deposit**
-   - Borrower deposita colateral en Avalanche Fuji/local.
+   - Borrower deposita 15 USDC de colateral en Avalanche Fuji/local para la demo real USDC.
    - Backend registra tx por `POST /loans/{loanId}/collateral/deposit`.
+   - En Fuji, el backend debe verificar evidencia del adaptador/contrato; en `/demo`, la evidencia queda rotulada como `demo-simulated`.
    - Estado sigue `Approved` hasta activar.
    - Evento: `CollateralDeposited`.
 
@@ -59,6 +60,7 @@ Este documento fija el flujo canónico de la demo para que frontend, backend y c
    - Borrower simula pago fiat off-chain.
    - Backend genera hash/atestación con `POST /loans/{loanId}/payments/attest`.
    - Contrato/backend registra `InstallmentPaid`.
+   - Si el pago final deja saldo cero, `releaseEvidence` se reporta separado; sólo hay evento `CollateralReleased` cuando el adaptador confirma release.
    - Estado puede permanecer `Active` o pasar a `Repaid` si queda saldo cero.
 
 8. **Risk movement / margin call**
@@ -70,6 +72,7 @@ Este documento fija el flujo canónico de la demo para que frontend, backend y c
    - Si LTV supera `liquidationLtvBps` o hay default, se llama `POST /loans/{loanId}/liquidate`.
    - Estado final: `Liquidated`.
    - Los proceeds se reportan en `USDC` aunque el préstamo haya sido fiat.
+   - Para la demo real USDC, la distribución canónica es 10 USDC a `fundingPartner`, 0.5 USDC a `originatorFees` y 4.5 USDC a `borrowerRemainder` desde 15 USDC de colateral bloqueado.
    - Evento: `Liquidated` con distribución a `fundingPartner`, `originatorFees` y `borrowerRemainder`.
 
 ## Flujo secundario — PyME/exportador

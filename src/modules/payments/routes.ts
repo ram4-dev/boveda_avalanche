@@ -11,13 +11,13 @@ type PaymentParams = {
   loanId: string;
 };
 
-type PaymentBody = Partial<PaymentAttestationRequest>;
+type PaymentBody = Partial<PaymentAttestationRequest> & { loanSnapshot?: unknown };
 
 const paymentRails = ['WIRE_SIMULATED', 'SPEI_SIMULATED', 'ACH_SIMULATED', 'MANUAL_SIMULATED'] as const satisfies readonly PaymentRail[];
 
 export async function registerPaymentRoutes(app: FastifyInstance, store: DemoStore, web3: Web3Adapter): Promise<void> {
   app.post('/loans/:loanId/payments/attest', async (request: FastifyRequest<{ Params: PaymentParams; Body: PaymentBody }>, reply) => {
-    const loan = store.getLoan(request.params.loanId);
+    const loan = store.getLoan(request.params.loanId) ?? (isLoanSnapshotFor(request.body?.loanSnapshot, request.params.loanId) ? store.createLoan(request.body.loanSnapshot) : undefined);
     if (!loan) {
       return sendApiError(reply, 404, 'LOAN_NOT_FOUND', `Loan ${request.params.loanId} was not found`);
     }
@@ -59,6 +59,9 @@ export async function registerPaymentRoutes(app: FastifyInstance, store: DemoSto
       registration = await web3.registerPaymentAttestation({ loan, attestation });
     } catch (error) {
       if (error instanceof Web3UnavailableError) {
+        if (error.code === 'WEB3_GAS_INSUFFICIENT') {
+          return reply.status(503).send({ error: { code: error.code, message: error.message }, signer: error.metadata?.role ?? 'unknown' });
+        }
         return sendApiError(reply, 503, error.code, error.message);
       }
       return sendApiError(reply, 502, 'WEB3_ACTION_FAILED', error instanceof Error ? error.message : 'Web3 payment attestation failed');
@@ -83,7 +86,9 @@ export async function registerPaymentRoutes(app: FastifyInstance, store: DemoSto
       ...attestation,
       txHash: registration.txHash,
       blockNumber: registration.blockNumber,
-      evidence
+      evidence,
+      releaseEvidence: registration.releaseEvidence,
+      onChainEvidence: registration.onChainEvidence ?? []
     };
 
     store.replaceLoan(nextLoan);
@@ -107,8 +112,40 @@ export async function registerPaymentRoutes(app: FastifyInstance, store: DemoSto
       }
     });
 
+    if (registration.releaseEvidence?.status === 'confirmed') {
+      store.appendEvent({
+        eventType: 'CollateralReleased',
+        loanId: nextLoan.loanId,
+        txHash: registration.releaseEvidence.txHash ?? null,
+        blockNumber: registration.releaseEvidence.blockNumber ?? null,
+        payload: {
+          eventType: 'CollateralReleased',
+          loanId: nextLoan.loanId,
+          status,
+          releaseEvidence: registration.releaseEvidence
+        }
+      });
+    }
+
     return persistedAttestation;
   });
+}
+
+function isLoanSnapshotFor(value: unknown, loanId: string): value is Loan {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Partial<Loan>;
+  return candidate.loanId === loanId &&
+    typeof candidate.status === 'string' &&
+    Boolean(candidate.borrower?.walletAddress) &&
+    Boolean(candidate.originator?.originatorId) &&
+    Boolean(candidate.fundingPartner?.fundingPartnerId) &&
+    Boolean(candidate.principal?.amount) &&
+    Boolean(candidate.collateral?.token) &&
+    typeof candidate.terms?.initialLtvBps === 'number' &&
+    Boolean(candidate.riskAssessment?.riskAssessmentId) &&
+    candidate.receipt !== undefined &&
+    Boolean(candidate.currentMetrics?.outstandingPrincipal) &&
+    Boolean(candidate.liquidationPreview?.proceedsCurrency);
 }
 
 function parsePaymentRequest(body: PaymentBody | undefined, reply: FastifyReply): PaymentAttestationRequest | null {

@@ -14,37 +14,37 @@ const marginCallPayload = {
 
 const liquidationPayload = {
   reason: 'LTV_BREACH',
-  proceedsAmount: '154200',
+  proceedsAmount: '15000000',
   proceedsCurrency: 'USDC',
   distribution: {
-    fundingPartnerAmount: '150000',
-    originatorFeeAmount: '2100',
-    borrowerRemainderAmount: '2100'
+    fundingPartnerAmount: '10000000',
+    originatorFeeAmount: '500000',
+    borrowerRemainderAmount: '4500000'
   }
 };
 
 describe('margin call, liquidation, and web3 failure safety', () => {
   it('moves an Active loan to MarginCall only when current LTV reaches the threshold', async () => {
     const app = buildFastifyApp();
-    const before = await app.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' });
+    const before = await app.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' });
 
     const belowThreshold = await app.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/margin-call',
+      url: '/loans/loan-sample-arch/margin-call',
       payload: { ...marginCallPayload, currentLtvBps: 6900 }
     });
     expect(belowThreshold.statusCode).toBe(409);
-    expect((await app.inject({ method: 'GET', url: '/loans/loan-web3-001' })).json()).toMatchObject({
+    expect((await app.inject({ method: 'GET', url: '/loans/loan-sample-arch' })).json()).toMatchObject({
       status: 'Active',
       currentMetrics: { currentLtvBps: 5000 }
     });
-    expect((await app.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' })).json().events).toHaveLength(
+    expect((await app.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' })).json().events).toHaveLength(
       before.json().events.length
     );
 
     const marginCall = await app.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/margin-call',
+      url: '/loans/loan-sample-arch/margin-call',
       payload: marginCallPayload
     });
     expect(marginCall.statusCode).toBe(200);
@@ -53,10 +53,10 @@ describe('margin call, liquidation, and web3 failure safety', () => {
       currentMetrics: { currentLtvBps: 7600 }
     });
 
-    const events = await app.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' });
+    const events = await app.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' });
     expect(events.json().events.at(-1)).toMatchObject({
       eventType: 'MarginCall',
-      loanId: 'loan-web3-001',
+      loanId: 'loan-sample-arch',
       payload: {
         currentLtvBps: 7600,
         marginCallLtvBps: 7000,
@@ -73,59 +73,69 @@ describe('margin call, liquidation, and web3 failure safety', () => {
 
     const activeLiquidation = await app.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/liquidate',
+      url: '/loans/loan-sample-arch/liquidate',
       payload: liquidationPayload
     });
     expect(activeLiquidation.statusCode).toBe(409);
 
-    const marginCall = await app.inject({ method: 'POST', url: '/loans/loan-web3-001/margin-call', payload: marginCallPayload });
+    const marginCall = await app.inject({ method: 'POST', url: '/loans/loan-sample-arch/margin-call', payload: marginCallPayload });
     expect(marginCall.statusCode).toBe(200);
 
     const liquidation = await app.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/liquidate',
+      url: '/loans/loan-sample-arch/liquidate',
       payload: liquidationPayload
     });
     expect(liquidation.statusCode).toBe(200);
     expect(liquidation.json()).toMatchObject({
-      loanId: 'loan-web3-001',
+      loanId: 'loan-sample-arch',
       status: 'Liquidated',
-      proceedsAmount: '154200',
+      proceedsAmount: '15000000',
       proceedsCurrency: 'USDC',
-      distribution: liquidationPayload.distribution
+      distribution: liquidationPayload.distribution,
+      evidence: {
+        source: 'demo-simulated',
+        mode: 'demo',
+        status: 'simulated',
+        token: {
+          symbol: 'USDC',
+          decimals: 6,
+          amountBaseUnits: '15000000'
+        }
+      }
     });
     expect(liquidation.json().liquidationTxHash).toMatch(/^0x[a-f0-9]{64}$/);
 
-    const liquidatedLoan = await app.inject({ method: 'GET', url: '/loans/loan-web3-001' });
+    const liquidatedLoan = await app.inject({ method: 'GET', url: '/loans/loan-sample-arch' });
     expect(liquidatedLoan.json()).toMatchObject({ status: 'Liquidated' });
-    const events = await app.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' });
+    const events = await app.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' });
     expect(events.json().events.at(-1)).toMatchObject({
       eventType: 'Liquidated',
-      loanId: 'loan-web3-001',
+      loanId: 'loan-sample-arch',
       payload: {
-        proceedsAmount: '154200',
+        proceedsAmount: '15000000',
         proceedsCurrency: 'USDC',
         distribution: liquidationPayload.distribution,
         status: 'Liquidated'
       }
     });
 
-    const doubleLiquidation = await app.inject({ method: 'POST', url: '/loans/loan-web3-001/liquidate', payload: liquidationPayload });
+    const doubleLiquidation = await app.inject({ method: 'POST', url: '/loans/loan-sample-arch/liquidate', payload: liquidationPayload });
     expect(doubleLiquidation.statusCode).toBe(409);
   });
 
   it('rejects non-USDC liquidation proceeds and preserves state/events on adapter failure', async () => {
-    const nonUsdcApp = buildFastifyApp({ store: DemoStore.fromSeed(seedWithLoanStatus('loan-web3-001', 'MarginCall')) });
-    const beforeNonUsdc = await nonUsdcApp.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' });
+    const nonUsdcApp = buildFastifyApp({ store: DemoStore.fromSeed(seedWithLoanStatus('loan-sample-arch', 'MarginCall')) });
+    const beforeNonUsdc = await nonUsdcApp.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' });
     const nonUsdc = await nonUsdcApp.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/liquidate',
+      url: '/loans/loan-sample-arch/liquidate',
       payload: { ...liquidationPayload, proceedsCurrency: 'USD' }
     });
     expect(nonUsdc.statusCode).toBe(400);
     expect(nonUsdc.json().error.code).toBe('INVALID_REQUEST');
-    expect((await nonUsdcApp.inject({ method: 'GET', url: '/loans/loan-web3-001' })).json().status).toBe('MarginCall');
-    expect((await nonUsdcApp.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' })).json().events).toHaveLength(
+    expect((await nonUsdcApp.inject({ method: 'GET', url: '/loans/loan-sample-arch' })).json().status).toBe('MarginCall');
+    expect((await nonUsdcApp.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' })).json().events).toHaveLength(
       beforeNonUsdc.json().events.length
     );
 
@@ -136,19 +146,19 @@ describe('margin call, liquidation, and web3 failure safety', () => {
       }
     };
     const failureApp = buildFastifyApp({
-      store: DemoStore.fromSeed(seedWithLoanStatus('loan-web3-001', 'MarginCall')),
+      store: DemoStore.fromSeed(seedWithLoanStatus('loan-sample-arch', 'MarginCall')),
       web3: failingWeb3
     });
-    const beforeFailure = await failureApp.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' });
+    const beforeFailure = await failureApp.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' });
     const failure = await failureApp.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/liquidate',
+      url: '/loans/loan-sample-arch/liquidate',
       payload: liquidationPayload
     });
     expect(failure.statusCode).toBe(502);
     expect(failure.json().error.code).toBe('WEB3_ACTION_FAILED');
-    expect((await failureApp.inject({ method: 'GET', url: '/loans/loan-web3-001' })).json().status).toBe('MarginCall');
-    expect((await failureApp.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' })).json().events).toHaveLength(
+    expect((await failureApp.inject({ method: 'GET', url: '/loans/loan-sample-arch' })).json().status).toBe('MarginCall');
+    expect((await failureApp.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' })).json().events).toHaveLength(
       beforeFailure.json().events.length
     );
   });

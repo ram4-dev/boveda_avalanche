@@ -24,7 +24,7 @@ export function createInitialJourneyState(): BorrowerJourneyState {
 }
 
 export function selectPreferredLoan(loans: Loan[]): Loan | null {
-  return loans.find((loan) => loan.loanId === 'loan-web3-001' && loan.scenario === 'WEB3_BRIDGE') ?? loans.find((loan) => loan.scenario === 'WEB3_BRIDGE') ?? loans[0] ?? null;
+  return loans.find((loan) => loan.loanId === 'loan-sample-arch' && loan.scenario === 'WEB3_BRIDGE') ?? loans.find((loan) => loan.scenario === 'WEB3_BRIDGE') ?? loans[0] ?? null;
 }
 
 export async function loadBorrowerContext(client: Pick<BovedaApiClient, 'listLoans' | 'listEvents'>, current: BorrowerJourneyState): Promise<BorrowerJourneyState> {

@@ -12,6 +12,7 @@ export default defineConfig({
       '/health': apiProxyTarget,
       '/runtime': apiProxyTarget,
       '/demo/reset': apiProxyTarget,
+      '/demo/release-and-reset': apiProxyTarget,
       '/quotes': apiProxyTarget,
       '/risk': apiProxyTarget,
       '/loans': apiProxyTarget,

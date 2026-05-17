@@ -124,6 +124,38 @@ contract CollateralVaultTest {
         assert(balanceAfter == balanceBefore + 100e18);
     }
 
+    function testReleaseCollateralAfterRepaidReturnsSixDecimalUsdcToBorrower() public {
+        LoanRegistry registry = new LoanRegistry();
+        CollateralVault usdcVault = new CollateralVault(address(registry));
+        MockERC20 usdc6 = new MockERC20("USDC", "USDC", 6, 0);
+        uint256 collateralAmount = 15_000_000;
+        uint256 loanId = registry.createLoan(
+            borrower,
+            originator,
+            address(usdc6),
+            0,
+            10_000_000,
+            6667,
+            block.timestamp + 365 days
+        );
+
+        usdc6.mint(borrower, collateralAmount);
+        usdc6.approve(address(usdcVault), collateralAmount);
+        usdcVault.depositCollateral(loanId, collateralAmount);
+
+        registry.setLoanStatus(loanId, uint8(ILoanRegistry.LoanStatus.Repaid));
+
+        uint256 balanceBefore = usdc6.balanceOf(borrower);
+        usdcVault.releaseCollateral(loanId);
+        uint256 balanceAfter = usdc6.balanceOf(borrower);
+        CollateralVault.Vault memory releasedVault = usdcVault.getVault(loanId);
+
+        assert(balanceAfter == balanceBefore + collateralAmount);
+        assert(releasedVault.amount == 0);
+        assert(releasedVault.locked == false);
+        assert(releasedVault.liquidated == false);
+    }
+
     function testRejectsDirectLiquidationWhenCallerIsNotEngine() public {
         uint256 dueDate = block.timestamp + 365 days;
         uint256 loanId = loanRegistry.createLoan(

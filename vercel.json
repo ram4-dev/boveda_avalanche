@@ -1,0 +1,29 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build:web",
+  "outputDirectory": "dist/web",
+  "framework": "vite",
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "config/**",
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/landing", "destination": "/landing/index.html" },
+    { "source": "/pitch", "destination": "/pitch/index.html" },
+    { "source": "/health", "destination": "/api/index" },
+    { "source": "/runtime", "destination": "/api/index" },
+    { "source": "/runtime/:path*", "destination": "/api/index" },
+    { "source": "/demo/:path*", "destination": "/api/index" },
+    { "source": "/quotes", "destination": "/api/index" },
+    { "source": "/risk/:path*", "destination": "/api/index" },
+    { "source": "/loans", "destination": "/api/index" },
+    { "source": "/loans/:path*", "destination": "/api/index" },
+    { "source": "/events", "destination": "/api/index" },
+    { "source": "/dashboard/:path*", "destination": "/api/index" },
+    { "source": "/demo", "destination": "/index.html" },
+    { "source": "/demo/:path*", "destination": "/index.html" }
+  ]
+}

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildFastifyApp } from '../src/app.js';
 import { Web3UnavailableError, type Web3Adapter } from '../src/adapters/web3.js';
 import { buildDemoRuntimeConfig, buildFujiRuntimeConfig } from '../src/config/runtime.js';
+import { loadFujiContractsConfig } from '../src/config/fujiContracts.js';
 import { DemoStore } from '../src/store/demoStore.js';
 import { loadSeedFileSync } from '../src/store/seedLoader.js';
 import type { Loan, SeedFile } from '../src/domain/types.js';
@@ -21,6 +22,12 @@ function seedWithApprovedDepositedLoan(): SeedFile {
     receipt: null
   };
   return { ...seed, loans: [...seed.loans, approvedDeposited] };
+}
+
+function loadFujiContractsForTest() {
+  const result = loadFujiContractsConfig();
+  if (!result.ok) throw new Error(result.errors.join('\n'));
+  return result.config;
 }
 
 function seedWithMarginCallLoan(): SeedFile {
@@ -92,12 +99,12 @@ describe('runtime composition and observability', () => {
 
     const payment = await paymentApp.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/payments/attest',
+      url: '/loans/loan-sample-arch/payments/attest',
       payload: {
         installmentId: 'runtime-fuji-unavailable-001',
         amount: '100',
-        currency: 'USD',
-        paymentRail: 'WIRE_SIMULATED',
+        currency: 'MXN',
+        paymentRail: 'SPEI_SIMULATED',
         paidAt: '2026-05-16T00:00:00.000Z'
       }
     });
@@ -113,6 +120,87 @@ describe('runtime composition and observability', () => {
     });
     expect(liquidation.statusCode).toBe(503);
     expect(liquidation.json().error.code).toBe('WEB3_UNAVAILABLE');
+  });
+
+  it('keeps default Fuji writes unavailable when runtime is ready but signer env is absent', async () => {
+    const store = DemoStore.fromSeed(seedWithApprovedDepositedLoan());
+    const app = buildFastifyApp({ store, runtime: buildFujiRuntimeConfig({ prerequisites: 'ready', contracts: loadFujiContractsForTest() }) });
+
+    const runtime = await app.inject({ method: 'GET', url: '/runtime' });
+    expect(runtime.json()).toMatchObject({
+      mode: 'fuji',
+      evidenceSource: 'fuji-unavailable',
+      prerequisites: 'ready'
+    });
+
+    const loan = store.getLoan('loan-runtime-approved-deposited');
+    if (!loan) throw new Error('Expected approved seed loan');
+    const deposit = await app.inject({
+      method: 'POST',
+      url: `/loans/${loan.loanId}/collateral/deposit`,
+      payload: {
+        token: 'USDC',
+        amount: '15000000',
+        txHash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        vaultAddress: '0x45E96820551466861d20f081ab390CAA9368F68B'
+      }
+    });
+
+    expect(deposit.statusCode).toBe(503);
+    expect(deposit.json().error.message).toContain('missing Fuji signing prerequisites');
+  });
+
+  it('uses injected Fuji deposit verification instead of trusting client supplied vault evidence', async () => {
+    const store = DemoStore.fromSeed(seedWithApprovedDepositedLoan());
+    const fakeFujiAdapter: Web3Adapter = {
+      evidenceSource: 'fuji-live',
+      async verifyCollateralDeposit(input) {
+        return {
+          ok: true,
+          txHash: input.txHash,
+          blockNumber: 55440001,
+          token: 'USDC',
+          amountBaseUnits: '15000000',
+          decimals: 6,
+          vaultAddress: '0x45E96820551466861d20f081ab390CAA9368F68B'
+        };
+      },
+      async activateLoan() {
+        throw new Web3UnavailableError('unused');
+      },
+      async topUpCollateral() {
+        throw new Web3UnavailableError('unused');
+      },
+      async registerPaymentAttestation() {
+        throw new Web3UnavailableError('unused');
+      },
+      async liquidateLoan() {
+        throw new Web3UnavailableError('unused');
+      }
+    };
+    const app = buildFastifyApp({ store, web3: fakeFujiAdapter, runtime: buildFujiRuntimeConfig({ prerequisites: 'ready' }) });
+    const loan = store.getLoan('loan-runtime-approved-deposited');
+    if (!loan) throw new Error('Expected approved seed loan');
+
+    const deposit = await app.inject({
+      method: 'POST',
+      url: `/loans/${loan.loanId}/collateral/deposit`,
+      payload: {
+        token: 'USDC',
+        amount: '99999999',
+        txHash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        vaultAddress: '0xclientSuppliedVault000000000000000000000001'
+      }
+    });
+
+    expect(deposit.statusCode).toBe(200);
+    expect(deposit.headers['x-boveda-evidence-source']).toBe('fuji-live');
+    expect(deposit.json().collateral).toMatchObject({
+      amount: '15000000',
+      amountBaseUnits: '15000000',
+      tokenDecimals: 6,
+      vaultAddress: '0x45E96820551466861d20f081ab390CAA9368F68B'
+    });
   });
 
   it('accepts an injected Fuji adapter and marks canonical responses as Fuji live', async () => {

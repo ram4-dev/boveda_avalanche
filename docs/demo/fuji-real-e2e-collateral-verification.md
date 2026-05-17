@@ -1,126 +1,99 @@
-# Fuji real E2E collateral verification
+# Fuji real USDC collateral verification
 
-This document defines the real-Fuji collateral deposit plan for Batch 5 without implementing it yet. The key rule is: **the frontend wallet prompt is not proof of deposit**. The backend must independently verify on-chain state before crediting collateral or advancing the loan.
+This document defines the real-Fuji collateral path for the `real-usdc-collateral-demo` change. The key rule remains: **a frontend wallet prompt or submitted tx hash is not proof of collateral**. The backend credits collateral, releases collateral, or reports liquidation only from adapter-confirmed Fuji evidence.
 
 ## Decision
 
-Use an **ERC-20 collateral path** for the first real E2E test.
+Use **Fuji USDC as both collateral token and liquidation proceeds token** for the hackathon live path.
 
-**Chosen demo split:**
-- **Collateral token:** `WAVAX` on Fuji, because it keeps the AVAX collateral narrative while matching the current ERC-20 vault mechanics.
-- **Liquidation proceeds currency:** `USDC`, which is already the canonical liquidation output in the API/specs/docs.
+Why:
 
-| Option | Recommendation | Why |
-|--------|----------------|-----|
-| Native AVAX | Do not use with current contracts | The deployed `CollateralVault` uses ERC-20 `transferFrom`; it has no payable/native AVAX deposit path. |
-| WAVAX / AVAX-like ERC-20 | **Chosen for real collateral** | Keeps the AVAX collateral narrative while matching ERC-20 `approve` + `transferFrom` vault mechanics. |
-| USDC on Fuji | Use for liquidation proceeds, not primary collateral | Liquidation proceeds are already canonicalized as `USDC`; using it as collateral would weaken the “crypto treasury collateral” story. |
-| BTC.b | Stretch only | Strong mainnet story, but too risky for a Fuji hackathon default unless contract address and funding path are prevalidated. |
+- The Slice A contracts now support a no-swap liquidation path where locked collateral token must equal the proceeds token.
+- Fuji USDC has 6 decimals, which matches the demo economics precisely: 10 USDC principal, 15 USDC collateral, 10 USDC funding-partner recovery, 0.5 USDC originator fee, and 4.5 USDC borrower remainder.
+- `/demo` remains deterministic and clearly labeled `demo-simulated`; `/`/Fuji mode must label missing signer/RPC prerequisites as `fuji-unavailable` rather than silently falling back to mock hashes.
 
-**Practical recommendation:** implement the first real Fuji E2E with **WAVAX collateral** and **USDC liquidation proceeds**. Do not use native AVAX without changing the vault contract. Before coding, confirm the exact Fuji WAVAX contract/funding path and keep `/demo` deterministic as fallback.
+## Public live configuration
 
-## Current contract reality
+Public values may be committed and shown to judges:
 
-The deployed Solidity stack expects ERC-20 collateral:
+- Chain: Avalanche Fuji C-Chain, `43113`
+- USDC/proceeds token: `0x5425890298aed601595a70AB815c96711a31Bc65`
+- LoanRegistry: `0x75eBfec02dAE1e0cd631C2d4961c5EE1849D4Fd3`
+- CollateralVault: `0x45E96820551466861d20f081ab390CAA9368F68B`
+- LoanReceiptNFT: `0x03AbD300629808fA9763DdB820469B2FC065e64F`
+- PaymentAttestation: `0x3dDC450C16231807d63f560c01455808ce130B0e`
+- LiquidationEngine: `0xe29EAEbCc8D90b18BD13AfEdbf5ceF274f3a58c4`
 
-- `LoanRegistry.createLoan(...)` rejects `collateralToken == address(0)`.
-- `CollateralVault.depositCollateral(...)` reads the loan’s `collateralToken` and calls `IERC20(loan.collateralToken).transferFrom(msg.sender, address(this), amount)`.
-- `CollateralVault` emits `CollateralDeposited(uint256 indexed loanId, address indexed borrower, uint256 amount)`.
-- `CollateralVault.getVault(loanId)` exposes the actual stored collateral token, amount, borrower, locked flag, and liquidation flag.
+Operator-only values must never be printed or committed:
 
-That means a real deposit requires:
+- Fuji RPC credentialed URL, if any.
+- Attestor private key.
+- Borrower private key.
+- Originator/operator private key.
+- Funding partner key; only its public address is safe to expose.
 
-1. borrower has ERC-20 token balance;
-2. borrower approves the vault to spend the required amount;
-3. borrower calls `depositCollateral(loanId, amount)`;
-4. the transaction mines successfully;
-5. backend verifies contract state and logs before trusting the result.
+Runtime env names used by the backend adapter:
 
-## Manual backend verification rule
+```text
+BOVEDA_FUJI_RPC_URL                 # optional; public RPC fallback exists
+BOVEDA_FUJI_ATTESTOR_PRIVATE_KEY    # secret
+BOVEDA_FUJI_BORROWER_PRIVATE_KEY    # secret
+BOVEDA_FUJI_ORIGINATOR_PRIVATE_KEY  # secret
+BOVEDA_FUJI_FUNDING_PARTNER_ADDRESS # public address
+```
 
-The backend must not trust any of these by themselves:
-
-- wallet popup appeared;
-- frontend says the user clicked approve/sign;
-- frontend supplies a `txHash`;
-- frontend supplies `amount`, `token`, or `vaultAddress`;
-- transaction was submitted but not mined.
-
-The backend may credit collateral only after it verifies all required on-chain evidence.
+If any signer prerequisite is absent, the API must return `WEB3_UNAVAILABLE` with `fuji-unavailable` evidence source.
 
 ## Required verification algorithm
 
-Given `loanId`, expected borrower wallet, expected token, and expected amount. For the chosen real E2E path, `expectedToken` is the confirmed Fuji `WAVAX` contract and liquidation result currency remains `USDC`:
+Given loan id, expected borrower wallet, expected USDC token, expected amount, and submitted tx hash:
 
-1. **Read canonical loan state** from `LoanRegistry.getLoan(loanId)`.
-   - Verify `loan.borrower == expectedBorrower`.
-   - Verify `loan.collateralToken == expectedToken`.
-   - Verify `loan.collateralAmount` / required amount matches the product terms.
+1. Read canonical loan/vault state from contracts.
+2. Fetch the submitted transaction receipt on Fuji and verify it mined successfully.
+3. Verify the transaction/receipt is for the expected contract and actor role.
+4. Decode/validate `CollateralDeposited` and ERC-20 `Transfer` evidence for 15,000,000 base units (15 USDC).
+5. Read final `CollateralVault.getVault(loanId)` state and require locked USDC collateral.
+6. Use token decimals from ERC-20 metadata or the verified runtime config; do not hard-code 18 decimals for USDC.
+7. Expose tx hash, block number, source label, token address, decimals, and base-unit amount in API responses/events.
 
-2. **Fetch the submitted transaction receipt** using the Fuji RPC.
-   - Verify receipt exists.
-   - Verify `receipt.status == 1`.
-   - Verify `receipt.to == CollateralVault` for the deposit call.
-   - Verify `receipt.from == loan.borrower`.
-   - Verify the RPC/client network is Fuji C-Chain before trusting the receipt; do not infer chain identity from the frontend.
+## Payment + release path
 
-3. **Decode and verify vault event logs** in the receipt.
-   - Require `CollateralDeposited(loanId, borrower, amount)` from `CollateralVault`.
-   - Verify `event.loanId == loanId`.
-   - Verify `event.borrower == loan.borrower`.
-   - Verify `event.amount >= expectedAmount`.
+Final repayment creates two separate evidence items:
 
-4. **Verify ERC-20 transfer evidence**.
-   - Decode the token contract’s `Transfer(from, to, value)` log.
-   - Verify `log.address == loan.collateralToken`.
-   - Verify `from == loan.borrower`.
-   - Verify `to == CollateralVault`.
-   - Verify `value >= expectedAmount` in base units, using the token’s decimals policy.
+1. `InstallmentPaid` / payment-attestation evidence.
+2. `CollateralReleased` only when the adapter confirms release tx/balance evidence.
 
-5. **Read final vault state** from `CollateralVault.getVault(loanId)`.
-   - Verify `vault.borrower == loan.borrower`.
-   - Verify `vault.collateralToken == loan.collateralToken`.
-   - Verify `vault.amount >= expectedAmount`.
-   - Verify `vault.locked == true`.
-   - Verify `vault.liquidated == false` before activation/liquidation.
+If release is pending or unavailable, the payment response may include `releaseEvidence.status = pending|unavailable`, but the event feed must not claim collateral was released.
 
-6. **Cross-check registry state/events**.
-   - Verify `LoanCollateralUpdated(loanId, newAmount)` was emitted or read back `LoanRegistry.getLoan(loanId).collateralAmount`.
-   - Verify expected state transition, e.g. `LoanStateChanged(..., Active)` or `getLoanStatus(loanId) == Active`, depending on the flow.
+## Liquidation path
 
-Only after all checks pass should the API mark deposit evidence as `fuji-live` and expose explorer links.
+The live adapter must ignore client-supplied distribution amounts and use adapter/contract-confirmed values. The canonical 15 USDC collateral distribution is:
 
-## Token-selection checklist before coding
+- FundingPartner: `10_000_000` base units (10 USDC)
+- Originator fee: `500_000` base units (0.5 USDC)
+- Borrower remainder: `4_500_000` base units (4.5 USDC)
 
-Before implementing the real adapter, confirm this for the selected token:
+The `Liquidated` event/response must include source label, tx hash, block number, USDC token context, and distribution evidence.
 
-- [ ] Exact Fuji token contract address is confirmed from an official/reputable source.
-- [ ] Token is visible on a Fuji explorer.
-- [ ] Demo borrower wallet can receive enough token balance.
-- [ ] Token decimals are known and documented.
-- [ ] `approve(CollateralVault, amount)` works from the borrower wallet.
-- [ ] `depositCollateral(loanId, amount)` emits both vault and ERC-20 transfer evidence.
-- [ ] Backend can decode `Transfer` and `CollateralDeposited` logs.
-- [ ] Explorer links show the token transfer clearly enough for judges.
+## Repeatable demo path
 
-## Suggested first real E2E path
+For a live Fuji run, reset means **create a fresh loan and fund actors again**. On-chain state is not reset in place. `/demo` can still use `POST /demo/reset` for deterministic local repeatability.
 
-1. Use **WAVAX on Fuji** as the collateral token.
-2. Keep liquidation proceeds denominated and displayed in **USDC**.
-3. Confirm the exact Fuji WAVAX token contract, decimals, funding path, and explorer visibility before coding.
-4. Avoid BTC.b for the default run unless we already control a Fuji BTC.b-compatible token/faucet path.
-5. Keep `/demo` independent and deterministic so the presentation still works if Fuji token funding or RPC fails.
+## Verification commands
 
-## What remains to implement later
+```bash
+npm test -- --run
+npm run typecheck
+npm run build
+npm run lint
+```
 
-This document is only the decision/runbook basis. Implementation still needs:
+If contracts or deploy artifacts change again:
 
-- real `FujiWeb3Adapter` read/write path;
-- browser wallet network/token approval flow;
-- backend receipt/log decoder;
-- token-decimals normalization;
-- explorer link generation for verified live evidence;
-- real-Fuji reset strategy, likely “new loan per run” rather than true chain reset.
+```bash
+forge build
+forge test
+```
 
 ## References
 
@@ -130,5 +103,4 @@ This document is only the decision/runbook basis. Implementation still needs:
 - Circle USDC network/address docs: https://developers.circle.com/stablecoins/usdc-contract-addresses
 - ERC-20 specification: https://eips.ethereum.org/EIPS/eip-20
 - Ethereum JSON-RPC transaction receipt docs: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_gettransactionreceipt
-- MetaMask transaction docs: https://docs.metamask.io/wallet/how-to/send-transactions/
 - Snowtrace Fuji explorer: https://testnet.snowtrace.io/

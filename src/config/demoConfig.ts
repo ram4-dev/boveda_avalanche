@@ -25,10 +25,13 @@ export const scenarioTerms: Record<LoanScenario, CollateralTerms> = {
   }
 };
 
+// FX rate aligned with the dashboard-driven Fuji demo: 150,000 MXN principal
+// translates to 8,823.529412 USDC equivalent (~17 MXN per USD). Same rate applies to
+// the SME loan: 850,000 MXN ~ 50,000 USDC.
 export const demoFxUsdPerCurrency: Record<string, number> = {
   USD: 1,
   USDC: 1,
-  MXN: 40950 / 850000
+  MXN: 1 / 17
 };
 
 export const scenarioRiskProfiles: Record<LoanScenario, { riskScore: number; maxLtvBps: number }> = {

@@ -1,5 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App.js';
 import { sampleLoan } from './state/demoPayloads.js';
@@ -8,21 +7,48 @@ function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
 }
 
-describe('app borrower + dashboard regression', () => {
+describe('app dashboard regression', () => {
   beforeEach(() => {
     window.history.pushState({}, '', '/');
-    const loan = sampleLoan({ status: 'Active' });
+    const loan = sampleLoan({ status: 'Active', loanId: 'loan-sample-arch' });
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const method = init?.method ?? 'GET';
 
-      if (url === '/runtime' && method === 'GET') return jsonResponse({ mode: 'fuji', evidenceSource: 'fuji-live', prerequisites: 'ready' });
-      if (url === '/dashboard/summary' && method === 'GET') return jsonResponse({ activePrincipalUsd: '150000', activeVaults: 1, averageLtvBps: 5000, loansInMarginCall: 0, paymentsAttested: 1, liquidationsExecuted: 0, exposureByAsset: [{ asset: 'AVAX', valueUsd: '300000' }], recentEvents: [] });
-      if (url.startsWith('/loans?') && method === 'GET') return jsonResponse({ loans: [loan] });
+      if (url === '/runtime' && method === 'GET') return jsonResponse({
+        mode: 'fuji',
+        evidenceSource: 'fuji-live',
+        prerequisites: 'ready',
+        networkName: 'Avalanche Fuji',
+        explorerBaseUrl: 'https://testnet.snowtrace.io',
+        contracts: [
+          { name: 'LoanRegistry', address: '0x75eBfec02dAE1e0cd631C2d4961c5EE1849D4Fd3' },
+          { name: 'CollateralVault', address: '0x45E96820551466861d20f081ab390CAA9368F68B' },
+          { name: 'PaymentAttestation', address: '0x3dDC450C16231807d63f560c01455808ce130B0e' },
+          { name: 'LiquidationEngine', address: '0xe29EAEbCc8D90b18BD13AfEdbf5ceF274f3a58c4' }
+        ]
+      });
+      if (url === '/runtime/fuji-smoke' && method === 'GET') return jsonResponse({ ok: true, mode: 'fuji', chainId: 43113, expectedChainId: 43113, contracts: [], errors: [] });
+      if (url.includes('/runtime/fuji-usdc-balances') && method === 'GET') return jsonResponse({
+        mode: 'fuji',
+        evidenceSource: 'fuji-live',
+        chainId: 43113,
+        token: { symbol: 'USDC', address: loan.collateral.tokenAddress, decimals: 6 },
+        balances: [
+          { address: loan.borrower.walletAddress.toLowerCase(), amountBaseUnits: '15000000', formatted: '15' },
+          { address: loan.originator.walletAddress?.toLowerCase(), amountBaseUnits: '23000000', formatted: '23' },
+          { address: loan.fundingPartner.walletAddress?.toLowerCase(), amountBaseUnits: '42000000', formatted: '42' }
+        ],
+        updatedAt: '2026-06-15T00:00:00Z'
+      });
+      if (url === '/dashboard/summary' && method === 'GET') return jsonResponse({ activePrincipalUsd: '150000', activeVaults: 1, averageLtvBps: 5000, loansInMarginCall: 0, paymentsAttested: 1, liquidationsExecuted: 0, exposureByAsset: [{ asset: 'USDC', valueUsd: '15' }], recentEvents: [] });
       if (url === '/loans' && method === 'GET') return jsonResponse({ loans: [loan] });
-      if (url === '/events' && method === 'GET') return jsonResponse({ events: [{ eventId: 'evt-1', eventType: 'InstallmentPaid', loanId: 'loan-web3-001', txHash: null, blockNumber: null, occurredAt: '2026-06-15T00:00:00Z', payload: { attestationHash: '0xabc', proceedsCurrency: 'USDC' } }] });
-      if (url === '/events?loanId=loan-web3-001' && method === 'GET') return jsonResponse({ events: [{ eventId: 'evt-1', eventType: 'InstallmentPaid', loanId: 'loan-web3-001', txHash: null, blockNumber: null, occurredAt: '2026-06-15T00:00:00Z', payload: { attestationHash: '0xabc', proceedsCurrency: 'USDC' } }] });
-      if (url === '/loans/loan-web3-001' && method === 'GET') return jsonResponse(loan);
+      if (url === '/events' && method === 'GET') return jsonResponse({ events: [{ eventId: 'evt-1', eventType: 'InstallmentPaid', loanId: 'loan-sample-arch', txHash: null, blockNumber: null, occurredAt: '2026-06-15T00:00:00Z', payload: { attestationHash: '0xabc', proceedsCurrency: 'USDC', evidence: { source: 'fuji-live', status: 'confirmed' } } }] });
+      if (url === '/loans/loan-sample-arch' && method === 'GET') return jsonResponse(loan);
+      if (url.includes('/collateral/deposit') && method === 'POST') return jsonResponse({ ...loan, collateral: { ...loan.collateral, amount: '15000000', amountBaseUnits: '15000000', tokenDecimals: 6 } });
+      if (url.includes('/payments/attest') && method === 'POST') return jsonResponse({ loanId: loan.loanId, status: 'Repaid', releaseEvidence: { status: 'pending' } });
+      if (url.includes('/margin-call') && method === 'POST') return jsonResponse({ ...loan, status: 'MarginCall' });
+      if (url.includes('/liquidate') && method === 'POST') return jsonResponse({ loanId: loan.loanId, status: 'Liquidated', proceedsAmount: '15000000', proceedsCurrency: 'USDC', distribution: loan.liquidationPreview.distribution });
       return jsonResponse({});
     }));
   });
@@ -32,152 +58,45 @@ describe('app borrower + dashboard regression', () => {
     window.history.pushState({}, '', '/');
   });
 
-  it('renders keyboard-reachable borrower controls and keeps borrower/dashboard views selectable', async () => {
+  it('renders the Bóveda operator dashboard as the base and only app view', async () => {
     render(<App />);
 
-    expect(await screen.findByText(/Fuji live mode/i)).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: /Borrower request/i })).toBeInTheDocument();
-    expect(screen.getByText(/Offer terms, collateral requirement, and risk score are not shown/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Refresh borrower data/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Connect injected wallet/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Loan activity pending/i })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /^Loan activity$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Attest simulated payment/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/local API simulation/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Borrower widget/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(await screen.findByRole('heading', { name: /Buenas .* Arkangeles\./i })).toBeInTheDocument();
+    expect(screen.getAllByText('Bóveda').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Arkangeles IFC/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('fuji-live').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: /Borrower widget/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Institutional dashboard/i })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: /Institutional dashboard/i }));
-    expect(await screen.findByRole('heading', { name: 'Institutional dashboard' })).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: /Borrower widget/i }));
-    expect(await screen.findByRole('heading', { name: /Borrower request/i })).toBeInTheDocument();
+    const dashboard = screen.getByLabelText('Dashboard institucional');
+    expect(within(dashboard).getByText('Cartera activa')).toBeInTheDocument();
+    expect(within(dashboard).getAllByText('Vaults activos').length).toBeGreaterThan(0);
+    expect(within(dashboard).getAllByText('LTV promedio').length).toBeGreaterThan(0);
+    expect(within(dashboard).getAllByText('Margin calls').length).toBeGreaterThan(0);
+    expect(within(dashboard).getByRole('heading', { name: 'Solicitudes pendientes' })).toBeInTheDocument();
+    expect(within(dashboard).getByRole('heading', { name: 'Préstamos activos' })).toBeInTheDocument();
+    expect(within(dashboard).getByRole('heading', { name: 'Eventos on-chain recientes' })).toBeInTheDocument();
+    expect(within(dashboard).getByRole('region', { name: 'Simulador end-to-end' })).toBeInTheDocument();
+    expect(within(dashboard).getByRole('heading', { name: 'Simulador end-to-end' })).toBeInTheDocument();
+    expect(within(dashboard).getByLabelText('Balances USDC Fuji')).toBeInTheDocument();
+    expect(await within(dashboard).findByText('23 USDC')).toBeInTheDocument();
+    expect(within(dashboard).getAllByText('Abrir en AvalScan')).toHaveLength(3);
+    expect(screen.getAllByText(/USDC/i).length).toBeGreaterThan(0);
   });
 
-  it('updates route mode on browser navigation events', async () => {
+  it('shows the simulator starting at step 1 and all action buttons visible', async () => {
     render(<App />);
-    expect(await screen.findByText(/Fuji live mode/i)).toBeInTheDocument();
+    await screen.findByRole('heading', { name: /Buenas .* Arkangeles\./i });
 
-    act(() => {
-      window.history.pushState({}, '', '/demo');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    });
-
-    expect((await screen.findAllByText(/Demo mode/i)).length).toBeGreaterThan(0);
-  });
-
-  it('renders demo mode from /demo and blocks misleading route/API mismatches', async () => {
-    window.history.pushState({}, '', '/demo');
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      const method = init?.method ?? 'GET';
-      if (url === '/runtime' && method === 'GET') return jsonResponse({ mode: 'fuji', evidenceSource: 'fuji-live', prerequisites: 'ready' });
-      if (url === '/loans?scenario=WEB3_BRIDGE' && method === 'GET') return jsonResponse({ loans: [sampleLoan({ status: 'Active' })] });
-      if (url === '/events?loanId=loan-web3-001' && method === 'GET') return jsonResponse({ events: [] });
-      return jsonResponse({});
-    }));
-
-    render(<App />);
-
-    expect((await screen.findAllByText(/Demo mode/i)).length).toBeGreaterThan(0);
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Route expects demo mode but API reports fuji mode/i);
-  });
-
-  it('announces API-backed readiness in a polite status region', async () => {
-    render(<App />);
-
-    expect(await screen.findByRole('status', { name: /Borrower data status/i })).toHaveTextContent(/Borrower data loaded from local Batch 2 API/i);
-  });
-
-  it('renders dashboard summary, portfolio table, risk panel, audit trail, loan detail affordance, and demo toggle', async () => {
-    render(<App />);
-
-    await userEvent.click(screen.getByRole('button', { name: /Institutional dashboard/i }));
-
-    expect(await screen.findByRole('heading', { name: 'Portfolio summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Portfolio loans' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Risk and exposure' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Audit trail' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Loan detail' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Institutional' })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByRole('button', { name: 'Crypto-native' })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
-
-    expect(screen.getByRole('columnheader', { name: 'Loan' })).toBeInTheDocument();
-    expect(screen.getAllByText('loan-web3-001').length).toBeGreaterThan(0);
-    await userEvent.click(screen.getByRole('button', { name: 'Inspect loan-web3-001' }));
-    expect(await screen.findByText(/Loan ID:/)).toBeInTheDocument();
-  });
-
-  it('does not invoke borrower mutation endpoints when rendering dashboard', async () => {
-    render(<App />);
-    await userEvent.click(screen.getByRole('button', { name: /Institutional dashboard/i }));
-    await screen.findByRole('heading', { name: 'Institutional dashboard' });
-
-    const fetchMock = vi.mocked(fetch);
-    const calls = fetchMock.mock.calls.map(([input, init]) => `${init?.method ?? 'GET'} ${String(input)}`);
-    expect(calls.some((call) => call.includes('POST /quotes') || call.includes('/payments/attest') || call.includes('/collateral/deposit') || call.includes('/margin-call') || call.includes('/liquidate'))).toBe(false);
-
-    const dashboardRegion = screen.getByLabelText('Institutional dashboard');
-    expect(within(dashboardRegion).getByRole('heading', { name: 'Institutional dashboard' })).toBeInTheDocument();
-  });
-
-  it('reveals risk and then offer terms as the path advances', async () => {
-    render(<App />);
-    await screen.findByRole('heading', { name: /Borrower request/i });
-
-    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
-    expect(screen.getByRole('heading', { name: /Wallet risk check/i })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /Borrower offer/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /^Loan activity$/i })).not.toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
-    expect(screen.getByRole('heading', { name: /Borrower offer/i })).toBeInTheDocument();
-    expect(screen.getAllByText('2750 AVAX').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('50.00%').length).toBeGreaterThan(0);
-    expect(screen.queryByRole('heading', { name: /^Loan activity$/i })).not.toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
-    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
-    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
-    expect(screen.getByRole('heading', { name: /^Loan activity$/i })).toBeInTheDocument();
-  });
-
-  it('keeps borrower UI honest, avoids raw JSON dumps, and shows USDC liquidation proceeds copy', async () => {
-    render(<App />);
-
-    await screen.findByRole('heading', { name: /Borrower request/i });
-    await userEvent.click(screen.getByRole('button', { name: /Auto-run path/i }));
-    expect(screen.getAllByText('DemoCollateralReleased').length).toBeGreaterThan(0);
-    expect(document.body.textContent).not.toMatch(/\{"|"loanId"|\[object Object\]/);
-  });
-
-  it('announces successful wallet connection and shows review/block risk states distinctly', async () => {
-    vi.stubGlobal('window', Object.assign(window, { ethereum: { request: vi.fn(async () => ['0xA11CE00000000000000000000000000000000001']) } }));
-    render(<App />);
-    await screen.findByRole('heading', { name: /Borrower request/i });
-    await userEvent.click(screen.getByRole('button', { name: /Next step/i }));
-
-    await userEvent.click(screen.getByRole('button', { name: /Connect injected wallet/i }));
-    expect(screen.getByText('0xA11C…0001')).toBeInTheDocument();
-
-    const riskRegion = within(screen.getByRole('heading', { name: /Wallet risk check/i }).closest('article')!);
-    expect(riskRegion.getByText(/Risk passed/i)).toBeInTheDocument();
-  });
-
-  it('runs scripted demo paths without changing the API contract path', async () => {
-    const fetchSpy = vi.mocked(fetch);
-    render(<App />);
-    await screen.findByRole('heading', { name: /Demo paths/i });
-
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Demo path' }), 'collateral-crash-liquidation');
-    await userEvent.click(screen.getByRole('button', { name: /Auto-run path/i }));
-
-    expect(screen.getByText('165000 USD')).toBeInTheDocument();
-    expect(screen.getByText('90.91%')).toBeInTheDocument();
-    expect(screen.getByText('DemoAutomaticLiquidation')).toBeInTheDocument();
-    expect(screen.getByText('154200 USDC')).toBeInTheDocument();
-
-    const calledUrls = fetchSpy.mock.calls.map(([input]) => String(input));
-    expect(calledUrls.some((url) => url.includes('/demo'))).toBe(false);
+    const simulator = screen.getByRole('region', { name: 'Simulador end-to-end' });
+    // Step 1 button should always be enabled (can create a new solicitud at any time)
+    expect(within(simulator).getByRole('button', { name: /Crear solicitud/i })).toBeInTheDocument();
+    // The stepper panel should show no active loan (since simulatedLoanId is null)
+    expect(within(simulator).getByText('Sin solicitud activa')).toBeInTheDocument();
+    // All lifecycle action buttons are rendered
+    expect(within(simulator).getByRole('button', { name: /Aprobar cr.dito/i })).toBeInTheDocument();
+    expect(within(simulator).getByRole('button', { name: /Depositar colateral/i })).toBeInTheDocument();
+    expect(within(simulator).getByRole('button', { name: /Pago final/i })).toBeInTheDocument();
+    expect(within(simulator).getByRole('button', { name: /Liquidar/i })).toBeInTheDocument();
   });
 });

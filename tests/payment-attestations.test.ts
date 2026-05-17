@@ -8,11 +8,11 @@ import { loadSeedFileSync } from '../src/store/seedLoader.js';
 
 const partialPaymentPayload = {
   installmentId: 'inst-demo-001',
-  amount: '12500',
-  currency: 'USD',
-  paymentRail: 'WIRE_SIMULATED',
+  amount: '50',
+  currency: 'MXN',
+  paymentRail: 'SPEI_SIMULATED',
   paidAt: '2026-06-15T00:00:00Z',
-  externalPaymentRef: 'wire-pay-demo-001'
+  externalPaymentRef: 'spei-pay-demo-001'
 };
 
 describe('payment attestation API', () => {
@@ -21,16 +21,16 @@ describe('payment attestation API', () => {
 
     const first = await app.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/payments/attest',
+      url: '/loans/loan-sample-arch/payments/attest',
       payload: partialPaymentPayload
     });
 
     expect(first.statusCode).toBe(200);
     expect(first.json()).toMatchObject({
-      loanId: 'loan-web3-001',
+      loanId: 'loan-sample-arch',
       installmentId: 'inst-demo-001',
-      amount: '12500',
-      currency: 'USD',
+      amount: '50',
+      currency: 'MXN',
       txHash: expect.stringMatching(/^0x[a-f0-9]{64}$/),
       blockNumber: null,
       evidence: {
@@ -39,28 +39,28 @@ describe('payment attestation API', () => {
         status: 'simulated',
         label: 'Simulated demo evidence'
       },
-      remainingPrincipal: '137500',
+      remainingPrincipal: '120',
       status: 'Active'
     });
     expect(first.json().attestationHash).toMatch(/^0x[a-f0-9]{64}$/);
 
-    const loanAfterFirst = await app.inject({ method: 'GET', url: '/loans/loan-web3-001' });
-    expect(loanAfterFirst.json().currentMetrics.outstandingPrincipal).toBe('137500');
+    const loanAfterFirst = await app.inject({ method: 'GET', url: '/loans/loan-sample-arch' });
+    expect(loanAfterFirst.json().currentMetrics.outstandingPrincipal).toBe('120');
     expect(loanAfterFirst.json().status).toBe('Active');
 
-    const eventsAfterFirst = await app.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' });
+    const eventsAfterFirst = await app.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' });
     const paymentEvents = eventsAfterFirst.json().events.filter((event: { eventType: string }) => event.eventType === 'InstallmentPaid');
     expect(paymentEvents).toHaveLength(1);
     expect(paymentEvents[0]).toMatchObject({
       eventType: 'InstallmentPaid',
-      loanId: 'loan-web3-001',
+      loanId: 'loan-sample-arch',
       payload: {
         installmentId: 'inst-demo-001',
-        amount: '12500',
-        currency: 'USD',
-        paymentRail: 'WIRE_SIMULATED',
+        amount: '50',
+        currency: 'MXN',
+        paymentRail: 'SPEI_SIMULATED',
         attestationHash: first.json().attestationHash,
-        remainingPrincipal: '137500',
+        remainingPrincipal: '120',
         status: 'Active',
         evidence: {
           source: 'demo-simulated',
@@ -72,15 +72,15 @@ describe('payment attestation API', () => {
 
     const retry = await app.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/payments/attest',
+      url: '/loans/loan-sample-arch/payments/attest',
       payload: partialPaymentPayload
     });
     expect(retry.statusCode).toBe(200);
     expect(retry.json()).toEqual(first.json());
 
-    const loanAfterRetry = await app.inject({ method: 'GET', url: '/loans/loan-web3-001' });
-    expect(loanAfterRetry.json().currentMetrics.outstandingPrincipal).toBe('137500');
-    const eventsAfterRetry = await app.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' });
+    const loanAfterRetry = await app.inject({ method: 'GET', url: '/loans/loan-sample-arch' });
+    expect(loanAfterRetry.json().currentMetrics.outstandingPrincipal).toBe('120');
+    const eventsAfterRetry = await app.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' });
     expect(eventsAfterRetry.json().events.filter((event: { eventType: string }) => event.eventType === 'InstallmentPaid')).toHaveLength(1);
   });
 
@@ -88,45 +88,53 @@ describe('payment attestation API', () => {
     const finalPaymentApp = buildFastifyApp();
     const finalPayment = await finalPaymentApp.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/payments/attest',
+      url: '/loans/loan-sample-arch/payments/attest',
       payload: {
         ...partialPaymentPayload,
         installmentId: 'inst-final-001',
-        amount: '150000',
-        externalPaymentRef: 'wire-pay-final-001'
+        amount: '170',
+        externalPaymentRef: 'spei-pay-final-001'
       }
     });
     expect(finalPayment.statusCode).toBe(200);
     expect(finalPayment.json()).toMatchObject({
-      loanId: 'loan-web3-001',
+      loanId: 'loan-sample-arch',
       remainingPrincipal: '0',
-      status: 'Repaid'
+      status: 'Repaid',
+      releaseEvidence: {
+        status: 'pending',
+        token: 'USDC',
+        amountBaseUnits: '15000000',
+        decimals: 6
+      }
     });
-    const repaidLoan = await finalPaymentApp.inject({ method: 'GET', url: '/loans/loan-web3-001' });
+    const finalEvents = await finalPaymentApp.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' });
+    expect(finalEvents.json().events.filter((event: { eventType: string }) => event.eventType === 'CollateralReleased')).toHaveLength(0);
+    const repaidLoan = await finalPaymentApp.inject({ method: 'GET', url: '/loans/loan-sample-arch' });
     expect(repaidLoan.json()).toMatchObject({ status: 'Repaid', currentMetrics: { outstandingPrincipal: '0' } });
 
-    const marginCallApp = buildFastifyApp({ store: DemoStore.fromSeed(seedWithLoanStatus('loan-web3-001', 'MarginCall')) });
+    const marginCallApp = buildFastifyApp({ store: DemoStore.fromSeed(seedWithLoanStatus('loan-sample-arch', 'MarginCall')) });
     const marginCallPayment = await marginCallApp.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/payments/attest',
+      url: '/loans/loan-sample-arch/payments/attest',
       payload: {
         ...partialPaymentPayload,
         installmentId: 'inst-margin-001',
-        amount: '5000',
-        externalPaymentRef: 'wire-pay-margin-001'
+        amount: '5',
+        externalPaymentRef: 'spei-pay-margin-001'
       }
     });
     expect(marginCallPayment.statusCode).toBe(200);
-    expect(marginCallPayment.json()).toMatchObject({ remainingPrincipal: '145000', status: 'MarginCall' });
-    const marginCallLoan = await marginCallApp.inject({ method: 'GET', url: '/loans/loan-web3-001' });
-    expect(marginCallLoan.json()).toMatchObject({ status: 'MarginCall', currentMetrics: { outstandingPrincipal: '145000' } });
+    expect(marginCallPayment.json()).toMatchObject({ remainingPrincipal: '165', status: 'MarginCall' });
+    const marginCallLoan = await marginCallApp.inject({ method: 'GET', url: '/loans/loan-sample-arch' });
+    expect(marginCallLoan.json()).toMatchObject({ status: 'MarginCall', currentMetrics: { outstandingPrincipal: '165' } });
   });
 
   it('returns WEB3_UNAVAILABLE for fuji payment attestation without fabricated live hashes', async () => {
     const app = buildFastifyApp({ runtime: buildFujiRuntimeConfig({ prerequisites: 'missing' }) });
     const unavailable = await app.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/payments/attest',
+      url: '/loans/loan-sample-arch/payments/attest',
       payload: partialPaymentPayload
     });
 
@@ -164,13 +172,13 @@ describe('payment attestation API', () => {
     const app = buildFastifyApp({ web3: unavailableButSuccessfulWeb3, runtime: buildFujiRuntimeConfig({ prerequisites: 'missing' }) });
     const response = await app.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/payments/attest',
+      url: '/loans/loan-sample-arch/payments/attest',
       payload: { ...partialPaymentPayload, installmentId: 'inst-unavailable-001' }
     });
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
-      loanId: 'loan-web3-001',
+      loanId: 'loan-sample-arch',
       status: 'Active',
       evidence: {
         mode: 'fuji',
@@ -185,42 +193,42 @@ describe('payment attestation API', () => {
     const app = buildFastifyApp();
     const first = await app.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/payments/attest',
+      url: '/loans/loan-sample-arch/payments/attest',
       payload: partialPaymentPayload
     });
     const changedEvidence = await app.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/payments/attest',
+      url: '/loans/loan-sample-arch/payments/attest',
       payload: { ...partialPaymentPayload, installmentId: 'inst-demo-002', externalPaymentRef: 'wire-pay-demo-002' }
     });
     expect(changedEvidence.statusCode).toBe(200);
     expect(changedEvidence.json().attestationHash).not.toBe(first.json().attestationHash);
 
-    const currencyMismatchEvents = await app.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' });
+    const currencyMismatchEvents = await app.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' });
     const badCurrency = await app.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/payments/attest',
-      payload: { ...partialPaymentPayload, installmentId: 'inst-bad-currency', currency: 'MXN' }
+      url: '/loans/loan-sample-arch/payments/attest',
+      payload: { ...partialPaymentPayload, installmentId: 'inst-bad-currency', currency: 'USDC' }
     });
     expect(badCurrency.statusCode).toBe(400);
     expect(badCurrency.json().error.code).toBe('INVALID_REQUEST');
-    expect((await app.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' })).json().events).toHaveLength(
+    expect((await app.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' })).json().events).toHaveLength(
       currencyMismatchEvents.json().events.length
     );
 
-    const terminalApp = buildFastifyApp({ store: DemoStore.fromSeed(seedWithLoanStatus('loan-web3-001', 'Liquidated')) });
-    const terminalBefore = await terminalApp.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' });
+    const terminalApp = buildFastifyApp({ store: DemoStore.fromSeed(seedWithLoanStatus('loan-sample-arch', 'Liquidated')) });
+    const terminalBefore = await terminalApp.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' });
     const terminal = await terminalApp.inject({
       method: 'POST',
-      url: '/loans/loan-web3-001/payments/attest',
+      url: '/loans/loan-sample-arch/payments/attest',
       payload: partialPaymentPayload
     });
     expect(terminal.statusCode).toBe(409);
-    expect((await terminalApp.inject({ method: 'GET', url: '/loans/loan-web3-001' })).json()).toMatchObject({
+    expect((await terminalApp.inject({ method: 'GET', url: '/loans/loan-sample-arch' })).json()).toMatchObject({
       status: 'Liquidated',
-      currentMetrics: { outstandingPrincipal: '150000' }
+      currentMetrics: { outstandingPrincipal: '170' }
     });
-    expect((await terminalApp.inject({ method: 'GET', url: '/events?loanId=loan-web3-001' })).json().events).toHaveLength(
+    expect((await terminalApp.inject({ method: 'GET', url: '/events?loanId=loan-sample-arch' })).json().events).toHaveLength(
       terminalBefore.json().events.length
     );
   });

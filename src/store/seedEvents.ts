@@ -95,9 +95,10 @@ function collateralDeposited(loan: Loan): EventDraft {
       loanId: loan.loanId,
       vaultAddress: loan.collateral.vaultAddress ?? null,
       token: loan.collateral.token,
-      amount: loan.collateral.amount,
+      amount: loan.collateral.amountBaseUnits ?? loan.collateral.amount,
       txHash: loan.collateral.depositTxHash ?? null,
-      status: 'Approved'
+      status: 'Approved',
+      evidence: collateralEvidence(loan)
     }
   };
 }
@@ -111,7 +112,8 @@ function loanActivated(loan: Loan): EventDraft {
       loanId: loan.loanId,
       vaultAddress: loan.collateral.vaultAddress ?? null,
       receiptTokenId: loan.receipt?.receiptTokenId ?? null,
-      status: 'Active'
+      status: 'Active',
+      evidence: loan.collateral.depositTxHash ? collateralEvidence(loan, 'Activation references verified deposit evidence') : undefined
     }
   };
 }
@@ -125,6 +127,28 @@ function receiptIssued(loan: Loan): EventDraft {
       receiptTokenId: loan.receipt?.receiptTokenId,
       owner: loan.receipt?.ownerWallet,
       soulbound: true
+    }
+  };
+}
+
+function collateralEvidence(loan: Loan, label = 'Historical Fuji collateral deposit evidence'): Record<string, unknown> | undefined {
+  if (!loan.collateral.depositTxHash || !loan.collateral.vaultAddress || loan.collateral.chainId !== 43113 || loan.collateral.token !== 'USDC') {
+    return undefined;
+  }
+  return {
+    mode: 'fuji',
+    source: 'fuji-live',
+    status: 'confirmed',
+    label,
+    txHash: loan.collateral.depositTxHash,
+    blockNumber: null,
+    explorerUrl: `https://testnet.snowtrace.io/tx/${loan.collateral.depositTxHash}`,
+    contracts: [{ name: 'CollateralVault', address: loan.collateral.vaultAddress }],
+    token: {
+      symbol: loan.collateral.token,
+      address: loan.collateral.tokenAddress ?? null,
+      decimals: loan.collateral.tokenDecimals ?? 6,
+      amountBaseUnits: loan.collateral.amountBaseUnits ?? loan.collateral.amount
     }
   };
 }

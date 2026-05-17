@@ -9,9 +9,13 @@ describe('seeded loan read API', () => {
     expect(listResponse.statusCode).toBe(200);
     const listBody = listResponse.json();
     expect(listBody.loans.map((loan: { loanId: string }) => loan.loanId)).toEqual([
-      'loan-web3-001',
+      'loan-sample-arch',
       'loan-sme-001'
     ]);
+    for (const loan of listBody.loans as Array<Record<string, unknown>>) {
+      expect(Object.prototype.hasOwnProperty.call(loan, 'onChainLoanId')).toBe(true);
+      expect(loan.onChainLoanId).toBeNull();
+    }
 
     const filteredResponse = await app.inject({
       method: 'GET',
@@ -19,16 +23,24 @@ describe('seeded loan read API', () => {
     });
     expect(filteredResponse.statusCode).toBe(200);
     expect(filteredResponse.json().loans).toMatchObject([
-      { loanId: 'loan-web3-001', scenario: 'WEB3_BRIDGE', status: 'Active' }
+      { loanId: 'loan-sample-arch', scenario: 'WEB3_BRIDGE', status: 'Active' }
     ]);
 
-    const detailResponse = await app.inject({ method: 'GET', url: '/loans/loan-web3-001' });
+    const detailResponse = await app.inject({ method: 'GET', url: '/loans/loan-sample-arch' });
     expect(detailResponse.statusCode).toBe(200);
-    expect(detailResponse.json()).toMatchObject({
-      loanId: 'loan-web3-001',
+    const detailBody = detailResponse.json();
+    expect(Object.prototype.hasOwnProperty.call(detailBody, 'onChainLoanId')).toBe(true);
+    expect(detailBody.onChainLoanId).toBeNull();
+    expect(detailBody).toMatchObject({
+      loanId: 'loan-sample-arch',
       scenario: 'WEB3_BRIDGE',
       status: 'Active',
-      borrower: { walletAddress: '0xA11CE00000000000000000000000000000000001' },
+      borrower: { walletAddress: '0x000000000000000000000000000000000000dE01' },
+      originator: { walletAddress: '0x1139dd3EF90bbA276Edf3fA7ec4efd0781E4b5bC' },
+      fundingPartner: { walletAddress: '0x4b85d24F1995D1FBD93D454C4883B13f21ca34D5' },
+      principal: { amount: '170', currency: 'MXN' },
+      collateral: { token: 'USDC', amount: '15', amountBaseUnits: '15000000', tokenDecimals: 6, vaultAddress: '0x45E96820551466861d20f081ab390CAA9368F68B' },
+      currentMetrics: { outstandingPrincipal: '170', outstandingCurrency: 'MXN' },
       terms: { liquidationCurrency: 'USDC' }
     });
 
@@ -38,11 +50,11 @@ describe('seeded loan read API', () => {
       event.loanId,
       event.eventType
     ])).toEqual([
-      ['loan-web3-001', 'LoanCreated'],
-      ['loan-web3-001', 'LoanApproved'],
-      ['loan-web3-001', 'CollateralDeposited'],
-      ['loan-web3-001', 'LoanActivated'],
-      ['loan-web3-001', 'ReceiptIssued'],
+      ['loan-sample-arch', 'LoanCreated'],
+      ['loan-sample-arch', 'LoanApproved'],
+      ['loan-sample-arch', 'CollateralDeposited'],
+      ['loan-sample-arch', 'LoanActivated'],
+      ['loan-sample-arch', 'ReceiptIssued'],
       ['loan-sme-001', 'LoanCreated'],
       ['loan-sme-001', 'LoanApproved']
     ]);

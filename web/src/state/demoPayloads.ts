@@ -4,19 +4,19 @@ const now = '2026-06-15T00:00:00Z';
 
 export function sampleLoan(overrides: Partial<Loan> & { loanId?: string; scenario?: LoanScenario; status?: LoanStatus } = {}): Loan {
   const loan: Loan = {
-    loanId: overrides.loanId ?? 'loan-web3-001',
+    loanId: overrides.loanId ?? 'loan-sample-arch',
     scenario: overrides.scenario ?? 'WEB3_BRIDGE',
     status: overrides.status ?? 'Active',
-    borrower: { borrowerId: 'borrower-nova-labs-demo', displayName: 'Nova Labs DAO Services', borrowerType: 'WEB3_STARTUP', walletAddress: '0xA11CE00000000000000000000000000000000001' },
-    originator: { originatorId: 'originator-ark-capital-demo', displayName: 'Ark Capital Demo Fund', originatorType: 'VC_FUND' },
-    fundingPartner: { fundingPartnerId: 'funding-bridge-vault-demo', displayName: 'Bóveda Bridge Credit Pool' },
-    principal: { amount: '150000', currency: 'USD', fiatRail: 'WIRE_SIMULATED', disbursementRef: 'wire-demo-2026-001' },
-    collateral: { token: 'AVAX', tokenAddress: '0x0000000000000000000000000000000000000000', chainId: 43113, amount: '2750', referencePriceUsd: '109.09', valueUsd: '300000', vaultAddress: '0xB0VEDA0000000000000000000000000000000001', depositTxHash: '0x1111111111111111111111111111111111111111111111111111111111111111' },
+    borrower: { borrowerId: 'borrower-nova-labs-demo', displayName: 'Nova Labs DAO Services', borrowerType: 'WEB3_STARTUP', walletAddress: '0x6f981Bf8d4fA751db294Bb62dDEB3d904514F2CF' },
+    originator: { originatorId: 'originator-arkangeles-demo', displayName: 'Arkangeles IFC Operator', originatorType: 'VC_FUND', walletAddress: '0x1139dd3EF90bbA276Edf3fA7ec4efd0781E4b5bC' },
+    fundingPartner: { fundingPartnerId: 'funding-bridge-vault-demo', displayName: 'Bóveda Demo Credit Pool', walletAddress: '0x4b85d24F1995D1FBD93D454C4883B13f21ca34D5' },
+    principal: { amount: '170', currency: 'MXN', fiatRail: 'SPEI_SIMULATED', disbursementRef: 'spei-demo-2026-001' },
+    collateral: { token: 'USDC', tokenAddress: '0x5425890298aed601595a70AB815c96711a31Bc65', chainId: 43113, amount: '15', amountBaseUnits: '15000000', tokenDecimals: 6, referencePriceUsd: '1', valueUsd: '15', vaultAddress: '0x45E96820551466861d20f081ab390CAA9368F68B', depositTxHash: '0xbf410bff14228631383c7547780178c0d83619dc6943e9598f64f5b5352bc5d7' },
     terms: { initialLtvBps: 5000, marginCallLtvBps: 7000, liquidationLtvBps: 8000, aprBps: 1450, tenorDays: 90, repaymentFrequency: 'MONTHLY', liquidationCurrency: 'USDC' },
     riskAssessment: sampleRiskAssessment(),
-    receipt: { receiptTokenId: '1', soulbound: true, ownerWallet: '0xA11CE00000000000000000000000000000000001' },
-    currentMetrics: { currentLtvBps: 5000, outstandingPrincipal: '150000', outstandingCurrency: 'USD', nextPaymentDueAt: now },
-    liquidationPreview: { proceedsAmount: '154200', proceedsCurrency: 'USDC', distribution: { fundingPartnerAmount: '150000', originatorFeeAmount: '2100', borrowerRemainderAmount: '2100' } }
+    receipt: { receiptTokenId: '1', soulbound: true, ownerWallet: '0x6f981Bf8d4fA751db294Bb62dDEB3d904514F2CF' },
+    currentMetrics: { currentLtvBps: 5000, outstandingPrincipal: '170', outstandingCurrency: 'MXN', nextPaymentDueAt: now },
+    liquidationPreview: { proceedsAmount: '15000000', proceedsCurrency: 'USDC', distribution: { fundingPartnerAmount: '10000000', originatorFeeAmount: '500000', borrowerRemainderAmount: '4500000' } }
   };
   return { ...loan, ...overrides };
 }
@@ -24,8 +24,8 @@ export function sampleLoan(overrides: Partial<Loan> & { loanId?: string; scenari
 export function sampleQuote(overrides: Partial<QuoteResponse> = {}): QuoteResponse {
   return {
     scenario: 'WEB3_BRIDGE',
-    suggestedPrincipal: { amount: '150000', currency: 'USD' },
-    requiredCollateralValueUsd: '300000',
+    suggestedPrincipal: { amount: '170', currency: 'MXN' },
+    requiredCollateralValueUsd: '15',
     terms: {
       initialLtvBps: 5000,
       marginCallLtvBps: 7000,
@@ -44,7 +44,7 @@ export function sampleRiskAssessment(overrides: Partial<RiskAssessment> = {}): R
 }
 
 export function buildDemoDepositPayload(loan: Loan): CollateralDepositRequest {
-  return { token: loan.collateral.token, amount: loan.collateral.amount, txHash: loan.collateral.depositTxHash ?? '0x3333333333333333333333333333333333333333333333333333333333333333', vaultAddress: loan.collateral.vaultAddress ?? '0xB0VEDA0000000000000000000000000000000003' };
+  return { token: loan.collateral.token, amount: loan.collateral.amountBaseUnits ?? loan.collateral.amount, txHash: loan.collateral.depositTxHash ?? '', vaultAddress: loan.collateral.vaultAddress ?? '' };
 }
 
 export function buildDemoTopUpPayload(loan: Loan): CollateralTopUpRequest {
@@ -52,8 +52,7 @@ export function buildDemoTopUpPayload(loan: Loan): CollateralTopUpRequest {
 }
 
 export function buildDemoPaymentPayload(loan: Loan): PaymentAttestationRequest {
-  const amount = loan.currentMetrics.outstandingPrincipal === loan.principal.amount ? '12500' : loan.currentMetrics.outstandingPrincipal;
-  return { installmentId: 'inst-demo-001', amount, currency: loan.currentMetrics.outstandingCurrency, paymentRail: loan.principal.fiatRail, paidAt: now, externalPaymentRef: 'demo-payment-ref' };
+  return { installmentId: 'inst-demo-001', amount: loan.currentMetrics.outstandingPrincipal, currency: loan.currentMetrics.outstandingCurrency, paymentRail: loan.principal.fiatRail, paidAt: now, externalPaymentRef: 'demo-payment-ref' };
 }
 
 export function buildDemoMarginCallPayload(loan: Loan): MarginCallRequest {

@@ -6,6 +6,8 @@
 node_modules/
 dist/
 coverage/
+cache/
+out/
 .local-run/
 .pi-lens/
 **/.pi-lens/
@@ -24,3 +26,5 @@ id_ed25519
 .netrc
 secrets.*
 credentials.*
+.vercel
+.env*.local

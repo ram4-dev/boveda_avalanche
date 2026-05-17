@@ -38,7 +38,7 @@ const summary: DashboardSummary = {
   loansInMarginCall: 1,
   paymentsAttested: 3,
   liquidationsExecuted: 0,
-  exposureByAsset: [{ asset: 'USDC', valueUsd: '65000' }, { asset: 'AVAX', valueUsd: '300000' }],
+  exposureByAsset: [{ asset: 'USDC', valueUsd: '15065000' }],
   recentEvents: [event]
 };
 
@@ -72,12 +72,11 @@ describe('dashboard selectors', () => {
   });
 
   it('prioritizes API exposure, safely derives loan exposure, and labels fixture fallback', () => {
-    expect(selectExposureByAsset(summary, [web3Loan])[0]).toMatchObject({ asset: 'AVAX', valueUsd: '300000', source: 'api' });
+    expect(selectExposureByAsset(summary, [web3Loan])[0]).toMatchObject({ asset: 'USDC', valueUsd: '15065000', source: 'api' });
 
     const derived = selectExposureByAsset(null, [web3Loan, smeLoan]);
     expect(derived).toEqual([
-      { asset: 'AVAX', valueUsd: '300000', source: 'derived', label: 'Derived from API loans' },
-      { asset: 'USDC', valueUsd: '65000', source: 'derived', label: 'Derived from API loans' }
+      { asset: 'USDC', valueUsd: '15065000', source: 'derived', label: 'Derived from API loans' }
     ]);
 
     expect(selectExposureByAsset(null, [])).toEqual([{ asset: 'No exposure data', valueUsd: '0', source: 'demo-fixture', label: 'Demo data' }]);

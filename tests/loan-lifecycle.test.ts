@@ -152,6 +152,31 @@ describe('loan creation and lifecycle through activation', () => {
     expect(events.json().events.map((event: { eventType: string }) => event.eventType)).toEqual(['LoanCreated']);
   });
 
+  it('approves a freshly created loan from a stateless serverless invocation when a loan snapshot is provided', async () => {
+    const { app, riskAssessmentId } = await acceptedRiskAssessmentId();
+    const created = await app.inject({ method: 'POST', url: '/loans', payload: createLoanPayload(riskAssessmentId) });
+    expect(created.statusCode).toBe(201);
+
+    const createdLoan = created.json() as Loan;
+    const statelessApp = buildFastifyApp();
+    const approved = await statelessApp.inject({
+      method: 'POST',
+      url: `/loans/${createdLoan.loanId}/approve`,
+      payload: {
+        approvedBy: createdLoan.originator.originatorId,
+        fiatDisbursementRef: 'serverless-spei-001',
+        loanSnapshot: createdLoan
+      }
+    });
+
+    expect(approved.statusCode).toBe(200);
+    expect(approved.json()).toMatchObject({
+      loanId: createdLoan.loanId,
+      status: 'Approved',
+      principal: { disbursementRef: 'serverless-spei-001' }
+    });
+  });
+
   it('approves, records collateral deposit, and activates with a soulbound mock receipt', async () => {
     const { app, riskAssessmentId } = await acceptedRiskAssessmentId();
     const created = await app.inject({ method: 'POST', url: '/loans', payload: createLoanPayload(riskAssessmentId) });
@@ -215,7 +240,7 @@ describe('loan creation and lifecycle through activation', () => {
       receipt: {
         receiptTokenId: '9001',
         soulbound: true,
-        ownerWallet: '0xC0FFEE0000000000000000000000000000000003'
+        ownerWallet: '0xc0ffee0000000000000000000000000000000003'
       }
     });
 
@@ -345,24 +370,27 @@ describe('loan creation and lifecycle through activation', () => {
   });
 
   it('returns WEB3_UNAVAILABLE for activation in fuji mode without fabricating live evidence hashes', async () => {
-    const { app, riskAssessmentId } = await acceptedRiskAssessmentId(buildFastifyApp({ runtime: buildFujiRuntimeConfig({ prerequisites: 'missing' }) }));
-    const created = await app.inject({ method: 'POST', url: '/loans', payload: createLoanPayload(riskAssessmentId) });
-    const loanId = created.json().loanId;
-
-    await app.inject({
-      method: 'POST',
-      url: `/loans/${loanId}/approve`,
-      payload: { approvedBy: 'originator-ark-capital-demo' }
-    });
-    await app.inject({
-      method: 'POST',
-      url: `/loans/${loanId}/collateral/deposit`,
-      payload: {
-        token: 'AVAX',
-        amount: '1000',
-        txHash: '0x7777777777777777777777777777777777777777777777777777777777777777',
+    const seed = loadSeedFileSync();
+    const source = seed.loans[0];
+    const loanId = 'loan-fuji-unavailable-activation';
+    const approvedDeposited: Loan = {
+      ...structuredClone(source),
+      loanId,
+      status: 'Approved',
+      receipt: null,
+      collateral: {
+        ...source.collateral,
+        token: 'USDC',
+        amount: '15000000',
+        amountBaseUnits: '15000000',
+        tokenDecimals: 6,
+        depositTxHash: '0x7777777777777777777777777777777777777777777777777777777777777777',
         vaultAddress: '0xB0VEDA0000000000000000000000000000000007'
       }
+    };
+    const app = buildFastifyApp({
+      store: DemoStore.fromSeed({ ...seed, loans: [...seed.loans, approvedDeposited] }),
+      runtime: buildFujiRuntimeConfig({ prerequisites: 'missing' })
     });
 
     const activation = await app.inject({ method: 'POST', url: `/loans/${loanId}/activate`, payload: {} });

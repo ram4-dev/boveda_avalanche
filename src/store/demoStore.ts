@@ -56,6 +56,14 @@ export class DemoStore {
     return clone(loan);
   }
 
+  deleteLoan(loanId: string): boolean {
+    const index = this.loans.findIndex((candidate) => candidate.loanId === loanId);
+    if (index === -1) return false;
+    this.loans.splice(index, 1);
+    this.events = this.events.filter((event) => event.loanId !== loanId);
+    return true;
+  }
+
   listEvents(filter: EventFilter = {}): OnChainEvent[] {
     return clone(
       this.events.filter((event) => !filter.loanId || event.loanId === filter.loanId)
@@ -84,7 +92,7 @@ export class DemoStore {
   }
 
   reset(seed: SeedFile): void {
-    this.loans = clone(seed.loans);
+    this.loans = clone(seed.loans).map((loan) => ({ ...loan, onChainLoanId: loan.onChainLoanId ?? null }));
     this.events = buildSeedEvents(seed);
     this.riskAssessments = new Map(seed.loans.map((loan) => [loan.riskAssessment.riskAssessmentId, clone(loan.riskAssessment)]));
     this.paymentAttestations.clear();

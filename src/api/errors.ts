@@ -7,7 +7,10 @@ export type ApiErrorCode =
   | 'RISK_ASSESSMENT_NOT_FOUND'
   | 'LOAN_NOT_FOUND'
   | 'WEB3_ACTION_FAILED'
-  | 'WEB3_UNAVAILABLE';
+  | 'WEB3_UNAVAILABLE'
+  | 'WEB3_LIQUIDATION_NOT_ALLOWED'
+  | 'WEB3_GAS_INSUFFICIENT'
+  | 'WEB3_PREREQUISITES_MISSING';
 
 export function sendApiError(
   reply: FastifyReply,

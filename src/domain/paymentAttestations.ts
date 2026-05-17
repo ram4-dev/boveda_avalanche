@@ -1,5 +1,6 @@
 import { canonicalJson } from './canonicalJson.js';
 import type { EvidenceMetadata } from './evidence.js';
+import type { CollateralReleaseEvidence, OnChainEvidenceStep } from '../adapters/web3.js';
 import { sha256Hex } from './hashing.js';
 import { normalizeDecimalString } from './money.js';
 import type { PaymentRail } from './types.js';
@@ -34,6 +35,8 @@ export type PaymentAttestation = {
   txHash?: `0x${string}`;
   blockNumber?: number | null;
   evidence?: EvidenceMetadata;
+  releaseEvidence?: CollateralReleaseEvidence;
+  onChainEvidence?: OnChainEvidenceStep[];
 };
 
 export function buildCanonicalPaymentPayload(loanId: string, request: PaymentAttestationRequest): CanonicalPaymentPayload {

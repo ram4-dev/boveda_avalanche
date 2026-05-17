@@ -80,7 +80,7 @@ const demoPaths: Record<DemoPathId, { label: string; summary: string; steps: Dem
       { label: 'Risk checked', description: 'Wallet risk score and AML status are assessed.', status: 'Requested', eventType: 'DemoRiskChecked' },
       { label: 'Offer returned', description: 'Bóveda returns terms, LTV, rate, and collateral requirements.', status: 'Requested', eventType: 'DemoOfferReturned' },
       { label: 'Offer accepted', description: 'Borrower accepts the terms.', status: 'Approved', eventType: 'DemoOfferAccepted' },
-      { label: 'Collateral sent', description: 'Borrower sends AVAX collateral to the vault.', status: 'Approved', eventType: 'DemoCollateralSent' },
+      { label: 'Collateral sent', description: 'Borrower sends USDC collateral to the vault.', status: 'Approved', eventType: 'DemoCollateralSent' },
       { label: 'Fiat deposited', description: 'Originator disburses fiat off-chain and the loan becomes active.', status: 'Active', eventType: 'DemoFiatDeposited' },
       { label: 'All payments made', description: 'All installments are attested and outstanding balance reaches zero.', status: 'Repaid', paymentMode: 'complete-all', collateralRelease: 'releasable', eventType: 'DemoAllPaymentsCompleted' },
       { label: 'Collateral released', description: 'Collateral is released back to the borrower after repayment.', status: 'Repaid', paymentMode: 'complete-all', collateralRelease: 'released', eventType: 'DemoCollateralReleased' }
@@ -88,7 +88,7 @@ const demoPaths: Record<DemoPathId, { label: string; summary: string; steps: Dem
   },
   'collateral-crash-liquidation': {
     label: 'Collateral crash liquidation',
-    summary: 'Healthy loan becomes undercollateralized after AVAX price drops and is liquidated automatically.',
+    summary: 'Healthy loan becomes liquidatable after a configured collateral-risk trigger and is liquidated automatically.',
     steps: [
       { label: 'Request loan', description: 'Borrower asks for a bridge loan.', status: 'Requested', eventType: 'DemoLoanRequested' },
       { label: 'Risk checked', description: 'Wallet risk score and AML status are assessed.', status: 'Requested', eventType: 'DemoRiskChecked' },
@@ -96,7 +96,7 @@ const demoPaths: Record<DemoPathId, { label: string; summary: string; steps: Dem
       { label: 'Offer accepted', description: 'Borrower accepts approved terms.', status: 'Approved', eventType: 'DemoOfferAccepted' },
       { label: 'Collateral sent', description: 'Collateral is locked in the vault.', status: 'Approved', eventType: 'DemoCollateralSent' },
       { label: 'Fiat deposited', description: 'Loan is activated after fiat disbursement.', status: 'Active', eventType: 'DemoFiatDeposited' },
-      { label: 'Token price drops', description: 'AVAX price drops and LTV crosses the margin threshold.', status: 'MarginCall', collateralPriceUsd: '70', eventType: 'DemoCollateralPriceDropped' },
+      { label: 'Collateral risk changes', description: 'Configured collateral value moves and LTV crosses the margin threshold.', status: 'MarginCall', collateralPriceUsd: '70', eventType: 'DemoCollateralPriceDropped' },
       { label: 'Automatic liquidation', description: 'Liquidation executes automatically after the breach.', status: 'Liquidated', collateralPriceUsd: '60', liquidationTriggered: true, eventType: 'DemoAutomaticLiquidation' }
     ]
   },
@@ -118,11 +118,11 @@ const demoPaths: Record<DemoPathId, { label: string; summary: string; steps: Dem
 
 export function createInitialDemoControls(): DemoControlsState {
   return {
-    enabled: true,
+    enabled: false,
     preset: 'canonical',
     activePathId: 'happy-repayment',
     pathStepIndex: 0,
-    pathMode: true,
+    pathMode: false,
     collateralPriceUsd: '',
     riskScore: null,
     amlStatus: null,

@@ -6,11 +6,11 @@ import { loadFujiContractsConfig } from '../src/config/fujiContracts.js';
 import { loadRuntimeConfig, parseRuntimeMode } from '../src/config/runtime.js';
 
 const expectedAddresses = {
-  LoanRegistry: '0xb6832e4c43e97d5ad11e99abcb23d9a734a4be14',
-  CollateralVault: '0xe550a10f585e5595ae187f08a701bdef890de057',
-  LoanReceiptNFT: '0xf88b6e8c107a0a5da6f398734783541cbe12a38c',
-  PaymentAttestation: '0xa222a02e828d5480be971b80d4157f2abe1fabda',
-  LiquidationEngine: '0x212f6565319caa343c8c39e9b11a447febf2055a'
+  LoanRegistry: '0x75ebfec02dae1e0cd631c2d4961c5ee1849d4fd3',
+  CollateralVault: '0x45e96820551466861d20f081ab390caa9368f68b',
+  LoanReceiptNFT: '0x03abd300629808fa9763ddb820469b2fc065e64f',
+  PaymentAttestation: '0x3ddc450c16231807d63f560c01455808ce130b0e',
+  LiquidationEngine: '0xe29eaebcc8d90b18bd13afedbf5cef274f3a58c4'
 } as const;
 
 describe('Fuji contract runtime config', () => {
@@ -21,11 +21,27 @@ describe('Fuji contract runtime config', () => {
   });
 
   it('loads Fuji runtime config from public contract artifacts when explicitly requested', () => {
-    const runtime = loadRuntimeConfig({ mode: 'fuji' });
+    const runtime = loadRuntimeConfig({ mode: 'fuji', env: {} });
 
     expect(runtime.mode).toBe('fuji');
     expect(runtime.contracts?.contracts.LoanRegistry.address).toBe(expectedAddresses.LoanRegistry);
     expect(runtime.evidenceSource).toBe('fuji-unavailable');
+  });
+
+  it('marks Fuji runtime ready only when operator signing prerequisites are provided', () => {
+    const runtime = loadRuntimeConfig({
+      mode: 'fuji',
+      env: {
+        BOVEDA_FUJI_ATTESTOR_PRIVATE_KEY: 'present',
+        BOVEDA_FUJI_BORROWER_PRIVATE_KEY: 'present',
+        BOVEDA_FUJI_ORIGINATOR_PRIVATE_KEY: 'present',
+        BOVEDA_FUJI_FUNDING_PARTNER_ADDRESS: '0x1111111111111111111111111111111111111111'
+      }
+    });
+
+    expect(runtime.prerequisites).toBe('ready');
+    expect(runtime.evidenceSource).toBe('fuji-live');
+    expect(runtime.validationErrors).toEqual([]);
   });
 
   it('loads the broadcast-authoritative Fuji addresses and ABI artifacts', () => {

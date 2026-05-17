@@ -32,8 +32,8 @@ contract LiquidationEngineTest {
     function setUp() public {
         loanRegistry = new LoanRegistry();
         collateralVault = new CollateralVault(address(loanRegistry));
-        collateralToken = new MockERC20("Collateral", "COL", 18, 0);
         usdc = new MockERC20("USDC", "USDC", 18, 0);
+        collateralToken = usdc;
         liquidationEngine = new LiquidationEngine(
             address(loanRegistry),
             address(collateralVault),
@@ -45,7 +45,6 @@ contract LiquidationEngineTest {
         priceOracle.setFeed(address(collateralToken), address(collateralFeed));
 
         collateralVault.setLiquidationEngine(address(liquidationEngine));
-        usdc.mint(address(liquidationEngine), 200e18);
     }
 
     function testRejectsNonCriticalLiquidationForActiveLoan() public {
@@ -119,16 +118,16 @@ contract LiquidationEngineTest {
         assert(loanRegistry.getLoanStatus(loanId) == uint8(ILoanRegistry.LoanStatus.Liquidated));
     }
 
-    function testLiquidatesDefaultedLoanWhenCriticalCoverage() public {
+    function testLiquidatesDefaultedLoanWithoutCriticalCoverage() public {
         uint256 loanId = _createActiveLoanWithCollateral(100e18, 50e18);
         loanRegistry.setLoanStatus(loanId, uint8(ILoanRegistry.LoanStatus.Defaulted));
 
-        (bool allowed, string memory reason) = liquidationEngine.canLiquidate(loanId, 0.5e18, 18);
+        (bool allowed, string memory reason) = liquidationEngine.canLiquidate(loanId, 1e18, 18);
         assert(allowed == true);
-        assertEq(reason, "LiquidationEngine: critical coverage threshold reached");
+        assertEq(reason, "LiquidationEngine: loan defaulted");
 
         vm.prank(originator);
-        liquidationEngine.liquidateLoan(loanId, 0.5e18, 18, fundingPartner);
+        liquidationEngine.liquidateLoan(loanId, 1e18, 18, fundingPartner);
 
         assert(loanRegistry.getLoanStatus(loanId) == uint8(ILoanRegistry.LoanStatus.Liquidated));
     }
@@ -183,9 +182,94 @@ contract LiquidationEngineTest {
         assert(loanRegistry.getLoanStatus(loanId) == uint8(ILoanRegistry.LoanStatus.Liquidated));
         CollateralVault.Vault memory vault = collateralVault.getVault(loanId);
         assert(vault.liquidated == true);
+        assert(vault.amount == 0);
+        assert(usdc.balanceOf(address(liquidationEngine)) == 0);
         assert(usdc.balanceOf(fundingPartner) == 50e18);
-        assert(usdc.balanceOf(originator) == 0);
-        assert(usdc.balanceOf(borrower) == 0);
+        assert(usdc.balanceOf(originator) == 5e18);
+        assert(usdc.balanceOf(borrower) == 45e18);
+    }
+
+    function testLiquidatesUsdcCollateralWithoutPrefundedEngineBalance() public {
+        LoanRegistry registry = new LoanRegistry();
+        CollateralVault vault = new CollateralVault(address(registry));
+        MockERC20 usdc6 = new MockERC20("USDC", "USDC", 6, 0);
+        LiquidationEngine engine = new LiquidationEngine(
+            address(registry),
+            address(vault),
+            address(usdc6),
+            1000
+        );
+        vault.setLiquidationEngine(address(engine));
+
+        uint256 loanAmount = 10_000_000;
+        uint256 collateralAmount = 15_000_000;
+        uint256 loanId = registry.createLoan(
+            borrower,
+            originator,
+            address(usdc6),
+            0,
+            loanAmount,
+            5000,
+            block.timestamp + 365 days
+        );
+
+        usdc6.mint(borrower, collateralAmount);
+        vm.prank(borrower);
+        usdc6.approve(address(vault), collateralAmount);
+        vm.prank(borrower);
+        vault.depositCollateral(loanId, collateralAmount);
+        registry.setLoanStatus(loanId, uint8(ILoanRegistry.LoanStatus.Defaulted));
+
+        assert(usdc6.balanceOf(address(engine)) == 0);
+        assert(usdc6.balanceOf(fundingPartner) == 0);
+        assert(usdc6.balanceOf(originator) == 0);
+        assert(usdc6.balanceOf(borrower) == 0);
+
+        (bool allowed, string memory reason) = engine.canLiquidate(loanId, 1_000_000, 6);
+        assert(allowed == true);
+        assertEq(reason, "LiquidationEngine: loan defaulted");
+
+        vm.prank(originator);
+        engine.liquidateLoan(loanId, 1_000_000, 6, fundingPartner);
+
+        CollateralVault.Vault memory liquidatedVault = vault.getVault(loanId);
+        assert(liquidatedVault.amount == 0);
+        assert(liquidatedVault.locked == false);
+        assert(liquidatedVault.liquidated == true);
+        assert(registry.getLoanStatus(loanId) == uint8(ILoanRegistry.LoanStatus.Liquidated));
+        assert(usdc6.balanceOf(address(vault)) == 0);
+        assert(usdc6.balanceOf(address(engine)) == 0);
+        assert(usdc6.balanceOf(fundingPartner) == 10_000_000);
+        assert(usdc6.balanceOf(originator) == 500_000);
+        assert(usdc6.balanceOf(borrower) == 4_500_000);
+    }
+
+    function testRejectsNonUsdcCollateralForNoSwapDemoPath() public {
+        MockERC20 nonUsdcCollateral = new MockERC20("Collateral", "COL", 18, 0);
+        uint256 loanId = loanRegistry.createLoan(
+            borrower,
+            originator,
+            address(nonUsdcCollateral),
+            0,
+            50e18,
+            5000,
+            block.timestamp + 365 days
+        );
+
+        nonUsdcCollateral.mint(borrower, 100e18);
+        vm.prank(borrower);
+        nonUsdcCollateral.approve(address(collateralVault), 100e18);
+        vm.prank(borrower);
+        collateralVault.depositCollateral(loanId, 100e18);
+        loanRegistry.setLoanStatus(loanId, uint8(ILoanRegistry.LoanStatus.Defaulted));
+
+        (bool allowed, string memory reason) = liquidationEngine.canLiquidate(loanId, 1e18, 18);
+        assert(allowed == false);
+        assertEq(reason, "LiquidationEngine: collateral token must match proceeds token");
+
+        vm.prank(originator);
+        vm.expectRevert(bytes("LiquidationEngine: collateral token must match proceeds token"));
+        liquidationEngine.liquidateLoan(loanId, 1e18, 18, fundingPartner);
     }
 
     function _createActiveLoanWithCollateral(uint256 collateralAmount, uint256 loanAmount) internal returns (uint256 loanId) {

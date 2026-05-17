@@ -53,7 +53,7 @@ export type FujiContractsConfigOptions = {
 };
 
 const DEFAULT_CONFIG_PATH = 'config/fuji-contracts.json';
-const DEFAULT_BROADCAST_PATH = 'broadcast/Deploy.s.sol/43113/run-latest.json';
+const DEFAULT_BROADCAST_PATH = 'config/fuji-broadcast-run-latest.json';
 
 export function loadFujiContractsConfig(options: FujiContractsConfigOptions = {}): FujiContractsConfigResult {
   const rootDir = options.rootDir ?? process.cwd();
@@ -151,11 +151,12 @@ function readJson<T>(path: string, label: string, errors: string[]): T | null {
 function extractBroadcastAddresses(artifact: BroadcastArtifact): Map<FujiContractName, string> {
   const addresses = new Map<FujiContractName, string>();
   for (const transaction of artifact.transactions ?? []) {
-    if (!isFujiContractName(transaction.contractName) || typeof transaction.contractAddress !== 'string') {
+    const contractName = normalizeBroadcastContractName(transaction.contractName);
+    if (!contractName || typeof transaction.contractAddress !== 'string') {
       continue;
     }
-    if (!addresses.has(transaction.contractName)) {
-      addresses.set(transaction.contractName, transaction.contractAddress);
+    if (!addresses.has(contractName)) {
+      addresses.set(contractName, transaction.contractAddress);
     }
   }
   return addresses;
@@ -175,6 +176,12 @@ function validateAbiArtifact(path: string, contractName: FujiContractName, error
   } catch {
     errors.push(`ABI artifact for ${contractName} is not valid JSON`);
   }
+}
+
+function normalizeBroadcastContractName(value: unknown): FujiContractName | null {
+  if (typeof value !== 'string') return null;
+  const contractName = value.split(/[\\/]/).at(-1);
+  return isFujiContractName(contractName) ? contractName : null;
 }
 
 function isFujiContractName(value: unknown): value is FujiContractName {

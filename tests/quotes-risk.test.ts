@@ -77,7 +77,7 @@ describe('quotes and Wavy Node wallet risk API', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
       scenario: 'SME_FIAT_WORKING_CAPITAL',
-      suggestedPrincipal: { amount: '850000', currency: 'MXN' },
+      suggestedPrincipal: { amount: '696150', currency: 'MXN' },
       requiredCollateralValueUsd: '65000',
       terms: {
         initialLtvBps: 6300,

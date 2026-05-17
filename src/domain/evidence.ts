@@ -7,6 +7,13 @@ export type ContractReference = {
   address: string;
 };
 
+export type EvidenceTokenContext = {
+  symbol: string;
+  address?: string | null;
+  decimals?: number;
+  amountBaseUnits?: string;
+};
+
 export type EvidenceMetadata = {
   mode: EvidenceMode;
   source: EvidenceSource;
@@ -16,12 +23,14 @@ export type EvidenceMetadata = {
   blockNumber?: number | null;
   explorerUrl?: string | null;
   contracts?: ContractReference[];
+  token?: EvidenceTokenContext;
 };
 
 type EvidenceOptions = {
   txHash?: `0x${string}`;
   blockNumber?: number | null;
   contracts?: ContractReference[];
+  token?: EvidenceTokenContext;
 };
 
 export function buildEvidenceMetadata(source: EvidenceSource, options: EvidenceOptions = {}): EvidenceMetadata {
@@ -44,7 +53,8 @@ export function buildEvidenceMetadata(source: EvidenceSource, options: EvidenceO
     txHash: options.txHash,
     blockNumber: options.blockNumber ?? null,
     explorerUrl: null,
-    contracts: options.contracts ?? []
+    contracts: options.contracts ?? [],
+    token: options.token
   };
 }
 
@@ -63,6 +73,7 @@ export function buildLoanEvidenceMetadata(
   return buildEvidenceMetadata(source, {
     txHash: options.txHash,
     blockNumber: options.blockNumber,
-    contracts: buildVaultContractReference(options.vaultAddress)
+    contracts: buildVaultContractReference(options.vaultAddress),
+    token: options.token
   });
 }
